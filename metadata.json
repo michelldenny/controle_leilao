@@ -1,0 +1,6 @@
+{
+  "name": "Controle de Leilões e Patrimônio",
+  "description": "Sistema completo para gestão de itens arrematados em leilões, acompanhamento de custos, manutenção, valuation, anúncios, vendas e ROI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
