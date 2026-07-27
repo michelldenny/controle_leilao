@@ -16,14 +16,17 @@ import {
   AlertCircle,
   X,
   ChevronRight,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 
 export const AuctionsView: React.FC = () => {
-  const { auctions, addAuction, lots, items, setActiveTab } = useAuction();
+  const { auctions, addAuction, updateAuction, deleteAuction, lots, items, setActiveTab } = useAuction();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingAuction, setEditingAuction] = useState<Auction | null>(null);
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
 
   // Form State
@@ -42,35 +45,93 @@ export const AuctionsView: React.FC = () => {
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<AuctionStatus>("participando");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !auctioneer) return;
+  const handleOpenEdit = (auction: Auction) => {
+    setEditingAuction(auction);
+    setName(auction.name);
+    setAuctioneer(auction.auctioneer);
+    setPlatform(auction.platform || "");
+    setProcessNumber(auction.processNumber || "");
+    setResponsibleEntity(auction.responsibleEntity || "");
+    setAuctionType(auction.auctionType || "Judicial");
+    setAuctionDate(auction.auctionDate || "2026-08-15");
+    setCity(auction.city || "São Paulo");
+    setState(auction.state || "SP");
+    setPickupAddress(auction.pickupAddress || "");
+    setCommissionPercentage(auction.commissionPercentage || 5);
+    setEditalUrl(auction.editalUrl || "");
+    setNotes(auction.notes || "");
+    setStatus(auction.status || "participando");
+    setIsModalOpen(true);
+  };
 
-    addAuction({
-      name,
-      auctioneer,
-      platform: platform || auctioneer,
-      processNumber,
-      responsibleEntity,
-      auctionType,
-      auctionDate,
-      city,
-      state,
-      pickupAddress,
-      commissionPercentage: Number(commissionPercentage),
-      editalUrl,
-      notes,
-      status,
-      documentsCount: 1,
-    });
-
-    setIsModalOpen(false);
-    // Reset form
+  const handleOpenNew = () => {
+    setEditingAuction(null);
     setName("");
     setAuctioneer("");
     setPlatform("");
     setProcessNumber("");
+    setResponsibleEntity("");
+    setAuctionType("Judicial");
+    setAuctionDate("2026-08-15");
+    setCity("São Paulo");
+    setState("SP");
+    setPickupAddress("");
+    setCommissionPercentage(5);
+    setEditalUrl("");
     setNotes("");
+    setStatus("participando");
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteAuction = (id: string, aucName: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir o leilão "${aucName}"?`)) {
+      deleteAuction(id);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !auctioneer) return;
+
+    if (editingAuction) {
+      updateAuction(editingAuction.id, {
+        name,
+        auctioneer,
+        platform: platform || auctioneer,
+        processNumber,
+        responsibleEntity,
+        auctionType,
+        auctionDate,
+        city,
+        state,
+        pickupAddress,
+        commissionPercentage: Number(commissionPercentage),
+        editalUrl,
+        notes,
+        status,
+      });
+    } else {
+      addAuction({
+        name,
+        auctioneer,
+        platform: platform || auctioneer,
+        processNumber,
+        responsibleEntity,
+        auctionType,
+        auctionDate,
+        city,
+        state,
+        pickupAddress,
+        commissionPercentage: Number(commissionPercentage),
+        editalUrl,
+        notes,
+        status,
+        documentsCount: 1,
+      });
+    }
+
+    setIsModalOpen(false);
+    setEditingAuction(null);
   };
 
   const filteredAuctions = auctions.filter((a) => {
@@ -110,7 +171,7 @@ export const AuctionsView: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenNew}
           className="flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md shadow-amber-500/20 transition-all shrink-0"
         >
           <Plus className="w-4 h-4" />
@@ -156,7 +217,7 @@ export const AuctionsView: React.FC = () => {
           return (
             <div
               key={auc.id}
-              className="flex flex-col justify-between p-5 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow"
+              className="flex flex-col justify-between p-5 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow relative group"
             >
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
@@ -167,9 +228,22 @@ export const AuctionsView: React.FC = () => {
                   >
                     {auc.status}
                   </span>
-                  <span className="text-[11px] font-semibold text-slate-400">
-                    Comissão: {auc.commissionPercentage}%
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleOpenEdit(auc)}
+                      title="Editar leilão"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteAuction(auc.id, auc.name)}
+                      title="Excluir leilão"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -227,12 +301,18 @@ export const AuctionsView: React.FC = () => {
 
       {/* New Auction Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
-          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm cursor-pointer"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                 <Gavel className="w-5 h-5 text-amber-500" />
-                <span>Cadastrar Novo Leilão</span>
+                <span>{editingAuction ? "Editar Leilão" : "Cadastrar Novo Leilão"}</span>
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -441,8 +521,14 @@ export const AuctionsView: React.FC = () => {
 
       {/* Auction Detail Modal */}
       {selectedAuction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
-          <div className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm cursor-pointer"
+          onClick={() => setSelectedAuction(null)}
+        >
+          <div
+            className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-500">

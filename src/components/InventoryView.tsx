@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useAuction } from "../context/AuctionContext";
 import { AuctionItem, ItemStatus, ItemCondition } from "../types";
+import { EditItemModal } from "./EditItemModal";
 import {
   Package,
   Search,
@@ -20,6 +21,8 @@ import {
   Square,
   Plus,
   Zap,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -38,10 +41,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
     globalSearch,
     setGlobalSearch,
     setIsWizardOpen,
+    deleteItem,
   } = useAuction();
 
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+  const [editingItem, setEditingItem] = useState<AuctionItem | null>(null);
 
   // Filter States
   const [categoryFilter, setCategoryFilter] = useState<string>("todas");
@@ -451,6 +456,24 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                       <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
+                            onClick={() => setEditingItem(item)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-700"
+                            title="Editar Item"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Tem certeza que deseja excluir o item ${item.code} (${item.name})?`)) {
+                                deleteItem(item.id);
+                              }
+                            }}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-500/10"
+                            title="Excluir Item"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          <button
                             onClick={() => onSelectQrCode && onSelectQrCode(item)}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700"
                             title="Imprimir Etiqueta / QR Code"
@@ -539,19 +562,39 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
               </div>
 
               <div className="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                <button
-                  onClick={() => openAiModal(item)}
-                  className="flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Análise IA</span>
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setEditingItem(item)}
+                    className="p-1.5 rounded-lg text-slate-500 hover:text-amber-500 hover:bg-slate-200/50 dark:hover:bg-slate-700"
+                    title="Editar Item"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`Tem certeza que deseja excluir o item ${item.code} (${item.name})?`)) {
+                        deleteItem(item.id);
+                      }
+                    }}
+                    className="p-1.5 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-500/10"
+                    title="Excluir Item"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => openAiModal(item)}
+                    className="flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400 px-2 py-1 rounded-lg hover:bg-amber-500/10"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>IA</span>
+                  </button>
+                </div>
 
                 <button
                   onClick={() => openItemDetail(item.id)}
                   className="flex items-center gap-1 text-xs font-bold text-slate-900 dark:text-white hover:text-amber-500"
                 >
-                  <span>Abrir Ficha</span>
+                  <span>Ver Detalhes</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
@@ -559,6 +602,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
           ))}
         </div>
       )}
+
+      {/* Modal para Edição de Item no Inventário */}
+      <EditItemModal
+        item={editingItem}
+        isOpen={!!editingItem}
+        onClose={() => setEditingItem(null)}
+      />
     </div>
   );
 };

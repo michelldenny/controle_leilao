@@ -85,10 +85,13 @@ export const DashboardView: React.FC = () => {
       {/* Main KPI Grid - 12 Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {/* Total Invested */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow">
+        <button
+          onClick={() => setActiveTab("financial")}
+          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-amber-500/50 transition-all text-left group cursor-pointer"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
             <span>Total Investido</span>
-            <DollarSign className="w-4 h-4 text-amber-500" />
+            <DollarSign className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
             {formatCurrency(metrics.totalInvested)}
@@ -96,13 +99,16 @@ export const DashboardView: React.FC = () => {
           <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
             Arrematações + custos adicionais
           </div>
-        </div>
+        </button>
 
         {/* Estimated Market Value */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow">
+        <button
+          onClick={() => setActiveTab("inventory")}
+          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-blue-500/50 transition-all text-left group cursor-pointer"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
             <span>Valor Estimado de Mercado</span>
-            <TrendingUp className="w-4 h-4 text-blue-500" />
+            <TrendingUp className="w-4 h-4 text-blue-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
             {formatCurrency(metrics.totalEstimatedMarket)}
@@ -111,13 +117,16 @@ export const DashboardView: React.FC = () => {
             <ArrowUpRight className="w-3 h-3" />
             <span>Valuation total dos bens</span>
           </div>
-        </div>
+        </button>
 
         {/* Total Sold Amount */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow">
+        <button
+          onClick={() => setActiveTab("sales")}
+          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-purple-500/50 transition-all text-left group cursor-pointer"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
             <span>Total Vendido</span>
-            <ShoppingBag className="w-4 h-4 text-purple-500" />
+            <ShoppingBag className="w-4 h-4 text-purple-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
             {formatCurrency(metrics.totalSoldAmount)}
@@ -125,13 +134,16 @@ export const DashboardView: React.FC = () => {
           <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
             {metrics.soldItemsCount} itens comercializados
           </div>
-        </div>
+        </button>
 
         {/* Realized Profit */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow">
+        <button
+          onClick={() => setActiveTab("financial")}
+          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-emerald-500/50 transition-all text-left group cursor-pointer"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
             <span>Lucro Realizado (Líquido)</span>
-            <DollarSign className="w-4 h-4 text-emerald-500" />
+            <DollarSign className="w-4 h-4 text-emerald-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="mt-2 text-xl font-bold text-emerald-600 dark:text-emerald-400">
             {formatCurrency(metrics.realizedProfit)}
@@ -139,13 +151,16 @@ export const DashboardView: React.FC = () => {
           <div className="mt-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
             Líquido após taxas e frete
           </div>
-        </div>
+        </button>
 
         {/* Potential Profit */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow">
+        <button
+          onClick={() => setActiveTab("bi")}
+          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-teal-500/50 transition-all text-left group cursor-pointer"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
             <span>Lucro Potencial (Estoque)</span>
-            <TrendingUp className="w-4 h-4 text-teal-500" />
+            <TrendingUp className="w-4 h-4 text-teal-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
             {formatCurrency(metrics.potentialProfit)}
@@ -153,13 +168,16 @@ export const DashboardView: React.FC = () => {
           <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
             Margem projetada no estoque
           </div>
-        </div>
+        </button>
 
         {/* Total Items */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow">
+        <button
+          onClick={() => setActiveTab("inventory")}
+          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-amber-500/50 transition-all text-left group cursor-pointer"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
             <span>Total de Itens</span>
-            <Package className="w-4 h-4 text-slate-500" />
+            <Package className="w-4 h-4 text-slate-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
             {metrics.totalItemsCount}
@@ -167,13 +185,16 @@ export const DashboardView: React.FC = () => {
           <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
             Cadastrados em carteira
           </div>
-        </div>
+        </button>
 
         {/* Items Available */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow">
+        <button
+          onClick={() => setActiveTab("inventory")}
+          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-emerald-500/50 transition-all text-left group cursor-pointer"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
             <span>Prontos p/ Venda</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500 group-hover:scale-125 transition-transform" />
           </div>
           <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
             {metrics.availableItemsCount}
@@ -181,13 +202,16 @@ export const DashboardView: React.FC = () => {
           <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
             Testados e armazenados
           </div>
-        </div>
+        </button>
 
         {/* Advertised Items */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow">
+        <button
+          onClick={() => setActiveTab("advertisements")}
+          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-blue-500/50 transition-all text-left group cursor-pointer"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
             <span>Itens Anunciados</span>
-            <Megaphone className="w-4 h-4 text-blue-500" />
+            <Megaphone className="w-4 h-4 text-blue-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
             {metrics.advertisedCount}
@@ -195,13 +219,16 @@ export const DashboardView: React.FC = () => {
           <div className="mt-1 text-[11px] text-blue-600 dark:text-blue-400 font-medium">
             Nos marketplaces
           </div>
-        </div>
+        </button>
 
         {/* Sold Items */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow">
+        <button
+          onClick={() => setActiveTab("sales")}
+          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-purple-500/50 transition-all text-left group cursor-pointer"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
             <span>Itens Vendidos</span>
-            <ShoppingBag className="w-4 h-4 text-purple-500" />
+            <ShoppingBag className="w-4 h-4 text-purple-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
             {metrics.soldItemsCount}
@@ -209,13 +236,16 @@ export const DashboardView: React.FC = () => {
           <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
             Concluídos com receita
           </div>
-        </div>
+        </button>
 
         {/* Awaiting Pickup */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow">
+        <button
+          onClick={() => setActiveTab("lots")}
+          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-amber-500/50 transition-all text-left group cursor-pointer"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
             <span>Aguardando Retirada</span>
-            <Clock className="w-4 h-4 text-amber-500" />
+            <Clock className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="mt-2 text-xl font-bold text-amber-600 dark:text-amber-400">
             {metrics.awaitingPickupCount}
@@ -223,13 +253,16 @@ export const DashboardView: React.FC = () => {
           <div className="mt-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium">
             Prazos nos leiloeiros
           </div>
-        </div>
+        </button>
 
         {/* In Maintenance */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow">
+        <button
+          onClick={() => setActiveTab("inventory")}
+          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-orange-500/50 transition-all text-left group cursor-pointer"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
             <span>Em Manutenção/Reforma</span>
-            <Wrench className="w-4 h-4 text-orange-500" />
+            <Wrench className="w-4 h-4 text-orange-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
             {metrics.inMaintenanceCount}
@@ -237,13 +270,16 @@ export const DashboardView: React.FC = () => {
           <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
             Em conserto ou higienização
           </div>
-        </div>
+        </button>
 
         {/* Unassessed Items */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-shadow">
+        <button
+          onClick={() => setActiveTab("inventory")}
+          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-red-500/50 transition-all text-left group cursor-pointer"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
             <span>Sem Avaliação</span>
-            <AlertCircle className="w-4 h-4 text-red-500" />
+            <AlertCircle className="w-4 h-4 text-red-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
             {metrics.unassessedCount}
@@ -251,7 +287,7 @@ export const DashboardView: React.FC = () => {
           <div className="mt-1 text-[11px] text-red-500 font-medium">
             Requerem pesquisa de preço
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Capital Immobilized Callout Box */}

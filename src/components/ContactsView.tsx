@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { useAuction } from "../context/AuctionContext";
-import { Users, Plus, Search, Phone, Mail, MapPin, Tag } from "lucide-react";
+import { Contact } from "../types";
+import { Users, Plus, Search, Phone, Mail, MapPin, Tag, Pencil, Trash2, X } from "lucide-react";
 
 export const ContactsView: React.FC = () => {
-  const { contacts, addContact } = useAuction();
+  const { contacts, addContact, updateContact, deleteContact } = useAuction();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("todos");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [name, setName] = useState("");
   const [type, setType] = useState<any>("comprador");
   const [phone, setPhone] = useState("");
@@ -24,24 +26,62 @@ export const ContactsView: React.FC = () => {
     return matchesSearch && matchesType;
   });
 
+  const handleOpenNew = () => {
+    setEditingContact(null);
+    setName("");
+    setType("comprador");
+    setPhone("");
+    setEmail("");
+    setCity("São Paulo");
+    setNotes("");
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (c: Contact) => {
+    setEditingContact(c);
+    setName(c.name);
+    setType(c.type);
+    setPhone(c.phone);
+    setEmail(c.email);
+    setCity(c.city);
+    setNotes(c.notes || "");
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: string, cName: string) => {
+    if (window.confirm(`Deseja excluir o contato "${cName}"?`)) {
+      deleteContact(id);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
 
-    addContact({
-      name,
-      type,
-      phone,
-      email,
-      city,
-      state: "SP",
-      notes,
-    });
+    if (editingContact) {
+      updateContact(editingContact.id, {
+        name,
+        type,
+        phone,
+        email,
+        city,
+        state: "SP",
+        notes,
+      });
+    } else {
+      addContact({
+        name,
+        type,
+        phone,
+        email,
+        city,
+        state: "SP",
+        notes,
+      });
+    }
 
     setIsModalOpen(false);
-    setName("");
-    setPhone("");
-    setEmail("");
+    setEditingContact(null);
   };
 
   return (
@@ -59,7 +99,7 @@ export const ContactsView: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenNew}
           className="flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md shadow-amber-500/20 transition-all shrink-0"
         >
           <Plus className="w-4 h-4" />
@@ -98,12 +138,28 @@ export const ContactsView: React.FC = () => {
         {filteredContacts.map((c) => (
           <div
             key={c.id}
-            className="p-5 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm space-y-3 text-xs"
+            className="p-5 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm space-y-3 text-xs relative group"
           >
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
                 {c.type.replace("_", " ")}
               </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => handleOpenEdit(c)}
+                  title="Editar Contato"
+                  className="p-1 rounded text-slate-400 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => handleDelete(c.id, c.name)}
+                  title="Excluir Contato"
+                  className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             <div>
@@ -131,9 +187,17 @@ export const ContactsView: React.FC = () => {
 
       {/* New Contact Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-            <h3 className="font-bold text-base text-slate-900 dark:text-white">Novo Contato</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm cursor-pointer"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-bold text-base text-slate-900 dark:text-white">
+              {editingContact ? "Editar Contato" : "Novo Contato"}
+            </h3>
 
             <form onSubmit={handleSubmit} className="space-y-3 text-xs">
               <div>

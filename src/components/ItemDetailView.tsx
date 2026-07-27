@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuction } from "../context/AuctionContext";
-import { AuctionItem, ItemStatus } from "../types";
+import { AuctionItem, ItemStatus, AdPlatform } from "../types";
+import { EditItemModal } from "./EditItemModal";
 import {
   ArrowLeft,
   Package,
@@ -16,12 +17,8 @@ import {
   Plus,
   Trash2,
   CheckCircle2,
-  TrendingUp,
-  Image as ImageIcon,
-  ChevronRight,
   Gavel,
-  ShieldCheck,
-  Tag,
+  Edit,
 } from "lucide-react";
 
 interface ItemDetailViewProps {
@@ -35,22 +32,31 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
     items,
     auctions,
     lots,
-    updateItemStatus,
-    addExpenseToItem,
-    addMaintenanceLog,
-    addAdvertisement,
+    updateItem,
+    deleteItem,
     openAiModal,
+    expenses,
+    maintenanceRecords,
+    advertisements,
+    documents,
+    activityLogs,
+    addExpense,
+    addMaintenance,
+    addAdvertisement,
   } = useAuction();
 
   const [activeTab, setActiveTab] = useState<
     "overview" | "financial" | "maintenance" | "ads" | "documents" | "history"
   >("overview");
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   const item = items.find((i) => i.id === itemId);
+
   if (!item) {
     return (
       <div className="p-8 text-center space-y-4">
-        <p className="text-slate-500">Item não encontrado.</p>
+        <p className="text-slate-500">Item não encontrado ou foi removido.</p>
         <button onClick={onBack} className="px-4 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs">
           Voltar ao Inventário
         </button>
@@ -61,6 +67,13 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
   const auction = auctions.find((a) => a.id === item.auctionId);
   const lot = lots.find((l) => l.id === item.lotId);
 
+  // Associated collections
+  const itemExpenses = (expenses || []).filter((e) => e.itemId === item.id);
+  const itemMaintenances = (maintenanceRecords || []).filter((m) => m.itemId === item.id);
+  const itemAds = (advertisements || []).filter((a) => a.itemId === item.id);
+  const itemDocs = (documents || []).filter((d) => d.entityId === item.id);
+  const itemLogs = (activityLogs || []).filter((l) => l.itemId === item.id);
+
   // Expense form
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [expenseDesc, setExpenseDesc] = useState("");
@@ -69,29 +82,35 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
 
   // Maintenance form
   const [showAddMaint, setShowAddMaint] = useState(false);
-  const [maintType, setMaintType] = useState<any>("limpeza");
+  const [maintType, setMaintType] = useState("limpeza");
   const [maintDesc, setMaintDesc] = useState("");
   const [maintCost, setMaintCost] = useState("");
   const [maintTech, setMaintTech] = useState("");
 
   // Ad form
   const [showAddAd, setShowAddAd] = useState(false);
-  const [adPlatform, setAdPlatform] = useState("Mercado Livre");
-  const [adTitle, setAdTitle] = useState(item.name);
+  const [adPlatform, setAdPlatform] = useState<AdPlatform>("Mercado Livre");
   const [adPrice, setAdPrice] = useState(item.listedPrice || item.estimatedMarketAvg);
-  const [adUrl, setAdUrl] = useState("");
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
 
+  const handleDelete = () => {
+    if (window.confirm(`Tem certeza que deseja excluir o item ${item.code} (${item.name})?`)) {
+      deleteItem(item.id);
+      onBack();
+    }
+  };
+
   const handleCreateExpense = (e: React.FormEvent) => {
     e.preventDefault();
     if (!expenseDesc || !expenseCost) return;
-    addExpenseToItem(item.id, {
+    addExpense({
+      itemId: item.id,
       description: expenseDesc,
-      cost: Number(expenseCost),
+      amount: Number(expenseCost),
       date: new Date().toISOString().split("T")[0],
-      category: expenseCategory as any,
+      category: expenseCategory,
     });
     setShowAddExpense(false);
     setExpenseDesc("");
@@ -101,13 +120,15 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
   const handleCreateMaintenance = (e: React.FormEvent) => {
     e.preventDefault();
     if (!maintDesc) return;
-    addMaintenanceLog(item.id, {
-      type: maintType,
+    addMaintenance({
+      itemId: item.id,
+      serviceType: maintType,
       description: maintDesc,
       cost: Number(maintCost) || 0,
-      technicianOrCompany: maintTech || "Técnico Próprio",
-      status: "concluido",
-      startDate: new Date().toISOString().split("T")[0],
+      supplier: maintTech || "Técnico Próprio",
+      status: "concluida",
+      date: new Date().toISOString().split("T")[0],
+      responsible: maintTech || "Técnico Próprio",
     });
     setShowAddMaint(false);
     setMaintDesc("");
@@ -116,16 +137,14 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
 
   const handleCreateAd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!adPlatform || !adTitle) return;
-    addAdvertisement(item.id, {
+    if (!adPlatform) return;
+    addAdvertisement({
+      itemId: item.id,
       platform: adPlatform,
-      title: adTitle,
-      price: Number(adPrice),
-      url: adUrl,
-      status: "ativo",
-      datePublished: new Date().toISOString().split("T")[0],
-      viewsCount: 0,
-      leadsCount: 0,
+      listedPrice: Number(adPrice),
+      publishDate: new Date().toISOString().split("T")[0],
+      adCost: 0,
+      status: "publicado",
     });
     setShowAddAd(false);
   };
@@ -142,7 +161,23 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
           <span>Voltar ao Inventário</span>
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setIsEditModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          >
+            <Edit className="w-4 h-4 text-amber-500" />
+            <span>Editar Item</span>
+          </button>
+
+          <button
+            onClick={handleDelete}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>Excluir Item</span>
+          </button>
+
           <button
             onClick={() => onSelectQrCode && onSelectQrCode(item)}
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
@@ -178,7 +213,7 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
 
             <select
               value={item.status}
-              onChange={(e) => updateItemStatus(item.id, e.target.value as ItemStatus)}
+              onChange={(e) => updateItem(item.id, { status: e.target.value as ItemStatus })}
               className="px-3 py-1.5 text-xs font-bold rounded-xl bg-amber-500 text-slate-950 border-none cursor-pointer"
             >
               <option value="disponivel">Status: Disponível</option>
@@ -273,7 +308,7 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
           }`}
         >
           <Wrench className="w-4 h-4" />
-          <span>Manutenção ({(item.maintenanceLogs || []).length})</span>
+          <span>Manutenção ({itemMaintenances.length})</span>
         </button>
 
         <button
@@ -285,7 +320,7 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
           }`}
         >
           <Megaphone className="w-4 h-4" />
-          <span>Anúncios ({(item.advertisements || []).length})</span>
+          <span>Anúncios ({itemAds.length})</span>
         </button>
 
         <button
@@ -297,7 +332,7 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
           }`}
         >
           <FileText className="w-4 h-4" />
-          <span>Documentos ({(item.documents || []).length})</span>
+          <span>Documentos ({itemDocs.length})</span>
         </button>
 
         <button
@@ -309,7 +344,7 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
           }`}
         >
           <Clock className="w-4 h-4" />
-          <span>Histórico ({(item.history || []).length})</span>
+          <span>Histórico ({itemLogs.length})</span>
         </button>
       </div>
 
@@ -323,7 +358,9 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
             </div>
 
             <div className="p-5 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 space-y-3">
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Galeria de Fotos do Bem ({(item.photos || []).length})</h3>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                Galeria de Fotos do Bem ({(item.photos || []).length})
+              </h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {(item.photos || []).map((photoUrl, idx) => (
                   <div key={idx} className="h-28 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900">
@@ -341,25 +378,12 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
                 <span>Rastreio de Localização Física</span>
               </h3>
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/40 space-y-1">
-                <span className="font-semibold text-slate-900 dark:text-white block">{item.location.customText}</span>
+                <span className="font-semibold text-slate-900 dark:text-white block">{item.location?.customText || "Depósito Central"}</span>
                 <p className="text-slate-400 text-[11px]">
-                  Armazém: {item.location.warehouse || "Sede Principal"} | Prateleira: {item.location.shelf || "N/A"}
+                  Armazém: {item.location?.warehouse || "Sede Principal"}
                 </p>
               </div>
             </div>
-
-            {item.saleDetails && (
-              <div className="p-5 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 space-y-2">
-                <h3 className="font-bold text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Dados da Venda Realizada</span>
-                </h3>
-                <p><strong>Comprador:</strong> {item.saleDetails.buyerName}</p>
-                <p><strong>Preço Final:</strong> {formatCurrency(item.saleDetails.finalPrice)}</p>
-                <p><strong>Lucro Líquido:</strong> <strong className="text-emerald-600">{formatCurrency(item.saleDetails.netProfit)}</strong></p>
-                <p><strong>ROI Obtido:</strong> <strong className="text-emerald-600">{item.saleDetails.roiPercentage.toFixed(1)}%</strong></p>
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -371,13 +395,68 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-sm text-slate-900 dark:text-white">Detalhamento da Composição do Custo Real</h3>
               <button
-                onClick={() => setShowAddExpense(true)}
+                onClick={() => setShowAddExpense(!showAddExpense)}
                 className="flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Lançar Nova Despesa</span>
               </button>
             </div>
+
+            {showAddExpense && (
+              <form onSubmit={handleCreateExpense} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/40 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Descrição</label>
+                    <input
+                      type="text"
+                      required
+                      value={expenseDesc}
+                      onChange={(e) => setExpenseDesc(e.target.value)}
+                      placeholder="Ex: Formatação, Frete Local, Peças"
+                      className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Valor (R$)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={expenseCost}
+                      onChange={(e) => setExpenseCost(e.target.value)}
+                      className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Categoria</label>
+                    <select
+                      value={expenseCategory}
+                      onChange={(e) => setExpenseCategory(e.target.value)}
+                      className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                    >
+                      <option value="Manutenção">Manutenção / Reparo</option>
+                      <option value="Transporte">Transporte / Frete</option>
+                      <option value="Limpeza">Limpeza / Higienização</option>
+                      <option value="Insumos">Insumos / Embalagem</option>
+                      <option value="Outros">Outros</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddExpense(false)}
+                    className="px-3 py-1.5 text-slate-500 font-semibold"
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className="px-4 py-1.5 bg-amber-500 text-slate-950 font-bold rounded-xl">
+                    Salvar Despesa
+                  </button>
+                </div>
+              </form>
+            )}
 
             <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden">
               <table className="w-full text-left">
@@ -394,13 +473,13 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
                     <td className="p-3 text-slate-400">{item.dateAdded}</td>
                     <td className="p-3 text-right font-bold text-amber-600">{formatCurrency(item.apportionedCost)}</td>
                   </tr>
-                  {(item.expenses || []).map((exp) => (
+                  {itemExpenses.map((exp) => (
                     <tr key={exp.id}>
                       <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">
                         {exp.description} <span className="text-[10px] text-slate-400 font-normal">({exp.category})</span>
                       </td>
                       <td className="p-3 text-slate-400">{exp.date}</td>
-                      <td className="p-3 text-right font-bold text-slate-900 dark:text-white">{formatCurrency(exp.cost)}</td>
+                      <td className="p-3 text-right font-bold text-slate-900 dark:text-white">{formatCurrency(exp.amount)}</td>
                     </tr>
                   ))}
                   <tr className="bg-amber-500/10 font-bold text-amber-600 dark:text-amber-400">
@@ -420,7 +499,7 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-sm text-slate-900 dark:text-white">Registros de Limpeza, Testes & Consertos</h3>
             <button
-              onClick={() => setShowAddMaint(true)}
+              onClick={() => setShowAddMaint(!showAddMaint)}
               className="flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -428,23 +507,74 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
             </button>
           </div>
 
-          <div className="space-y-3">
-            {(item.maintenanceLogs || []).map((m) => (
-              <div key={m.id} className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                    {m.type}
-                  </span>
-                  <h4 className="font-bold text-slate-900 dark:text-white">{m.description}</h4>
-                  <p className="text-[11px] text-slate-400">Prestador: {m.technicianOrCompany} • Data: {m.startDate}</p>
+          {showAddMaint && (
+            <form onSubmit={handleCreateMaintenance} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/40 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Tipo de Serviço</label>
+                  <input
+                    type="text"
+                    required
+                    value={maintType}
+                    onChange={(e) => setMaintType(e.target.value)}
+                    placeholder="Ex: Formatação, Pintura, Troca de Tela"
+                    className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  />
                 </div>
-
-                <div className="text-right">
-                  <span className="text-[10px] text-slate-400 block">Custo</span>
-                  <strong className="text-sm font-bold text-slate-900 dark:text-white">{formatCurrency(m.cost)}</strong>
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Custo (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={maintCost}
+                    onChange={(e) => setMaintCost(e.target.value)}
+                    className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Descrição</label>
+                  <input
+                    type="text"
+                    required
+                    value={maintDesc}
+                    onChange={(e) => setMaintDesc(e.target.value)}
+                    placeholder="Detalhes dos procedimentos executados"
+                    className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  />
                 </div>
               </div>
-            ))}
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={() => setShowAddMaint(false)} className="px-3 py-1.5 text-slate-500 font-semibold">
+                  Cancelar
+                </button>
+                <button type="submit" className="px-4 py-1.5 bg-amber-500 text-slate-950 font-bold rounded-xl">
+                  Salvar Registro
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="space-y-3">
+            {itemMaintenances.length === 0 ? (
+              <p className="text-slate-400 p-4 text-center">Nenhum registro de manutenção cadastrado.</p>
+            ) : (
+              itemMaintenances.map((m) => (
+                <div key={m.id} className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                      {m.serviceType}
+                    </span>
+                    <h4 className="font-bold text-slate-900 dark:text-white">{m.description}</h4>
+                    <p className="text-[11px] text-slate-400">Prestador: {m.supplier || "Técnico Próprio"} • Data: {m.date}</p>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-400 block">Custo</span>
+                    <strong className="text-sm font-bold text-slate-900 dark:text-white">{formatCurrency(m.cost)}</strong>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
@@ -455,7 +585,7 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-sm text-slate-900 dark:text-white">Anúncios Publicados em Marketplaces</h3>
             <button
-              onClick={() => setShowAddAd(true)}
+              onClick={() => setShowAddAd(!showAddAd)}
               className="flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -463,28 +593,75 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
             </button>
           </div>
 
-          <div className="space-y-3">
-            {(item.advertisements || []).map((ad) => (
-              <div key={ad.id} className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-blue-500/10 text-blue-600 border border-blue-500/20">
-                    {ad.platform}
-                  </span>
-                  <h4 className="font-bold text-slate-900 dark:text-white">{ad.title}</h4>
-                  <p className="text-[11px] text-slate-400">Publicado em: {ad.datePublished}</p>
+          {showAddAd && (
+            <form onSubmit={handleCreateAd} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/40 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Plataforma</label>
+                  <select
+                    value={adPlatform}
+                    onChange={(e) => setAdPlatform(e.target.value as AdPlatform)}
+                    className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  >
+                    <option value="Mercado Livre">Mercado Livre</option>
+                    <option value="OLX">OLX</option>
+                    <option value="Facebook Marketplace">Facebook Marketplace</option>
+                    <option value="Webmotors">Webmotors</option>
+                    <option value="Shopee">Shopee</option>
+                    <option value="Instagram">Instagram</option>
+                    <option value="Loja própria">Loja Própria</option>
+                    <option value="Venda direta">Venda Direta</option>
+                  </select>
                 </div>
-
-                <div className="text-right space-y-1">
-                  <span className="text-sm font-bold text-emerald-600">{formatCurrency(ad.price)}</span>
-                  {ad.url && (
-                    <a href={ad.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[11px] text-amber-500 font-semibold underline">
-                      <span>Ver Anúncio</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Preço Anunciado (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={adPrice}
+                    onChange={(e) => setAdPrice(Number(e.target.value))}
+                    className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  />
                 </div>
               </div>
-            ))}
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={() => setShowAddAd(false)} className="px-3 py-1.5 text-slate-500 font-semibold">
+                  Cancelar
+                </button>
+                <button type="submit" className="px-4 py-1.5 bg-amber-500 text-slate-950 font-bold rounded-xl">
+                  Salvar Anúncio
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="space-y-3">
+            {itemAds.length === 0 ? (
+              <p className="text-slate-400 p-4 text-center">Nenhum anúncio registrado para este item.</p>
+            ) : (
+              itemAds.map((ad) => (
+                <div key={ad.id} className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                      {ad.platform}
+                    </span>
+                    <h4 className="font-bold text-slate-900 dark:text-white">{item.name}</h4>
+                    <p className="text-[11px] text-slate-400">Publicado em: {ad.publishDate}</p>
+                  </div>
+
+                  <div className="text-right space-y-1">
+                    <span className="text-sm font-bold text-emerald-600">{formatCurrency(ad.listedPrice)}</span>
+                    {ad.url && (
+                      <a href={ad.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[11px] text-amber-500 font-semibold underline">
+                        <span>Ver Anúncio</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
@@ -493,17 +670,23 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
       {activeTab === "documents" && (
         <div className="p-6 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 space-y-3 text-xs">
           <h3 className="font-bold text-sm text-slate-900 dark:text-white">Documentos & Laudos Técnicos</h3>
-          {(item.documents || []).map((doc) => (
-            <div key={doc.id} className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/40 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-amber-500" />
-                <span className="font-bold text-slate-900 dark:text-white">{doc.title}</span>
+          {itemDocs.length === 0 ? (
+            <p className="text-slate-400 py-2">Nenhum documento anexado para este item.</p>
+          ) : (
+            itemDocs.map((doc) => (
+              <div key={doc.id} className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/40 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-amber-500" />
+                  <span className="font-bold text-slate-900 dark:text-white">{doc.title}</span>
+                </div>
+                {doc.fileUrl && (
+                  <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="text-amber-600 font-semibold underline">
+                    Visualizar PDF
+                  </a>
+                )}
               </div>
-              <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="text-amber-600 font-semibold underline">
-                Visualizar PDF
-              </a>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       )}
 
@@ -512,19 +695,30 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
         <div className="p-6 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 space-y-3 text-xs">
           <h3 className="font-bold text-sm text-slate-900 dark:text-white">Trilha de Auditoria & Alterações</h3>
           <div className="space-y-3">
-            {(item.history || []).map((h) => (
-              <div key={h.id} className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/40 space-y-0.5">
-                <div className="flex items-center justify-between font-bold text-slate-900 dark:text-white">
-                  <span>{h.action}</span>
-                  <span className="text-[10px] text-slate-400">{h.timestamp}</span>
+            {itemLogs.length === 0 ? (
+              <p className="text-slate-400 py-2">Nenhum registro de histórico.</p>
+            ) : (
+              itemLogs.map((h) => (
+                <div key={h.id} className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/40 space-y-0.5">
+                  <div className="flex items-center justify-between font-bold text-slate-900 dark:text-white">
+                    <span>{h.title}</span>
+                    <span className="text-[10px] text-slate-400">{h.timestamp}</span>
+                  </div>
+                  <p className="text-slate-500">{h.description}</p>
+                  <div className="text-[10px] text-slate-400">Por: {h.user}</div>
                 </div>
-                <p className="text-slate-500">{h.details}</p>
-                <div className="text-[10px] text-slate-400">Por: {h.user}</div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}
+
+      {/* Modal para Edição do Item */}
+      <EditItemModal
+        item={item}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+      />
     </div>
   );
 };

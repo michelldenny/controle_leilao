@@ -85,8 +85,10 @@ interface AuctionContextType {
   // CRUD & Operations
   addAuction: (auction: Omit<Auction, "id">) => Auction;
   updateAuction: (id: string, auction: Partial<Auction>) => void;
+  deleteAuction: (id: string) => void;
   addLot: (lot: Omit<Lot, "id" | "totalLotCost">) => Lot;
   updateLot: (id: string, lot: Partial<Lot>) => void;
+  deleteLot: (id: string) => void;
   addItem: (item: Omit<AuctionItem, "id" | "code" | "dateAdded" | "realTotalCost">) => AuctionItem;
   updateItem: (id: string, item: Partial<AuctionItem>) => void;
   deleteItem: (id: string) => void;
@@ -111,6 +113,17 @@ interface AuctionContextType {
       estimatedMarketAvg?: number;
     }
   ) => void;
+  addMultipleItems: (params: {
+    auctionId: string;
+    lotId: string;
+    baseName: string;
+    category: string;
+    condition?: ItemCondition;
+    quantity: number;
+    unitApportionedCost: number;
+    unitEstimatedValue: number;
+    photoUrl?: string;
+  }) => void;
 
   // Expense & Maintenance & Sales
   addExpense: (expense: Omit<AdditionalExpense, "id">) => void;
@@ -118,11 +131,16 @@ interface AuctionContextType {
   updateMaintenanceStatus: (id: string, status: MaintenanceRecord["status"]) => void;
   addAdvertisement: (ad: Omit<Advertisement, "id">) => void;
   updateAdStatus: (id: string, status: Advertisement["status"]) => void;
+  deleteAdvertisement: (id: string) => void;
   recordSale: (sale: Omit<SaleRecord, "id" | "netSaleValue" | "netProfit" | "roiPercentage" | "marginPercentage">) => void;
 
   // Contacts & Documents
   addContact: (contact: Omit<Contact, "id">) => void;
+  updateContact: (id: string, contact: Partial<Contact>) => void;
+  deleteContact: (id: string) => void;
   addDocument: (doc: Omit<AppDocument, "id" | "uploadDate">) => void;
+  updateDocument: (id: string, doc: Partial<AppDocument>) => void;
+  deleteDocument: (id: string) => void;
 
   // Toast / Alerts
   addToast: (title: string, message: string, type?: ToastMessage["type"]) => void;
@@ -340,6 +358,11 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addToast("Leilão Atualizado", "As informações do leilão foram atualizadas.");
   };
 
+  const deleteAuction = (id: string) => {
+    setAuctions((prev) => prev.filter((a) => a.id !== id));
+    addToast("Leilão Excluído", "O leilão foi removido do sistema.");
+  };
+
   // CRUD Lots
   const addLot = (lotData: Omit<Lot, "id" | "totalLotCost">): Lot => {
     const id = "lot-" + (lots.length + 1) + "-" + Date.now().toString(36);
@@ -363,6 +386,11 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       })
     );
     addToast("Lote Atualizado", "Dados do lote atualizados com sucesso.");
+  };
+
+  const deleteLot = (id: string) => {
+    setLots((prev) => prev.filter((l) => l.id !== id));
+    addToast("Lote Excluído", "O lote foi removido do sistema.");
   };
 
   // CRUD Items
@@ -578,6 +606,89 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addLog("Cadastro em Massa", `${count} itens (${baseData.name}) criados no lote ${targetLot.lotNumber}.`, "creation");
   };
 
+  const addMultipleItems = (params: {
+    auctionId: string;
+    lotId: string;
+    baseName: string;
+    category: string;
+    condition?: ItemCondition;
+    quantity: number;
+    unitApportionedCost: number;
+    unitEstimatedValue: number;
+    photoUrl?: string;
+  }) => {
+    const {
+      auctionId,
+      lotId,
+      baseName,
+      category,
+      condition = "usado",
+      quantity,
+      unitApportionedCost,
+      unitEstimatedValue,
+      photoUrl,
+    } = params;
+
+    const count = Math.max(1, Number(quantity) || 1);
+    const targetLot = lots.find((l) => l.id === lotId) || lots[0];
+    const newCreatedItems: AuctionItem[] = [];
+    const startSeq = items.length + 1;
+    const dateAdded = new Date().toISOString().split("T")[0];
+
+    const defaultPhoto = photoUrl || "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80";
+
+    for (let i = 0; i < count; i++) {
+      const seq = startSeq + i;
+      const code = `LEIL-2026-${seq.toString().padStart(3, "0")}`;
+      const id = "itm-" + seq + "-" + Date.now().toString(36) + "-" + i;
+
+      const item: AuctionItem = {
+        id,
+        code,
+        lotId: targetLot ? targetLot.id : lotId,
+        auctionId: targetLot ? targetLot.auctionId : auctionId,
+        category,
+        name: count > 1 ? `${baseName} #${i + 1}` : baseName,
+        description: `${baseName} gerado via cadastro em massa.`,
+        quantity: 1,
+        condition,
+        operationalState: "funcionando",
+        location: {
+          customText: "Depósito Central",
+        },
+        photos: [defaultPhoto],
+        primaryPhoto: defaultPhoto,
+        status: "armazenado",
+        originalCost: Number(unitApportionedCost) || 0,
+        assignedPercent: Number((100 / count).toFixed(2)),
+        apportionedCost: Number(unitApportionedCost) || 0,
+        additionalCosts: 0,
+        realTotalCost: Number(unitApportionedCost) || 0,
+        estimatedMarketMin: (Number(unitEstimatedValue) || 0) * 0.85,
+        estimatedMarketAvg: Number(unitEstimatedValue) || 0,
+        estimatedMarketMax: (Number(unitEstimatedValue) || 0) * 1.15,
+        isAdvertised: false,
+        isSold: false,
+        dateAdded,
+        daysInStock: 0,
+        archived: false,
+      };
+
+      newCreatedItems.push(item);
+    }
+
+    setItems((prev) => [...newCreatedItems, ...prev]);
+
+    if (targetLot) {
+      setLots((prev) =>
+        prev.map((l) => (l.id === targetLot.id ? { ...l, itemCount: l.itemCount + count } : l))
+      );
+    }
+
+    addToast(`Gerados ${count} Itens`, `Criados com sucesso no inventário.`);
+    addLog("Cadastro em Massa", `${count} itens (${baseName}) criados.`, "creation");
+  };
+
   // Add Expense
   const addExpense = (expenseData: Omit<AdditionalExpense, "id">) => {
     const id = "exp-" + Date.now();
@@ -663,6 +774,11 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addToast("Anúncio Atualizado", `Status alterado para ${status}.`);
   };
 
+  const deleteAdvertisement = (id: string) => {
+    setAdvertisements((prev) => prev.filter((a) => a.id !== id));
+    addToast("Anúncio Removido", "O anúncio foi excluído.");
+  };
+
   // Record Sale (Registrar Venda e calcular ROI)
   const recordSale = (
     saleData: Omit<SaleRecord, "id" | "netSaleValue" | "netProfit" | "roiPercentage" | "marginPercentage">
@@ -736,6 +852,16 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addToast("Contato Cadastrado", `${newCnt.name} salvo.`);
   };
 
+  const updateContact = (id: string, contactData: Partial<Contact>) => {
+    setContacts((prev) => prev.map((c) => (c.id === id ? { ...c, ...contactData } : c)));
+    addToast("Contato Atualizado", "As informações do contato foram alteradas.");
+  };
+
+  const deleteContact = (id: string) => {
+    setContacts((prev) => prev.filter((c) => c.id !== id));
+    addToast("Contato Excluído", "O contato foi removido.");
+  };
+
   // Documents
   const addDocument = (docData: Omit<AppDocument, "id" | "uploadDate">) => {
     const id = "doc-" + Date.now();
@@ -743,6 +869,16 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const newDoc: AppDocument = { ...docData, id, uploadDate };
     setDocuments((prev) => [newDoc, ...prev]);
     addToast("Documento Anexado", `${newDoc.title}`);
+  };
+
+  const updateDocument = (id: string, docData: Partial<AppDocument>) => {
+    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, ...docData } : d)));
+    addToast("Documento Atualizado", "Documento atualizado com sucesso.");
+  };
+
+  const deleteDocument = (id: string) => {
+    setDocuments((prev) => prev.filter((d) => d.id !== id));
+    addToast("Documento Removido", "O documento foi excluído.");
   };
 
   // Global Financial Metrics Calculation
@@ -818,22 +954,30 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         toasts,
         addAuction,
         updateAuction,
+        deleteAuction,
         addLot,
         updateLot,
+        deleteLot,
         addItem,
         updateItem,
         deleteItem,
         archiveItem,
         apportionLotCost,
         bulkCreateItems,
+        addMultipleItems,
         addExpense,
         addMaintenance,
         updateMaintenanceStatus,
         addAdvertisement,
         updateAdStatus,
+        deleteAdvertisement,
         recordSale,
         addContact,
+        updateContact,
+        deleteContact,
         addDocument,
+        updateDocument,
+        deleteDocument,
         addToast,
         removeToast,
         globalSearch,
