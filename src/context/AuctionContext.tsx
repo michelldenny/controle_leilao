@@ -65,6 +65,8 @@ interface AuctionContextType {
   aiModalItem: AuctionItem | null;
   openAiModal: (item?: AuctionItem) => void;
   closeAiModal: () => void;
+  isImportModalOpen: boolean;
+  setIsImportModalOpen: (open: boolean) => void;
 
   // Database Connection & Reset
   isFirebaseConnected: boolean;
@@ -190,6 +192,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [selectedLotForApportionment, setSelectedLotForApportionment] = useState<Lot | null>(null);
   const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
   const [aiModalItem, setAiModalItem] = useState<AuctionItem | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
 
   // Firestore connection status
   const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(true);
@@ -946,6 +949,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         aiModalItem,
         openAiModal,
         closeAiModal,
+        isImportModalOpen,
+        setIsImportModalOpen,
         isFirebaseConnected,
         clearAllDatabaseData,
         auctions,

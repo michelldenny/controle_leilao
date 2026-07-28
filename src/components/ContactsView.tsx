@@ -22,7 +22,8 @@ export const ContactsView: React.FC = () => {
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.phone.toLowerCase().includes(search.toLowerCase()) ||
       c.email.toLowerCase().includes(search.toLowerCase());
-    const matchesType = typeFilter === "todos" || c.type === typeFilter;
+    const cType = c.type || c.contactType || "";
+    const matchesType = typeFilter === "todos" || cType === typeFilter;
     return matchesSearch && matchesType;
   });
 
@@ -40,10 +41,10 @@ export const ContactsView: React.FC = () => {
   const handleOpenEdit = (c: Contact) => {
     setEditingContact(c);
     setName(c.name);
-    setType(c.type);
+    setType(c.type || c.contactType || "comprador");
     setPhone(c.phone);
     setEmail(c.email);
-    setCity(c.city);
+    setCity(c.city || "São Paulo");
     setNotes(c.notes || "");
     setIsModalOpen(true);
   };
@@ -62,6 +63,7 @@ export const ContactsView: React.FC = () => {
       updateContact(editingContact.id, {
         name,
         type,
+        contactType: type,
         phone,
         email,
         city,
@@ -72,6 +74,7 @@ export const ContactsView: React.FC = () => {
       addContact({
         name,
         type,
+        contactType: type,
         phone,
         email,
         city,
@@ -130,6 +133,7 @@ export const ContactsView: React.FC = () => {
           <option value="leiloeiro">Leiloeiros</option>
           <option value="transportadora">Transportadoras</option>
           <option value="prestador_servico">Prestadores / Mecânicos</option>
+          <option value="fornecedor_pecas">Fornecedores de Peças</option>
         </select>
       </div>
 
@@ -142,7 +146,7 @@ export const ContactsView: React.FC = () => {
           >
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                {c.type.replace("_", " ")}
+                {(c.type || c.contactType || "").replace("_", " ")}
               </span>
               <div className="flex items-center gap-1">
                 <button
@@ -164,7 +168,9 @@ export const ContactsView: React.FC = () => {
 
             <div>
               <h3 className="font-bold text-sm text-slate-900 dark:text-white">{c.name}</h3>
-              {c.companyName && <p className="text-[11px] text-slate-400">{c.companyName}</p>}
+              {(c.companyName || c.company) && (
+                <p className="text-[11px] text-slate-400">{c.companyName || c.company}</p>
+              )}
             </div>
 
             <div className="space-y-1.5 text-slate-600 dark:text-slate-300">
@@ -178,7 +184,7 @@ export const ContactsView: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span>{c.city} - {c.state}</span>
+                <span>{c.city || "São Paulo"} - {c.state || "SP"}</span>
               </div>
             </div>
           </div>
