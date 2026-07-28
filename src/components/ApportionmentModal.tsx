@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuction } from "../context/AuctionContext";
 import { Lot, ApportionmentMethod } from "../types";
-import { Calculator, X, AlertCircle, Check, Percent, DollarSign, Scale } from "lucide-react";
+import { Calculator, X, AlertCircle, Check, Percent, DollarSign, Scale, Plus, PackagePlus } from "lucide-react";
 
 interface ApportionmentModalProps {
   lot: Lot;
@@ -9,7 +9,7 @@ interface ApportionmentModalProps {
 }
 
 export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onClose }) => {
-  const { items, apportionLotCost } = useAuction();
+  const { items, apportionLotCost, setIsWizardOpen, setIsBulkModalOpen } = useAuction();
 
   const lotItems = items.filter((i) => i.lotId === lot.id);
   const [method, setMethod] = useState<ApportionmentMethod>("igualitario");
@@ -170,99 +170,141 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
           </div>
 
           <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden text-xs">
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 font-semibold">
-                <tr>
-                  <th className="p-3">Código / Item</th>
-                  <th className="p-3">Valor Estimado</th>
-                  <th className="p-3 text-center">Atribuição / %</th>
-                  <th className="p-3 text-right">Custo Rateado</th>
-                  <th className="p-3 text-right">Despesas Ext.</th>
-                  <th className="p-3 text-right">Custo Total Real</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {lotItems.map((item) => {
-                  let previewApportioned = 0;
-                  let previewPercent = 0;
+            {lotItems.length === 0 ? (
+              <div className="p-8 text-center space-y-4 bg-slate-50/50 dark:bg-slate-800/30">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+                <div className="max-w-md mx-auto space-y-1">
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                    Nenhum Item Cadastrado neste Lote
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    O rateio divide o custo total do lote ({formatCurrency(lot.totalLotCost)}) entre os itens individuais que o compõem. Para realizar o rateio, cadastre os itens deste lote primeiro:
+                  </p>
+                </div>
 
-                  if (method === "igualitario") {
-                    previewApportioned = lot.totalLotCost / Math.max(lotItems.length, 1);
-                    previewPercent = 100 / Math.max(lotItems.length, 1);
-                  } else if (method === "valor_estimado") {
-                    const sumEst = lotItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 1), 0);
-                    const itemEst = item.estimatedMarketAvg || 1;
-                    previewPercent = sumEst > 0 ? (itemEst / sumEst) * 100 : 100 / lotItems.length;
-                    previewApportioned = (lot.totalLotCost * previewPercent) / 100;
-                  } else if (method === "percentual") {
-                    previewPercent = customValues[item.id] || 0;
-                    previewApportioned = (lot.totalLotCost * previewPercent) / 100;
-                  } else if (method === "manual") {
-                    previewApportioned = customValues[item.id] || 0;
-                    previewPercent = lot.totalLotCost > 0 ? (previewApportioned / lot.totalLotCost) * 100 : 0;
-                  }
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      setIsWizardOpen(true);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md shadow-amber-500/20"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Cadastrar Item Individual</span>
+                  </button>
 
-                  const previewRealTotal = previewApportioned + (item.additionalCosts || 0);
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      setIsBulkModalOpen(true);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20"
+                  >
+                    <PackagePlus className="w-4 h-4" />
+                    <span>Gerar Itens em Massa</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 font-semibold">
+                  <tr>
+                    <th className="p-3">Código / Item</th>
+                    <th className="p-3">Valor Estimado</th>
+                    <th className="p-3 text-center">Atribuição / %</th>
+                    <th className="p-3 text-right">Custo Rateado</th>
+                    <th className="p-3 text-right">Despesas Ext.</th>
+                    <th className="p-3 text-right">Custo Total Real</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {lotItems.map((item) => {
+                    let previewApportioned = 0;
+                    let previewPercent = 0;
 
-                  return (
-                    <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
-                      <td className="p-3 font-semibold text-slate-900 dark:text-white">
-                        <div>{item.name}</div>
-                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono">
-                          {item.code}
-                        </span>
-                      </td>
+                    if (method === "igualitario") {
+                      previewApportioned = lot.totalLotCost / Math.max(lotItems.length, 1);
+                      previewPercent = 100 / Math.max(lotItems.length, 1);
+                    } else if (method === "valor_estimado") {
+                      const sumEst = lotItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 1), 0);
+                      const itemEst = item.estimatedMarketAvg || 1;
+                      previewPercent = sumEst > 0 ? (itemEst / sumEst) * 100 : 100 / lotItems.length;
+                      previewApportioned = (lot.totalLotCost * previewPercent) / 100;
+                    } else if (method === "percentual") {
+                      previewPercent = customValues[item.id] || 0;
+                      previewApportioned = (lot.totalLotCost * previewPercent) / 100;
+                    } else if (method === "manual") {
+                      previewApportioned = customValues[item.id] || 0;
+                      previewPercent = lot.totalLotCost > 0 ? (previewApportioned / lot.totalLotCost) * 100 : 0;
+                    }
 
-                      <td className="p-3 text-slate-600 dark:text-slate-300">
-                        {formatCurrency(item.estimatedMarketAvg || 0)}
-                      </td>
+                    const previewRealTotal = previewApportioned + (item.additionalCosts || 0);
 
-                      <td className="p-3 text-center">
-                        {method === "percentual" ? (
-                          <div className="flex items-center justify-center gap-1">
-                            <input
-                              type="number"
-                              step="1"
-                              value={customValues[item.id] ?? 0}
-                              onChange={(e) => handleInputChange(item.id, Number(e.target.value))}
-                              className="w-16 p-1 text-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                            />
-                            <span>%</span>
-                          </div>
-                        ) : method === "manual" ? (
-                          <div className="flex items-center justify-center gap-1">
-                            <span>R$</span>
-                            <input
-                              type="number"
-                              step="10"
-                              value={customValues[item.id] ?? 0}
-                              onChange={(e) => handleInputChange(item.id, Number(e.target.value))}
-                              className="w-24 p-1 text-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                            />
-                          </div>
-                        ) : (
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">
-                            {previewPercent.toFixed(1)}%
+                    return (
+                      <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                        <td className="p-3 font-semibold text-slate-900 dark:text-white">
+                          <div>{item.name}</div>
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono">
+                            {item.code}
                           </span>
-                        )}
-                      </td>
+                        </td>
 
-                      <td className="p-3 text-right font-bold text-amber-600 dark:text-amber-400">
-                        {formatCurrency(previewApportioned)}
-                      </td>
+                        <td className="p-3 text-slate-600 dark:text-slate-300">
+                          {formatCurrency(item.estimatedMarketAvg || 0)}
+                        </td>
 
-                      <td className="p-3 text-right text-slate-500">
-                        {formatCurrency(item.additionalCosts || 0)}
-                      </td>
+                        <td className="p-3 text-center">
+                          {method === "percentual" ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <input
+                                type="number"
+                                step="1"
+                                value={customValues[item.id] ?? 0}
+                                onChange={(e) => handleInputChange(item.id, Number(e.target.value))}
+                                className="w-16 p-1 text-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                              />
+                              <span>%</span>
+                            </div>
+                          ) : method === "manual" ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <span>R$</span>
+                              <input
+                                type="number"
+                                step="10"
+                                value={customValues[item.id] ?? 0}
+                                onChange={(e) => handleInputChange(item.id, Number(e.target.value))}
+                                className="w-24 p-1 text-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                              />
+                            </div>
+                          ) : (
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              {previewPercent.toFixed(1)}%
+                            </span>
+                          )}
+                        </td>
 
-                      <td className="p-3 text-right font-extrabold text-slate-900 dark:text-white">
-                        {formatCurrency(previewRealTotal)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        <td className="p-3 text-right font-bold text-amber-600 dark:text-amber-400">
+                          {formatCurrency(previewApportioned)}
+                        </td>
+
+                        <td className="p-3 text-right text-slate-500">
+                          {formatCurrency(item.additionalCosts || 0)}
+                        </td>
+
+                        <td className="p-3 text-right font-extrabold text-slate-900 dark:text-white">
+                          {formatCurrency(previewRealTotal)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 

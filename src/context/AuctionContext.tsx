@@ -57,7 +57,9 @@ interface AuctionContextType {
   isApportionmentModalOpen: boolean;
   setIsApportionmentModalOpen: (open: boolean) => void;
   selectedLotForApportionment: Lot | null;
+  apportionmentModalLot: Lot | null;
   openApportionmentModal: (lot: Lot) => void;
+  closeApportionmentModal: () => void;
   isAiModalOpen: boolean;
   setIsAiModalOpen: (open: boolean) => void;
   aiModalItem: AuctionItem | null;
@@ -366,6 +368,11 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const openApportionmentModal = (lot: Lot) => {
     setSelectedLotForApportionment(lot);
     setIsApportionmentModalOpen(true);
+  };
+
+  const closeApportionmentModal = () => {
+    setIsApportionmentModalOpen(false);
+    setSelectedLotForApportionment(null);
   };
 
   const openAiModal = (item?: AuctionItem) => {
@@ -931,7 +938,9 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         isApportionmentModalOpen,
         setIsApportionmentModalOpen,
         selectedLotForApportionment,
+        apportionmentModalLot: selectedLotForApportionment,
         openApportionmentModal,
+        closeApportionmentModal,
         isAiModalOpen,
         setIsAiModalOpen,
         aiModalItem,
