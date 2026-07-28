@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "auctions": {
+      "title": "Auctions",
+      "description": "Leilões cadastrados no sistema",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "auctioneer": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "lots": {
+      "title": "Lots",
+      "description": "Lotes do leilão",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "auctionId": { "type": "string" },
+        "lotNumber": { "type": "string" }
+      },
+      "required": ["id", "auctionId", "lotNumber"]
+    },
+    "items": {
+      "title": "Items",
+      "description": "Itens do inventário",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "expenses": {
+      "title": "Expenses",
+      "type": "object"
+    },
+    "maintenanceRecords": {
+      "title": "Maintenance Records",
+      "type": "object"
+    },
+    "advertisements": {
+      "title": "Advertisements",
+      "type": "object"
+    },
+    "sales": {
+      "title": "Sales",
+      "type": "object"
+    },
+    "contacts": {
+      "title": "Contacts",
+      "type": "object"
+    },
+    "documents": {
+      "title": "Documents",
+      "type": "object"
+    },
+    "activityLogs": {
+      "title": "Activity Logs",
+      "type": "object"
+    }
+  }
+}

@@ -1,11 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { db } from "../lib/firebase";
+import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  onSnapshot,
+  getDocs,
+  writeBatch,
+} from "firebase/firestore";
 import {
   Auction,
   Lot,
   AuctionItem,
   AdditionalExpense,
   MaintenanceRecord,
-  MarketEvaluation,
   Advertisement,
   SaleRecord,
   Contact,
@@ -14,23 +23,10 @@ import {
   AlertItem,
   UserRole,
   ApportionmentMethod,
-  ItemStatus,
   ItemCondition,
   OperationalState,
 } from "../types";
-import {
-  initialAuctions,
-  initialLots,
-  initialItems,
-  initialExpenses,
-  initialMaintenanceRecords,
-  initialAdvertisements,
-  initialSales,
-  initialContacts,
-  initialDocuments,
-  initialActivityLogs,
-  initialAlerts,
-} from "../mockData";
+import { initialAlerts } from "../mockData";
 
 interface ToastMessage {
   id: string;
@@ -67,6 +63,10 @@ interface AuctionContextType {
   aiModalItem: AuctionItem | null;
   openAiModal: (item?: AuctionItem) => void;
   closeAiModal: () => void;
+
+  // Database Connection & Reset
+  isFirebaseConnected: boolean;
+  clearAllDatabaseData: () => Promise<void>;
 
   // Core Data Lists
   auctions: Auction[];
@@ -173,7 +173,6 @@ interface AuctionContextType {
 const AuctionContext = createContext<AuctionContextType | undefined>(undefined);
 
 export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // State Initialization with LocalStorage fallbacks
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     return localStorage.getItem("leilao_theme") === "dark";
   });
@@ -190,62 +189,97 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
   const [aiModalItem, setAiModalItem] = useState<AuctionItem | null>(null);
 
-  // Entities Data
-  const [auctions, setAuctions] = useState<Auction[]>(() => {
-    const saved = localStorage.getItem("leilao_auctions");
-    return saved ? JSON.parse(saved) : initialAuctions;
-  });
+  // Firestore connection status
+  const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(true);
 
-  const [lots, setLots] = useState<Lot[]>(() => {
-    const saved = localStorage.getItem("leilao_lots");
-    return saved ? JSON.parse(saved) : initialLots;
-  });
+  // Entities Data - Initialize with empty arrays (0 fictitious values)
+  const [auctions, setAuctions] = useState<Auction[]>([]);
+  const [lots, setLots] = useState<Lot[]>([]);
+  const [items, setItems] = useState<AuctionItem[]>([]);
+  const [expenses, setExpenses] = useState<AdditionalExpense[]>([]);
+  const [maintenanceRecords, setMaintenanceRecords] = useState<MaintenanceRecord[]>([]);
+  const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
+  const [sales, setSales] = useState<SaleRecord[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [documents, setDocuments] = useState<AppDocument[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
 
-  const [items, setItems] = useState<AuctionItem[]>(() => {
-    const saved = localStorage.getItem("leilao_items");
-    return saved ? JSON.parse(saved) : initialItems;
-  });
-
-  const [expenses, setExpenses] = useState<AdditionalExpense[]>(() => {
-    const saved = localStorage.getItem("leilao_expenses");
-    return saved ? JSON.parse(saved) : initialExpenses;
-  });
-
-  const [maintenanceRecords, setMaintenanceRecords] = useState<MaintenanceRecord[]>(() => {
-    const saved = localStorage.getItem("leilao_maintenance");
-    return saved ? JSON.parse(saved) : initialMaintenanceRecords;
-  });
-
-  const [advertisements, setAdvertisements] = useState<Advertisement[]>(() => {
-    const saved = localStorage.getItem("leilao_advertisements");
-    return saved ? JSON.parse(saved) : initialAdvertisements;
-  });
-
-  const [sales, setSales] = useState<SaleRecord[]>(() => {
-    const saved = localStorage.getItem("leilao_sales");
-    return saved ? JSON.parse(saved) : initialSales;
-  });
-
-  const [contacts, setContacts] = useState<Contact[]>(() => {
-    const saved = localStorage.getItem("leilao_contacts");
-    return saved ? JSON.parse(saved) : initialContacts;
-  });
-
-  const [documents, setDocuments] = useState<AppDocument[]>(() => {
-    const saved = localStorage.getItem("leilao_documents");
-    return saved ? JSON.parse(saved) : initialDocuments;
-  });
-
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(() => {
-    const saved = localStorage.getItem("leilao_activity_logs");
-    return saved ? JSON.parse(saved) : initialActivityLogs;
-  });
-
-  const [alerts, setAlerts] = useState<AlertItem[]>(initialAlerts);
+  const [alerts] = useState<AlertItem[]>(initialAlerts);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [globalSearch, setGlobalSearch] = useState<string>("");
 
-  // Sync with localStorage
+  // Sync with Firestore in real-time
+  useEffect(() => {
+    // Clear old localStorage mock caches
+    [
+      "leilao_auctions",
+      "leilao_lots",
+      "leilao_items",
+      "leilao_expenses",
+      "leilao_maintenance",
+      "leilao_advertisements",
+      "leilao_sales",
+      "leilao_contacts",
+      "leilao_documents",
+      "leilao_activity_logs",
+    ].forEach((k) => localStorage.removeItem(k));
+
+    const unsubAuctions = onSnapshot(collection(db, "auctions"), (snap) => {
+      setAuctions(snap.docs.map((d) => d.data() as Auction));
+    }, () => setIsFirebaseConnected(false));
+
+    const unsubLots = onSnapshot(collection(db, "lots"), (snap) => {
+      setLots(snap.docs.map((d) => d.data() as Lot));
+    });
+
+    const unsubItems = onSnapshot(collection(db, "items"), (snap) => {
+      setItems(snap.docs.map((d) => d.data() as AuctionItem));
+    });
+
+    const unsubExpenses = onSnapshot(collection(db, "expenses"), (snap) => {
+      setExpenses(snap.docs.map((d) => d.data() as AdditionalExpense));
+    });
+
+    const unsubMaint = onSnapshot(collection(db, "maintenanceRecords"), (snap) => {
+      setMaintenanceRecords(snap.docs.map((d) => d.data() as MaintenanceRecord));
+    });
+
+    const unsubAds = onSnapshot(collection(db, "advertisements"), (snap) => {
+      setAdvertisements(snap.docs.map((d) => d.data() as Advertisement));
+    });
+
+    const unsubSales = onSnapshot(collection(db, "sales"), (snap) => {
+      setSales(snap.docs.map((d) => d.data() as SaleRecord));
+    });
+
+    const unsubContacts = onSnapshot(collection(db, "contacts"), (snap) => {
+      setContacts(snap.docs.map((d) => d.data() as Contact));
+    });
+
+    const unsubDocs = onSnapshot(collection(db, "documents"), (snap) => {
+      setDocuments(snap.docs.map((d) => d.data() as AppDocument));
+    });
+
+    const unsubLogs = onSnapshot(collection(db, "activityLogs"), (snap) => {
+      const list = snap.docs.map((d) => d.data() as ActivityLog);
+      setActivityLogs(list.sort((a, b) => (b.id || "").localeCompare(a.id || "")));
+    });
+
+    return () => {
+      unsubAuctions();
+      unsubLots();
+      unsubItems();
+      unsubExpenses();
+      unsubMaint();
+      unsubAds();
+      unsubSales();
+      unsubContacts();
+      unsubDocs();
+      unsubLogs();
+    };
+  }, []);
+
+  // Theme toggle
   useEffect(() => {
     localStorage.setItem("leilao_theme", darkMode ? "dark" : "light");
     if (darkMode) {
@@ -255,31 +289,6 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [darkMode]);
 
-  useEffect(() => {
-    localStorage.setItem("leilao_auctions", JSON.stringify(auctions));
-  }, [auctions]);
-
-  useEffect(() => {
-    localStorage.setItem("leilao_lots", JSON.stringify(lots));
-  }, [lots]);
-
-  useEffect(() => {
-    localStorage.setItem("leilao_items", JSON.stringify(items));
-  }, [items]);
-
-  useEffect(() => {
-    localStorage.setItem("leilao_expenses", JSON.stringify(expenses));
-  }, [expenses]);
-
-  useEffect(() => {
-    localStorage.setItem("leilao_sales", JSON.stringify(sales));
-  }, [sales]);
-
-  useEffect(() => {
-    localStorage.setItem("leilao_activity_logs", JSON.stringify(activityLogs));
-  }, [activityLogs]);
-
-  // Theme toggle
   const toggleDarkMode = () => setDarkMode((prev) => !prev);
 
   // Toast notifications
@@ -296,8 +305,9 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const addLog = (title: string, description: string, type: ActivityLog["type"], itemId?: string) => {
+    const id = "log-" + Date.now();
     const newLog: ActivityLog = {
-      id: "log-" + Date.now(),
+      id,
       itemId,
       title,
       description,
@@ -305,7 +315,47 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       user: userRole === "admin" ? "Administrador" : userRole,
       type,
     };
-    setActivityLogs((prev) => [newLog, ...prev]);
+    setDoc(doc(db, "activityLogs", id), newLog).catch(console.error);
+  };
+
+  // Clear all database data (zerar dados)
+  const clearAllDatabaseData = async () => {
+    try {
+      const colNames = [
+        "auctions",
+        "lots",
+        "items",
+        "expenses",
+        "maintenanceRecords",
+        "advertisements",
+        "sales",
+        "contacts",
+        "documents",
+        "activityLogs",
+      ];
+      for (const name of colNames) {
+        const snap = await getDocs(collection(db, name));
+        if (!snap.empty) {
+          const batch = writeBatch(db);
+          snap.docs.forEach((d) => batch.delete(d.ref));
+          await batch.commit();
+        }
+      }
+      setAuctions([]);
+      setLots([]);
+      setItems([]);
+      setExpenses([]);
+      setMaintenanceRecords([]);
+      setAdvertisements([]);
+      setSales([]);
+      setContacts([]);
+      setDocuments([]);
+      setActivityLogs([]);
+      addToast("Banco de Dados Zerado", "Todos os dados fictícios foram removidos do Firebase.", "info");
+    } catch (err) {
+      console.error("Erro ao zerar dados no Firebase:", err);
+      addToast("Erro", "Não foi possível apagar os dados do Firebase.", "error");
+    }
   };
 
   const openItemDetail = (itemId: string) => {
@@ -328,7 +378,6 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setAiModalItem(null);
   };
 
-  // Helper calculate total lot cost
   const calculateTotalLotCost = (l: Omit<Lot, "id" | "totalLotCost"> | Lot): number => {
     return (
       (l.winningBid || 0) +
@@ -345,51 +394,49 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // CRUD Auctions
   const addAuction = (auctionData: Omit<Auction, "id">): Auction => {
-    const id = "auc-" + (auctions.length + 1) + "-" + Date.now().toString(36);
+    const id = "auc-" + Date.now().toString(36);
     const newAuction: Auction = { ...auctionData, id };
-    setAuctions((prev) => [newAuction, ...prev]);
+    setDoc(doc(db, "auctions", id), newAuction).catch(console.error);
     addToast("Leilão Cadastrado", `Leilão "${newAuction.name}" adicionado com sucesso!`);
     addLog("Novo Leilão", `Leilão ${newAuction.name} cadastrado.`, "creation");
     return newAuction;
   };
 
   const updateAuction = (id: string, auctionData: Partial<Auction>) => {
-    setAuctions((prev) => prev.map((a) => (a.id === id ? { ...a, ...auctionData } : a)));
+    const existing = auctions.find((a) => a.id === id);
+    if (!existing) return;
+    const updated = { ...existing, ...auctionData };
+    setDoc(doc(db, "auctions", id), updated).catch(console.error);
     addToast("Leilão Atualizado", "As informações do leilão foram atualizadas.");
   };
 
   const deleteAuction = (id: string) => {
-    setAuctions((prev) => prev.filter((a) => a.id !== id));
+    deleteDoc(doc(db, "auctions", id)).catch(console.error);
     addToast("Leilão Excluído", "O leilão foi removido do sistema.");
   };
 
   // CRUD Lots
   const addLot = (lotData: Omit<Lot, "id" | "totalLotCost">): Lot => {
-    const id = "lot-" + (lots.length + 1) + "-" + Date.now().toString(36);
+    const id = "lot-" + Date.now().toString(36);
     const totalLotCost = calculateTotalLotCost(lotData);
     const newLot: Lot = { ...lotData, id, totalLotCost };
-    setLots((prev) => [newLot, ...prev]);
+    setDoc(doc(db, "lots", id), newLot).catch(console.error);
     addToast("Lote Cadastrado", `Lote ${newLot.lotNumber} adicionado com custo total de R$ ${totalLotCost.toFixed(2)}.`);
     addLog("Novo Lote", `Lote ${newLot.lotNumber} cadastrado com valor de lance R$ ${newLot.winningBid.toFixed(2)}.`, "creation");
     return newLot;
   };
 
   const updateLot = (id: string, lotData: Partial<Lot>) => {
-    setLots((prev) =>
-      prev.map((l) => {
-        if (l.id === id) {
-          const updated = { ...l, ...lotData };
-          updated.totalLotCost = calculateTotalLotCost(updated);
-          return updated;
-        }
-        return l;
-      })
-    );
+    const existing = lots.find((l) => l.id === id);
+    if (!existing) return;
+    const updated = { ...existing, ...lotData };
+    updated.totalLotCost = calculateTotalLotCost(updated);
+    setDoc(doc(db, "lots", id), updated).catch(console.error);
     addToast("Lote Atualizado", "Dados do lote atualizados com sucesso.");
   };
 
   const deleteLot = (id: string) => {
-    setLots((prev) => prev.filter((l) => l.id !== id));
+    deleteDoc(doc(db, "lots", id)).catch(console.error);
     addToast("Lote Excluído", "O lote foi removido do sistema.");
   };
 
@@ -413,12 +460,12 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       archived: false,
     };
 
-    setItems((prev) => [newItem, ...prev]);
+    setDoc(doc(db, "items", id), newItem).catch(console.error);
 
-    // Update itemCount in Lot
-    setLots((prev) =>
-      prev.map((l) => (l.id === newItem.lotId ? { ...l, itemCount: l.itemCount + 1 } : l))
-    );
+    const targetLot = lots.find((l) => l.id === newItem.lotId);
+    if (targetLot) {
+      updateLot(targetLot.id, { itemCount: (targetLot.itemCount || 0) + 1 });
+    }
 
     addToast("Item Cadastrado", `Item ${newItem.code} - ${newItem.name} adicionado ao inventário.`);
     addLog("Novo Item", `Item ${newItem.name} (${newItem.code}) cadastrado no lote.`, "creation", newItem.id);
@@ -427,42 +474,34 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateItem = (id: string, itemData: Partial<AuctionItem>) => {
-    setItems((prev) =>
-      prev.map((it) => {
-        if (it.id === id) {
-          const updated = { ...it, ...itemData };
-          updated.realTotalCost = (updated.apportionedCost || 0) + (updated.additionalCosts || 0);
+    const existing = items.find((i) => i.id === id);
+    if (!existing) return;
+    const updated = { ...existing, ...itemData };
+    updated.realTotalCost = (updated.apportionedCost || 0) + (updated.additionalCosts || 0);
 
-          if (itemData.status && itemData.status !== it.status) {
-            addLog("Status Alterado", `Status do item ${it.code} alterado para ${itemData.status}.`, "status_change", id);
-          }
-          if (itemData.location && JSON.stringify(itemData.location) !== JSON.stringify(it.location)) {
-            addLog("Localização Alterada", `Localização do item ${it.code} atualizada para ${itemData.location.customText}.`, "location_change", id);
-          }
+    if (itemData.status && itemData.status !== existing.status) {
+      addLog("Status Alterado", `Status do item ${existing.code} alterado para ${itemData.status}.`, "status_change", id);
+    }
+    if (itemData.location && JSON.stringify(itemData.location) !== JSON.stringify(existing.location)) {
+      addLog("Localização Alterada", `Localização do item ${existing.code} atualizada para ${itemData.location.customText}.`, "location_change", id);
+    }
 
-          return updated;
-        }
-        return it;
-      })
-    );
+    setDoc(doc(db, "items", id), updated).catch(console.error);
     addToast("Item Atualizado", "Alterações salvas com sucesso.");
   };
 
   const deleteItem = (id: string) => {
-    const target = items.find((i) => i.id === id);
-    setItems((prev) => prev.filter((i) => i.id !== id));
-    addToast("Item Removido", `O item ${target?.code || ""} foi excluído.`);
-    addLog("Exclusão de Item", `Item ${target?.code} (${target?.name}) foi removido.`, "system");
+    deleteDoc(doc(db, "items", id)).catch(console.error);
+    addToast("Item Excluído", "O item foi removido do inventário.");
   };
 
   const archiveItem = (id: string) => {
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, archived: true } : i))
-    );
-    addToast("Item Arquivado", "O item foi movido para os arquivos sem perder o histórico.");
+    const existing = items.find((i) => i.id === id);
+    if (!existing) return;
+    updateItem(id, { archived: !existing.archived });
   };
 
-  // Apportionment Logic (Rateio do custo do lote)
+  // Apportion Lot Cost
   const apportionLotCost = (
     lotId: string,
     method: ApportionmentMethod,
@@ -472,51 +511,46 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!targetLot) return;
 
     const lotItems = items.filter((i) => i.lotId === lotId);
-    if (lotItems.length === 0) {
-      addToast("Aviso de Rateio", "Não há itens cadastrados neste lote para ratear o custo.", "warning");
-      return;
-    }
+    if (lotItems.length === 0) return;
 
-    const totalLotCost = targetLot.totalLotCost;
+    const totalLotCost = targetLot.totalLotCost || 0;
 
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.lotId !== lotId) return item;
+    lotItems.forEach((item) => {
+      let apportioned = 0;
+      let assignedPercent = 0;
 
-        let apportioned = 0;
-        let assignedPercent = 0;
+      if (method === "igualitario") {
+        assignedPercent = 100 / lotItems.length;
+        apportioned = totalLotCost / lotItems.length;
+      } else if (method === "manual" && customValues) {
+        const found = customValues.find((cv) => cv.itemId === item.id);
+        apportioned = found ? found.value : 0;
+        assignedPercent = totalLotCost > 0 ? (apportioned / totalLotCost) * 100 : 0;
+      } else if (method === "percentual" && customValues) {
+        const found = customValues.find((cv) => cv.itemId === item.id);
+        assignedPercent = found ? found.value : 0;
+        apportioned = (totalLotCost * assignedPercent) / 100;
+      } else if (method === "valor_estimado") {
+        const sumEstimated = lotItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 1), 0);
+        const itemEst = item.estimatedMarketAvg || 1;
+        assignedPercent = sumEstimated > 0 ? (itemEst / sumEstimated) * 100 : 100 / lotItems.length;
+        apportioned = (totalLotCost * assignedPercent) / 100;
+      }
 
-        if (method === "igualitario") {
-          apportioned = totalLotCost / lotItems.length;
-          assignedPercent = 100 / lotItems.length;
-        } else if (method === "percentual" && customValues) {
-          const match = customValues.find((c) => c.itemId === item.id);
-          assignedPercent = match ? match.value : 0;
-          apportioned = (totalLotCost * assignedPercent) / 100;
-        } else if (method === "manual" && customValues) {
-          const match = customValues.find((c) => c.itemId === item.id);
-          apportioned = match ? match.value : 0;
-          assignedPercent = totalLotCost > 0 ? (apportioned / totalLotCost) * 100 : 0;
-        } else if (method === "valor_estimado") {
-          const sumEstimated = lotItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 1), 0);
-          const itemEst = item.estimatedMarketAvg || 1;
-          assignedPercent = sumEstimated > 0 ? (itemEst / sumEstimated) * 100 : 100 / lotItems.length;
-          apportioned = (totalLotCost * assignedPercent) / 100;
-        }
+      const realTotalCost = apportioned + (item.additionalCosts || 0);
 
-        const realTotalCost = apportioned + (item.additionalCosts || 0);
+      const updated = {
+        ...item,
+        apportionedCost: Number(apportioned.toFixed(2)),
+        assignedPercent: Number(assignedPercent.toFixed(2)),
+        realTotalCost: Number(realTotalCost.toFixed(2)),
+      };
 
-        return {
-          ...item,
-          apportionedCost: Number(apportioned.toFixed(2)),
-          assignedPercent: Number(assignedPercent.toFixed(2)),
-          realTotalCost: Number(realTotalCost.toFixed(2)),
-        };
-      })
-    );
+      setDoc(doc(db, "items", item.id), updated).catch(console.error);
+    });
 
-    addToast("Rateio Concluído", `Custo total de R$ ${totalLotCost.toFixed(2)} rateado entre ${lotItems.length} itens (${method}).`);
-    addLog("Rateio de Custo", `Rateio de custo (${method}) aplicado no lote ${targetLot.lotNumber}.`, "expense");
+    addToast("Rateio Concluído", `Custo de R$ ${totalLotCost.toFixed(2)} rateado entre ${lotItems.length} itens (${method}).`);
+    addLog("Rateio de Custo", `Rateio (${method}) aplicado no lote ${targetLot.lotNumber}.`, "expense");
   };
 
   // Bulk Item Generator (Cadastro em Massa)
@@ -538,11 +572,9 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const targetLot = lots.find((l) => l.id === lotId);
     if (!targetLot) return;
 
-    const newCreatedItems: AuctionItem[] = [];
     const startSeq = items.length + 1;
     const dateAdded = new Date().toISOString().split("T")[0];
 
-    // Simple default photo depending on category
     let defaultPhoto = "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80";
     if (baseData.category === "Veículos") {
       defaultPhoto = "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&q=80";
@@ -592,17 +624,12 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         archived: false,
       };
 
-      newCreatedItems.push(item);
+      setDoc(doc(db, "items", id), item).catch(console.error);
     }
 
-    setItems((prev) => [...newCreatedItems, ...prev]);
+    updateLot(lotId, { itemCount: (targetLot.itemCount || 0) + count });
 
-    // Update lot item count
-    setLots((prev) =>
-      prev.map((l) => (l.id === lotId ? { ...l, itemCount: l.itemCount + count } : l))
-    );
-
-    addToast("Gerados " + count + " Itens", `Criados com sucesso no lote ${targetLot.lotNumber}.`);
+    addToast(`Gerados ${count} Itens`, `Criados com sucesso no lote ${targetLot.lotNumber}.`);
     addLog("Cadastro em Massa", `${count} itens (${baseData.name}) criados no lote ${targetLot.lotNumber}.`, "creation");
   };
 
@@ -631,7 +658,6 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const count = Math.max(1, Number(quantity) || 1);
     const targetLot = lots.find((l) => l.id === lotId) || lots[0];
-    const newCreatedItems: AuctionItem[] = [];
     const startSeq = items.length + 1;
     const dateAdded = new Date().toISOString().split("T")[0];
 
@@ -674,18 +700,14 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         archived: false,
       };
 
-      newCreatedItems.push(item);
+      setDoc(doc(db, "items", id), item).catch(console.error);
     }
-
-    setItems((prev) => [...newCreatedItems, ...prev]);
 
     if (targetLot) {
-      setLots((prev) =>
-        prev.map((l) => (l.id === targetLot.id ? { ...l, itemCount: l.itemCount + count } : l))
-      );
+      updateLot(targetLot.id, { itemCount: (targetLot.itemCount || 0) + count });
     }
 
-    addToast(`Gerados ${count} Itens`, `Criados com sucesso no inventário.`);
+    addToast(`Gerados ${count} Itens`, `Criados com sucesso no banco de dados.`);
     addLog("Cadastro em Massa", `${count} itens (${baseName}) criados.`, "creation");
   };
 
@@ -694,19 +716,14 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const id = "exp-" + Date.now();
     const newExp: AdditionalExpense = { ...expenseData, id };
 
-    setExpenses((prev) => [newExp, ...prev]);
+    setDoc(doc(db, "expenses", id), newExp).catch(console.error);
 
-    // Update item additional costs
-    setItems((prev) =>
-      prev.map((it) => {
-        if (it.id === newExp.itemId) {
-          const additionalCosts = (it.additionalCosts || 0) + newExp.amount;
-          const realTotalCost = (it.apportionedCost || 0) + additionalCosts;
-          return { ...it, additionalCosts, realTotalCost };
-        }
-        return it;
-      })
-    );
+    const targetItem = items.find((i) => i.id === newExp.itemId);
+    if (targetItem) {
+      const additionalCosts = (targetItem.additionalCosts || 0) + newExp.amount;
+      const realTotalCost = (targetItem.apportionedCost || 0) + additionalCosts;
+      updateItem(targetItem.id, { additionalCosts, realTotalCost });
+    }
 
     addToast("Despesa Adicionada", `R$ ${newExp.amount.toFixed(2)} - ${newExp.description}`);
     addLog("Nova Despesa", `Despesa de R$ ${newExp.amount.toFixed(2)} adicionada: ${newExp.description}.`, "expense", newExp.itemId);
@@ -717,9 +734,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const id = "maint-" + Date.now();
     const newMaint: MaintenanceRecord = { ...maintData, id };
 
-    setMaintenanceRecords((prev) => [newMaint, ...prev]);
+    setDoc(doc(db, "maintenanceRecords", id), newMaint).catch(console.error);
 
-    // If there is a cost, also update additional expenses
     if (newMaint.cost > 0) {
       addExpense({
         itemId: newMaint.itemId,
@@ -731,19 +747,16 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
     }
 
-    // Set item status to em_manutencao
-    setItems((prev) =>
-      prev.map((it) => (it.id === newMaint.itemId ? { ...it, status: "em_manutencao" } : it))
-    );
+    updateItem(newMaint.itemId, { status: "em_manutencao" });
 
     addToast("Manutenção Registrada", `${newMaint.serviceType} para o item.`);
     addLog("Manutenção Registrada", `${newMaint.serviceType} (${newMaint.description}).`, "maintenance", newMaint.itemId);
   };
 
   const updateMaintenanceStatus = (id: string, status: MaintenanceRecord["status"]) => {
-    setMaintenanceRecords((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, status } : m))
-    );
+    const existing = maintenanceRecords.find((m) => m.id === id);
+    if (!existing) return;
+    setDoc(doc(db, "maintenanceRecords", id), { ...existing, status }).catch(console.error);
     addToast("Manutenção Atualizada", "Status do serviço alterado.");
   };
 
@@ -752,34 +765,31 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const id = "ad-" + Date.now();
     const newAd: Advertisement = { ...adData, id };
 
-    setAdvertisements((prev) => [newAd, ...prev]);
+    setDoc(doc(db, "advertisements", id), newAd).catch(console.error);
 
-    // Update item advertised state
-    setItems((prev) =>
-      prev.map((it) =>
-        it.id === newAd.itemId
-          ? { ...it, isAdvertised: true, status: "anunciado", listedPrice: newAd.listedPrice }
-          : it
-      )
-    );
+    updateItem(newAd.itemId, {
+      isAdvertised: true,
+      status: "anunciado",
+      listedPrice: newAd.listedPrice,
+    });
 
     addToast("Anúncio Cadastrado", `Publicado no ${newAd.platform} por R$ ${newAd.listedPrice.toFixed(2)}.`);
     addLog("Anúncio Criado", `Item anunciado no ${newAd.platform} por R$ ${newAd.listedPrice.toFixed(2)}.`, "ad", newAd.itemId);
   };
 
   const updateAdStatus = (id: string, status: Advertisement["status"]) => {
-    setAdvertisements((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status } : a))
-    );
+    const existing = advertisements.find((a) => a.id === id);
+    if (!existing) return;
+    setDoc(doc(db, "advertisements", id), { ...existing, status }).catch(console.error);
     addToast("Anúncio Atualizado", `Status alterado para ${status}.`);
   };
 
   const deleteAdvertisement = (id: string) => {
-    setAdvertisements((prev) => prev.filter((a) => a.id !== id));
+    deleteDoc(doc(db, "advertisements", id)).catch(console.error);
     addToast("Anúncio Removido", "O anúncio foi excluído.");
   };
 
-  // Record Sale (Registrar Venda e calcular ROI)
+  // Record Sale
   const recordSale = (
     saleData: Omit<SaleRecord, "id" | "netSaleValue" | "netProfit" | "roiPercentage" | "marginPercentage">
   ) => {
@@ -788,9 +798,6 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!targetItem) return;
 
     const realCost = targetItem.realTotalCost || 0;
-
-    // Formulas:
-    // Net Sale Value = finalPrice - sellerFreight - platformCommission - taxes - otherExpenses
     const netSaleValue =
       (saleData.finalPrice || 0) -
       (saleData.sellerFreight || 0) -
@@ -798,13 +805,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       (saleData.taxes || 0) -
       (saleData.otherExpenses || 0);
 
-    // Net Profit = netSaleValue - realTotalCost
     const netProfit = netSaleValue - realCost;
-
-    // ROI = (netProfit / realTotalCost) * 100
     const roiPercentage = realCost > 0 ? (netProfit / realCost) * 100 : 0;
-
-    // Margin = (netProfit / netSaleValue) * 100
     const marginPercentage = netSaleValue > 0 ? (netProfit / netSaleValue) * 100 : 0;
 
     const newSale: SaleRecord = {
@@ -816,20 +818,12 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       marginPercentage: Number(marginPercentage.toFixed(2)),
     };
 
-    setSales((prev) => [newSale, ...prev]);
+    setDoc(doc(db, "sales", id), newSale).catch(console.error);
 
-    // Update item status to 'vendido'
-    setItems((prev) =>
-      prev.map((it) =>
-        it.id === saleData.itemId
-          ? {
-              ...it,
-              status: "vendido",
-              isSold: true,
-            }
-          : it
-      )
-    );
+    updateItem(saleData.itemId, {
+      status: "vendido",
+      isSold: true,
+    });
 
     addToast(
       "Venda Registrada!",
@@ -848,17 +842,19 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addContact = (contactData: Omit<Contact, "id">) => {
     const id = "cnt-" + Date.now();
     const newCnt: Contact = { ...contactData, id };
-    setContacts((prev) => [newCnt, ...prev]);
+    setDoc(doc(db, "contacts", id), newCnt).catch(console.error);
     addToast("Contato Cadastrado", `${newCnt.name} salvo.`);
   };
 
   const updateContact = (id: string, contactData: Partial<Contact>) => {
-    setContacts((prev) => prev.map((c) => (c.id === id ? { ...c, ...contactData } : c)));
+    const existing = contacts.find((c) => c.id === id);
+    if (!existing) return;
+    setDoc(doc(db, "contacts", id), { ...existing, ...contactData }).catch(console.error);
     addToast("Contato Atualizado", "As informações do contato foram alteradas.");
   };
 
   const deleteContact = (id: string) => {
-    setContacts((prev) => prev.filter((c) => c.id !== id));
+    deleteDoc(doc(db, "contacts", id)).catch(console.error);
     addToast("Contato Excluído", "O contato foi removido.");
   };
 
@@ -867,17 +863,19 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const id = "doc-" + Date.now();
     const uploadDate = new Date().toISOString().split("T")[0];
     const newDoc: AppDocument = { ...docData, id, uploadDate };
-    setDocuments((prev) => [newDoc, ...prev]);
+    setDoc(doc(db, "documents", id), newDoc).catch(console.error);
     addToast("Documento Anexado", `${newDoc.title}`);
   };
 
   const updateDocument = (id: string, docData: Partial<AppDocument>) => {
-    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, ...docData } : d)));
+    const existing = documents.find((d) => d.id === id);
+    if (!existing) return;
+    setDoc(doc(db, "documents", id), { ...existing, ...docData }).catch(console.error);
     addToast("Documento Atualizado", "Documento atualizado com sucesso.");
   };
 
   const deleteDocument = (id: string) => {
-    setDocuments((prev) => prev.filter((d) => d.id !== id));
+    deleteDoc(doc(db, "documents", id)).catch(console.error);
     addToast("Documento Removido", "O documento foi excluído.");
   };
 
@@ -887,7 +885,6 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const totalSoldAmount = sales.reduce((acc, curr) => acc + (curr.finalPrice || 0), 0);
   const realizedProfit = sales.reduce((acc, curr) => acc + (curr.netProfit || 0), 0);
 
-  // Unsold items in inventory
   const unsoldItems = items.filter((i) => !i.isSold && i.status !== "descartado");
   const capitalInInventoryCost = unsoldItems.reduce((acc, curr) => acc + (curr.realTotalCost || 0), 0);
   const capitalInInventoryEstimated = unsoldItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 0), 0);
@@ -940,6 +937,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         aiModalItem,
         openAiModal,
         closeAiModal,
+        isFirebaseConnected,
+        clearAllDatabaseData,
         auctions,
         lots,
         items,

@@ -12,6 +12,8 @@ import {
   PackagePlus,
   Boxes,
   Zap,
+  Database,
+  Trash2,
 } from "lucide-react";
 
 export const Header: React.FC = () => {
@@ -25,11 +27,13 @@ export const Header: React.FC = () => {
     setIsBulkModalOpen,
     openAiModal,
     setActiveTab,
-    darkMode,
+    isFirebaseConnected,
+    clearAllDatabaseData,
   } = useAuction();
 
   const [showAlertsMenu, setShowAlertsMenu] = useState(false);
   const [showQuickMenu, setShowQuickMenu] = useState(false);
+  const [showConfirmReset, setShowConfirmReset] = useState(false);
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md">
@@ -54,6 +58,22 @@ export const Header: React.FC = () => {
 
       {/* Action Controls & Profile */}
       <div className="flex items-center gap-3">
+        {/* Real Database Indicator */}
+        <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold border border-emerald-500/20">
+          <Database className="w-3.5 h-3.5 animate-pulse" />
+          <span>Firestore Ativo</span>
+        </div>
+
+        {/* Zerar Dados Button */}
+        <button
+          onClick={() => setShowConfirmReset(true)}
+          title="Apagar todos os dados do banco real"
+          className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 border border-red-200 dark:border-red-900/40 transition-all"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          <span>Zerar Banco</span>
+        </button>
+
         {/* IA Assistant Button */}
         <button
           onClick={() => openAiModal()}
@@ -125,6 +145,16 @@ export const Header: React.FC = () => {
                 <ShoppingBag className="w-4 h-4 text-emerald-600" />
                 <span>+ Registrar Venda</span>
               </button>
+              <button
+                onClick={() => {
+                  setShowQuickMenu(false);
+                  setShowConfirmReset(true);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 font-medium border-t border-slate-100 dark:border-slate-700"
+              >
+                <Trash2 className="w-4 h-4 text-red-500" />
+                <span>Zerar Todos os Dados</span>
+              </button>
             </div>
           )}
         </div>
@@ -192,6 +222,54 @@ export const Header: React.FC = () => {
           </select>
         </div>
       </div>
+
+      {/* Modal de confirmação de Zerar Banco de Dados (fecha ao clicar fora) */}
+      {showConfirmReset && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm cursor-pointer"
+          onClick={() => setShowConfirmReset(false)}
+        >
+          <div
+            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 cursor-default text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 text-red-500">
+              <div className="p-3 rounded-2xl bg-red-500/10">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">Zerar Banco de Dados Real</h3>
+                <p className="text-xs text-slate-500">Limpar todos os dados cadastrados</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Deseja remover todos os leilões, lotes, itens, vendas, despesas e cadastros do banco de dados Firebase? Essa ação limpará a aplicação para dados 100% reais do zero.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowConfirmReset(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setShowConfirmReset(false);
+                  await clearAllDatabaseData();
+                }}
+                className="px-4 py-2 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-md transition-all"
+              >
+                Confirmar e Zerar Tudo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
+
