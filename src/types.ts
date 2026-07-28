@@ -37,7 +37,15 @@ export type AdPlatform =
 
 export type AdStatus = "preparando" | "publicado" | "pausado" | "vendido" | "encerrado";
 
-export type ContactType = "comprador" | "fornecedor" | "transportadora" | "tecnico" | "prestador" | "leiloeiro";
+export type ContactType =
+  | "comprador"
+  | "fornecedor"
+  | "transportadora"
+  | "tecnico"
+  | "prestador"
+  | "leiloeiro"
+  | "prestador_servico"
+  | "fornecedor_pecas";
 
 export type DocType =
   | "edital"
@@ -225,13 +233,17 @@ export interface Contact {
   id: string;
   name: string;
   company?: string;
+  companyName?: string;
   docType?: "CPF" | "CNPJ";
   docNumber?: string;
   phone: string;
   whatsapp?: string;
   email: string;
   address?: string;
-  contactType: ContactType;
+  city?: string;
+  state?: string;
+  contactType?: ContactType;
+  type?: ContactType;
   notes?: string;
 }
 
@@ -246,6 +258,9 @@ export interface AppDocument {
   fileSize?: string;
   uploadDate: string;
   notes?: string;
+  type?: string;
+  dateUploaded?: string;
+  origin?: string;
 }
 
 export interface ActivityLog {
