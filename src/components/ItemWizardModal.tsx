@@ -134,7 +134,7 @@ export const ItemWizardModal: React.FC = () => {
       operationalState: "funcionando",
       photos: [photoUrl],
       primaryPhoto: photoUrl,
-      apportionedCost: calculatedTotalLotCost,
+      apportionedCost: 0,
       additionalCosts: 0,
       estimatedMarketMin: Number(estimatedValue) * 0.85,
       estimatedMarketMax: Number(estimatedValue) * 1.15,

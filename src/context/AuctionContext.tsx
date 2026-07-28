@@ -474,7 +474,25 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const targetLot = lots.find((l) => l.id === newItem.lotId);
     if (targetLot) {
-      updateLot(targetLot.id, { itemCount: (targetLot.itemCount || 0) + 1 });
+      const newCount = (targetLot.itemCount || 0) + 1;
+      updateLot(targetLot.id, { itemCount: newCount });
+
+      // Recalcula o rateio do lote considerando todos os itens existentes mais o novo item
+      const currentLotItems = [...items.filter((i) => i.lotId === targetLot.id), newItem];
+      const totalLotCost = targetLot.totalLotCost || 0;
+      const equalShare = Number((totalLotCost / currentLotItems.length).toFixed(2));
+      const equalPercent = Number((100 / currentLotItems.length).toFixed(2));
+
+      currentLotItems.forEach((item) => {
+        const realTotalCost = equalShare + (item.additionalCosts || 0);
+        const updatedItem = {
+          ...item,
+          apportionedCost: equalShare,
+          assignedPercent: equalPercent,
+          realTotalCost: Number(realTotalCost.toFixed(2)),
+        };
+        setDoc(doc(db, "items", item.id), updatedItem).catch(console.error);
+      });
     }
 
     addToast("Item Cadastrado", `Item ${newItem.code} - ${newItem.name} adicionado ao inventário.`);
@@ -501,7 +519,35 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const deleteItem = (id: string) => {
+    const itemToDelete = items.find((i) => i.id === id);
     deleteDoc(doc(db, "items", id)).catch(console.error);
+
+    if (itemToDelete) {
+      const targetLot = lots.find((l) => l.id === itemToDelete.lotId);
+      if (targetLot) {
+        const remainingItems = items.filter((i) => i.lotId === targetLot.id && i.id !== id);
+        const newCount = Math.max(0, (targetLot.itemCount || 1) - 1);
+        updateLot(targetLot.id, { itemCount: newCount });
+
+        if (remainingItems.length > 0) {
+          const totalLotCost = targetLot.totalLotCost || 0;
+          const equalShare = Number((totalLotCost / remainingItems.length).toFixed(2));
+          const equalPercent = Number((100 / remainingItems.length).toFixed(2));
+
+          remainingItems.forEach((item) => {
+            const realTotalCost = equalShare + (item.additionalCosts || 0);
+            const updatedItem = {
+              ...item,
+              apportionedCost: equalShare,
+              assignedPercent: equalPercent,
+              realTotalCost: Number(realTotalCost.toFixed(2)),
+            };
+            setDoc(doc(db, "items", item.id), updatedItem).catch(console.error);
+          });
+        }
+      }
+    }
+
     addToast("Item Excluído", "O item foi removido do inventário.");
   };
 
