@@ -198,7 +198,7 @@ export const DashboardView: React.FC = () => {
             <span>Lucro Potencial (Estoque)</span>
             <TrendingUp className="w-4 h-4 text-teal-500 group-hover:scale-110 transition-transform" />
           </div>
-          <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
+          <div className="mt-2 text-xl font-bold text-emerald-600 dark:text-emerald-400">
             {formatCurrency(metrics.potentialProfit)}
           </div>
           <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">

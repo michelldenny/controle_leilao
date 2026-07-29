@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useAuction } from "../context/AuctionContext";
 import { Lot, LotPaymentStatus, LotPickupStatus } from "../types";
 import { ApportionmentModal } from "./ApportionmentModal";
+import { BulkItemModal } from "./BulkItemModal";
+import { ConfirmModal } from "./ConfirmModal";
 import {
   Boxes,
   Plus,
@@ -48,6 +50,7 @@ export const LotsView: React.FC = () => {
   const [paymentStatus, setPaymentStatus] = useState<LotPaymentStatus>("pago");
   const [pickupStatus, setPickupStatus] = useState<LotPickupStatus>("retirado");
   const [notes, setNotes] = useState("");
+  const [deletingLot, setDeletingLot] = useState<Lot | null>(null);
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
@@ -245,7 +248,7 @@ export const LotsView: React.FC = () => {
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => handleDeleteLot(lot.id, lot.lotNumber)}
+                        onClick={() => setDeletingLot(lot)}
                         title="Excluir Lote"
                         className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                       >
@@ -412,8 +415,9 @@ export const LotsView: React.FC = () => {
                     required
                     value={auctionId}
                     onChange={(e) => setAuctionId(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
                   >
+                    <option value="">Selecione o leilão...</option>
                     {auctions.map((a) => (
                       <option key={a.id} value={a.id}>
                         {a.name} ({a.auctioneer})
@@ -424,53 +428,50 @@ export const LotsView: React.FC = () => {
 
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Número / Código do Lote *
+                    Número do Lote *
                   </label>
                   <input
                     type="text"
                     required
                     value={lotNumber}
                     onChange={(e) => setLotNumber(e.target.value)}
-                    placeholder="Ex: Lote 15 / Lote 04-A"
+                    placeholder="Ex: Lote 04B"
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                   />
                 </div>
+              </div>
 
-                <div className="md:col-span-2">
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Descrição do Lote *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Ex: Lote contendo 10 Notebooks Dell e 2 Monitores LG"
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
-                  />
-                </div>
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Descrição Resumida do Lote
+                </label>
+                <input
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Ex: Lote com 15 Notebooks Dell e Acessórios"
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                />
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Valor do Lance Vencedor (R$) *
+                    Lance Vencedor (R$) *
                   </label>
                   <input
                     type="number"
-                    required
                     step="0.01"
+                    required
                     value={winningBid}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setWinningBid(val);
-                      setAuctioneerCommission(val * 0.05); // 5% default
-                    }}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
+                    onChange={(e) => setWinningBid(Number(e.target.value))}
+                    className="w-full p-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold"
                   />
                 </div>
 
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Comissão do Leiloeiro (R$)
+                    Comissão Leiloeiro (R$)
                   </label>
                   <input
                     type="number"
@@ -483,7 +484,7 @@ export const LotsView: React.FC = () => {
 
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Taxa Administrativa (R$)
+                    Taxa Adm / Serv. (R$)
                   </label>
                   <input
                     type="number"
@@ -493,10 +494,12 @@ export const LotsView: React.FC = () => {
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                   />
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Impostos (R$)
+                    Impostos / ICMS (R$)
                   </label>
                   <input
                     type="number"
@@ -509,7 +512,7 @@ export const LotsView: React.FC = () => {
 
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Custo de Transporte / Frete (R$)
+                    Frete / Transporte (R$)
                   </label>
                   <input
                     type="number"
@@ -522,7 +525,7 @@ export const LotsView: React.FC = () => {
 
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Desmontagem / Carregamento / Outros (R$)
+                    Carregamento / Outros (R$)
                   </label>
                   <input
                     type="number"
@@ -553,6 +556,23 @@ export const LotsView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Confirmação para Exclusão de Lote */}
+      <ConfirmModal
+        isOpen={!!deletingLot}
+        title="Excluir Lote do Leilão"
+        message={`Tem certeza que deseja excluir o lote "${deletingLot?.lotNumber}"? Todos os itens cadastrados pertencentes a este lote no inventário também serão removidos.`}
+        confirmText="Excluir Lote"
+        cancelText="Cancelar"
+        variant="danger"
+        onConfirm={() => {
+          if (deletingLot) {
+            deleteLot(deletingLot.id);
+            setDeletingLot(null);
+          }
+        }}
+        onCancel={() => setDeletingLot(null)}
+      />
     </div>
   );
 };

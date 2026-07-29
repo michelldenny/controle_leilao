@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAuction } from "../context/AuctionContext";
 import { SaleRecord } from "../types";
 import { ShoppingBag, Plus, DollarSign, TrendingUp, CheckCircle2, X, Eye, Pencil, Trash2 } from "lucide-react";
+import { ConfirmModal } from "./ConfirmModal";
 
 export const SalesView: React.FC = () => {
   const { items, lots, sales, recordSale, updateSale, deleteSale, openItemDetail, metrics } = useAuction();
@@ -9,6 +10,7 @@ export const SalesView: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<SaleRecord | null>(null);
   const [viewingSale, setViewingSale] = useState<SaleRecord | null>(null);
+  const [deletingSale, setDeletingSale] = useState<SaleRecord | null>(null);
 
   // Sale Form State
   const [selectedItemId, setSelectedItemId] = useState("");
@@ -242,7 +244,7 @@ export const SalesView: React.FC = () => {
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDeleteSaleItem(sale)}
+                          onClick={() => setDeletingSale(sale)}
                           title="Excluir Venda"
                           className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                         >
@@ -302,13 +304,13 @@ export const SalesView: React.FC = () => {
                   <option value="">Selecione um item...</option>
                   {availableItems.map((i) => (
                     <option key={i.id} value={i.id}>
-                      [{i.code}] {i.name} (Custo: R$ {i.realTotalCost.toFixed(2)})
+                      [{i.code}] {i.name} (Custo: R$ {getItemRealCost(i).toFixed(2)})
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Nome do Comprador *
@@ -325,7 +327,7 @@ export const SalesView: React.FC = () => {
 
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    CPF / CNPJ
+                    CPF / CNPJ Comprador
                   </label>
                   <input
                     type="text"
@@ -335,10 +337,12 @@ export const SalesView: React.FC = () => {
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                   />
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Canal de Venda
+                    Canal de Venda *
                   </label>
                   <select
                     value={saleChannel}
@@ -347,28 +351,45 @@ export const SalesView: React.FC = () => {
                   >
                     <option value="Mercado Livre">Mercado Livre</option>
                     <option value="OLX">OLX</option>
-                    <option value="Webmotors">Webmotors</option>
                     <option value="Direto / Balcão">Direto / Balcão</option>
+                    <option value="Instagram / Redes">Instagram / Redes</option>
+                    <option value="Outros">Outros</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Preço Final da Venda (R$) *
+                    Preço Final Acordado (R$) *
                   </label>
                   <input
                     type="number"
-                    required
                     step="0.01"
+                    required
                     value={finalPrice}
                     onChange={(e) => setFinalPrice(Number(e.target.value))}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
+                    className="w-full p-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold"
+                  />
+                </div>
+              </div>
+
+              {/* Deduction Expenses */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Impostos (R$)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={taxes}
+                    onChange={(e) => setTaxes(Number(e.target.value))}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                   />
                 </div>
 
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Comissão da Plataforma (R$)
+                    Comissão Plataforma (R$)
                   </label>
                   <input
                     type="number"
@@ -381,7 +402,7 @@ export const SalesView: React.FC = () => {
 
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Frete Pago pelo Vendedor (R$)
+                    Frete (R$)
                   </label>
                   <input
                     type="number"
@@ -434,7 +455,7 @@ export const SalesView: React.FC = () => {
         </div>
       )}
 
-      {/* Modal para Visualização de Detalhes da Venda */}
+      {/* Viewing Sale Modal */}
       {viewingSale && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm cursor-pointer"
@@ -445,18 +466,10 @@ export const SalesView: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  <Eye className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                    Detalhes do Registro de Venda
-                  </h3>
-                  <span className="text-xs text-slate-400 font-mono">ID: {viewingSale.id}</span>
-                </div>
-              </div>
-
+              <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <Eye className="w-5 h-5 text-amber-500" />
+                <span>Detalhes da Venda Realizada</span>
+              </h3>
               <button
                 onClick={() => setViewingSale(null)}
                 className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white"
@@ -466,44 +479,36 @@ export const SalesView: React.FC = () => {
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                <span className="text-[10px] text-slate-400 font-medium block">Item Comercializado</span>
-                <strong className="text-sm font-bold text-slate-900 dark:text-white">
-                  {items.find((i) => i.id === viewingSale.itemId)?.name || "Item Não Localizado"}
-                </strong>
-                <span className="block text-[10px] text-amber-600 font-mono mt-0.5">
-                  Código: {items.find((i) => i.id === viewingSale.itemId)?.code || viewingSale.itemId}
-                </span>
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 space-y-1">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold">Item Comercializado</span>
+                <p className="font-bold text-slate-900 dark:text-white text-sm">
+                  {items.find((i) => i.id === viewingSale.itemId)?.name || viewingSale.itemId}
+                </p>
+                <p className="text-amber-600 font-mono text-[11px]">
+                  {items.find((i) => i.id === viewingSale.itemId)?.code}
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
-                  <span className="text-slate-400 block text-[10px]">Comprador</span>
+              <div className="grid grid-cols-2 gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800">
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-medium">Comprador</span>
                   <strong className="text-slate-900 dark:text-white">{viewingSale.buyerName}</strong>
                 </div>
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
-                  <span className="text-slate-400 block text-[10px]">CPF / CNPJ</span>
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-medium">CPF/CNPJ</span>
                   <strong className="text-slate-900 dark:text-white">{viewingSale.buyerDoc || "Não informado"}</strong>
                 </div>
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
-                  <span className="text-slate-400 block text-[10px]">Plataforma / Canal</span>
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-medium">Canal de Venda</span>
                   <strong className="text-slate-900 dark:text-white">{viewingSale.platform}</strong>
                 </div>
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
-                  <span className="text-slate-400 block text-[10px]">Data da Venda</span>
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-medium">Data da Venda</span>
                   <strong className="text-slate-900 dark:text-white">{viewingSale.saleDate}</strong>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
-                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40">
-                  <span className="text-slate-400 block text-[10px]">Valor Bruto</span>
-                  <strong className="text-slate-900 dark:text-white">{formatCurrency(viewingSale.finalPrice)}</strong>
-                </div>
-                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40">
-                  <span className="text-slate-400 block text-[10px]">Comissão</span>
-                  <strong className="text-slate-900 dark:text-white">{formatCurrency(viewingSale.platformCommission)}</strong>
-                </div>
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
                 <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40">
                   <span className="text-slate-400 block text-[10px]">Frete Vendedor</span>
                   <strong className="text-slate-900 dark:text-white">{formatCurrency(viewingSale.sellerFreight)}</strong>

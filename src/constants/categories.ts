@@ -1,0 +1,25 @@
+export const PRODUCT_CATEGORIES = [
+  "Audio, Som & Vídeo",
+  "Cama, Mesa e Banho",
+  "Decoração",
+  "Eletrodomésticos",
+  "Eletrônicos & TI",
+  "Esporte & Lazer",
+  "Ferramentas Elétricas & Manuais",
+  "Game, Consoles & Acessórios",
+  "Iluminação",
+  "Imóveis",
+  "Informática & Acessórios",
+  "Itens para Casa",
+  "Máquinas & Equipamentos",
+  "Materiais de Construção",
+  "Moda, Calçados & Acessórios",
+  "Móveis & Escritório",
+  "Peças & Acessórios",
+  "Smartphones & Celulares",
+  "Sucata & Reciclagem",
+  "Veículos & Automotivo",
+  "Diversos",
+] as const;
+
+export type ProductCategory = typeof PRODUCT_CATEGORIES[number];

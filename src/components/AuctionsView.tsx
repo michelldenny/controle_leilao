@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { ConfirmModal } from "./ConfirmModal";
 import { useAuction } from "../context/AuctionContext";
 import { Auction, AuctionStatus } from "../types";
 import { formatDateBR } from "../lib/dateUtils";
@@ -29,6 +30,7 @@ export const AuctionsView: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAuction, setEditingAuction] = useState<Auction | null>(null);
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
+  const [deletingAuction, setDeletingAuction] = useState<Auction | null>(null);
 
   // Form State
   const [name, setName] = useState("");
@@ -238,7 +240,7 @@ export const AuctionsView: React.FC = () => {
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={() => handleDeleteAuction(auc.id, auc.name)}
+                      onClick={() => setDeletingAuction(auc)}
                       title="Excluir leilão"
                       className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                     >
@@ -594,6 +596,23 @@ export const AuctionsView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Confirmação para Exclusão de Leilão */}
+      <ConfirmModal
+        isOpen={!!deletingAuction}
+        title="Excluir Registro de Leilão"
+        message={`Tem certeza que deseja excluir o leilão "${deletingAuction?.name}"? Todos os lotes e itens atrelados a este leilão também serão removidos.`}
+        confirmText="Excluir Leilão"
+        cancelText="Cancelar"
+        variant="danger"
+        onConfirm={() => {
+          if (deletingAuction) {
+            deleteAuction(deletingAuction.id);
+            setDeletingAuction(null);
+          }
+        }}
+        onCancel={() => setDeletingAuction(null)}
+      />
     </div>
   );
 };

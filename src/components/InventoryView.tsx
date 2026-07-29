@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
+import { ConfirmModal } from "./ConfirmModal";
 
 interface InventoryViewProps {
   onSelectQrCode?: (item: AuctionItem) => void;
@@ -50,6 +51,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [editingItem, setEditingItem] = useState<AuctionItem | null>(null);
+  const [deletingItem, setDeletingItem] = useState<AuctionItem | null>(null);
 
   // Filter States
   const [categoryFilter, setCategoryFilter] = useState<string>("todas");
@@ -485,11 +487,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => {
-                              if (window.confirm(`Tem certeza que deseja excluir o item ${item.code} (${item.name})?`)) {
-                                deleteItem(item.id);
-                              }
-                            }}
+                            onClick={() => setDeletingItem(item)}
                             className="p-1.5 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-500/10"
                             title="Excluir Item"
                           >
@@ -539,41 +537,34 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                 >
                   {item.status.replace("_", " ")}
                 </span>
-                <span className="absolute bottom-3 left-3 px-2 py-0.5 text-[10px] font-mono font-bold rounded-lg bg-slate-900/80 text-amber-400 backdrop-blur-md">
+                <span className="absolute bottom-3 left-3 px-2 py-0.5 text-[10px] font-mono font-bold rounded-lg bg-slate-950/70 text-amber-400 backdrop-blur-md">
                   {item.code}
                 </span>
               </div>
 
-              <div className="p-4 space-y-3 flex-1">
+              <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
                 <div>
-                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold uppercase">
-                    {item.category}
-                  </span>
-                  <h3
-                    onClick={() => openItemDetail(item.id)}
-                    className="font-bold text-sm text-slate-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer line-clamp-1"
-                  >
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1">
                     {item.name}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{item.description}</p>
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    {item.category} • {item.location.customText}
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60 text-xs">
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs">
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Custo Real Total</span>
-                    <strong className="text-slate-900 dark:text-white">{formatCurrency(item.realTotalCost)}</strong>
+                    <span className="text-[10px] text-slate-400 block">Custo Real</span>
+                    <strong className="text-slate-900 dark:text-white">
+                      {formatCurrency(item.realTotalCost)}
+                    </strong>
                   </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block">Valor Estimado</span>
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-400 block">Valuation Média</span>
                     <strong className="text-emerald-600 dark:text-emerald-400">
                       {formatCurrency(item.estimatedMarketAvg)}
                     </strong>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                  <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span className="truncate">{item.location.customText}</span>
                 </div>
               </div>
 
@@ -587,11 +578,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                     <Edit className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => {
-                      if (window.confirm(`Tem certeza que deseja excluir o item ${item.code} (${item.name})?`)) {
-                        deleteItem(item.id);
-                      }
-                    }}
+                    onClick={() => setDeletingItem(item)}
                     className="p-1.5 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-500/10"
                     title="Excluir Item"
                   >
@@ -608,9 +595,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
 
                 <button
                   onClick={() => openItemDetail(item.id)}
-                  className="flex items-center gap-1 text-xs font-bold text-slate-900 dark:text-white hover:text-amber-500"
+                  className="flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-amber-500 transition-colors"
                 >
-                  <span>Ver Detalhes</span>
+                  <span>Detalhes</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
@@ -619,11 +606,27 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
         </div>
       )}
 
-      {/* Modal para Edição de Item no Inventário */}
+      {/* Modais */}
       <EditItemModal
         item={editingItem}
         isOpen={!!editingItem}
         onClose={() => setEditingItem(null)}
+      />
+
+      <ConfirmModal
+        isOpen={!!deletingItem}
+        title="Excluir Item do Inventário"
+        message={`Tem certeza que deseja excluir o item ${deletingItem?.code} (${deletingItem?.name})? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir Item"
+        cancelText="Cancelar"
+        variant="danger"
+        onConfirm={() => {
+          if (deletingItem) {
+            deleteItem(deletingItem.id);
+            setDeletingItem(null);
+          }
+        }}
+        onCancel={() => setDeletingItem(null)}
       />
     </div>
   );

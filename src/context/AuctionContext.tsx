@@ -1053,11 +1053,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const unsoldItems = items.filter((i) => !i.isSold && i.status !== "descartado");
   const capitalInInventoryCost = unsoldItems.reduce((acc, curr) => acc + (curr.realTotalCost || 0), 0);
   const capitalInInventoryEstimated = unsoldItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 0), 0);
-  const potentialStockProfit = Math.max(0, capitalInInventoryEstimated - capitalInInventoryCost);
-
-  const potentialProfit = items
-    .filter((i) => !i.isSold)
-    .reduce((acc, curr) => acc + Math.max(0, (curr.estimatedMarketAvg || 0) - (curr.realTotalCost || 0)), 0);
+  const potentialProfit = Math.max(0, capitalInInventoryEstimated - capitalInInventoryCost);
+  const potentialStockProfit = potentialProfit;
 
   const metrics = {
     totalInvested,
