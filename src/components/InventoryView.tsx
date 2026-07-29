@@ -519,8 +519,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
           </div>
         </div>
       ) : (
-        /* GRID CARDS VIEW */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        /* GRID CARDS VIEW - 4 cards por linha */
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredItems.map((item) => (
             <div
               key={item.id}

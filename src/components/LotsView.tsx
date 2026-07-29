@@ -150,6 +150,15 @@ export const LotsView: React.FC = () => {
     setLotNumber("");
     setDescription("");
     setWinningBid(0);
+    setAuctioneerCommission(0);
+    setAdminFee(0);
+    setTaxes(0);
+    setTransportCost(0);
+    setDisassemblyCost(0);
+    setLoadingCost(0);
+    setStorageCost(0);
+    setOtherCosts(0);
+    setNotes("");
   };
 
   const filteredLots = lots.filter((l) => {
