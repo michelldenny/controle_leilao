@@ -23,6 +23,9 @@ import {
   Zap,
   Edit,
   Trash2,
+  Eye,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -373,9 +376,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                   <th className="p-3">Foto / Código</th>
                   <th className="p-3">Item / Descrição</th>
                   <th className="p-3">Categoria</th>
-                  <th className="p-3">Localização</th>
                   <th className="p-3 text-right">Custo Real Total</th>
                   <th className="p-3 text-right">Valor Estimado</th>
+                  <th className="p-3 text-right">% Margem Est.</th>
                   <th className="p-3 text-center">Status</th>
                   <th className="p-3 text-right">Ações</th>
                 </tr>
@@ -384,6 +387,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                 {filteredItems.map((item) => {
                   const lot = lots.find((l) => l.id === item.lotId);
                   const isSelected = selectedItemIds.includes(item.id);
+
+                  // Lucro estimado em relação ao valor estimado
+                  const profitEst = item.estimatedMarketAvg - item.realTotalCost;
+                  const profitMarginPct = item.realTotalCost > 0 
+                    ? (profitEst / item.realTotalCost) * 100 
+                    : 0;
 
                   return (
                     <tr
@@ -428,19 +437,29 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                         {item.category}
                       </td>
 
-                      <td className="p-3">
-                        <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                          <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                          <span className="truncate max-w-[150px]">{item.location.customText}</span>
-                        </div>
-                      </td>
-
                       <td className="p-3 text-right font-bold text-slate-900 dark:text-white">
                         {formatCurrency(item.realTotalCost)}
                       </td>
 
                       <td className="p-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
                         {formatCurrency(item.estimatedMarketAvg)}
+                      </td>
+
+                      <td className="p-3 text-right font-bold">
+                        <span
+                          className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] ${
+                            profitMarginPct >= 0
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                              : "bg-red-500/10 text-red-600 dark:text-red-400"
+                          }`}
+                        >
+                          {profitMarginPct >= 0 ? (
+                            <TrendingUp className="w-3 h-3" />
+                          ) : (
+                            <TrendingDown className="w-3 h-3" />
+                          )}
+                          {profitMarginPct >= 0 ? "+" : ""}{profitMarginPct.toFixed(1)}%
+                        </span>
                       </td>
 
                       <td className="p-3 text-center">
@@ -455,6 +474,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
 
                       <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => openItemDetail(item.id)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-700"
+                            title="Ver Detalhes"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => setEditingItem(item)}
                             className="p-1.5 rounded-lg text-slate-500 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-700"
@@ -486,12 +512,6 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                             title="Análise com IA"
                           >
                             <Sparkles className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => openItemDetail(item.id)}
-                            className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950"
-                          >
-                            Ver Detalhes
                           </button>
                         </div>
                       </td>
