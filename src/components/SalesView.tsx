@@ -4,7 +4,7 @@ import { SaleRecord } from "../types";
 import { ShoppingBag, Plus, DollarSign, TrendingUp, CheckCircle2, X, Eye, Pencil, Trash2 } from "lucide-react";
 
 export const SalesView: React.FC = () => {
-  const { items, sales, recordSale, updateSale, deleteSale, openItemDetail, metrics } = useAuction();
+  const { items, lots, sales, recordSale, updateSale, deleteSale, openItemDetail, metrics } = useAuction();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<SaleRecord | null>(null);
@@ -20,21 +20,32 @@ export const SalesView: React.FC = () => {
   const [sellerFreight, setSellerFreight] = useState<number>(0);
   const [taxes, setTaxes] = useState<number>(0);
 
-  const availableItems = items.filter((i) => i.status !== "vendido");
+  const availableItems = items.filter((i) => i.status !== "vendido" || (editingSale && i.id === editingSale.itemId));
   
+  // Função para determinar o custo real do item (puxando o custo do item ou o custo total do lote caso zerado)
+  const getItemRealCost = (itemObj?: any) => {
+    if (!itemObj) return 0;
+    if (itemObj.realTotalCost && itemObj.realTotalCost > 0) {
+      return itemObj.realTotalCost;
+    }
+    const parentLot = lots.find((l) => l.id === itemObj.lotId);
+    return parentLot?.totalLotCost || 0;
+  };
+
   // Associar o histórico de vendas gravado na coleção sales com o item correspondente
   const salesHistory = sales.map((sale) => {
     const item = items.find((i) => i.id === sale.itemId);
     return {
       sale,
       item,
+      itemCost: getItemRealCost(item),
     };
   });
 
   const selectedItem = items.find((i) => i.id === selectedItemId);
 
   // Live ROI Calculation Preview
-  const realCost = selectedItem?.realTotalCost || 0;
+  const realCost = getItemRealCost(selectedItem);
   const netSaleValue =
     Number(finalPrice) - Number(platformCommission) - Number(sellerFreight) - Number(taxes);
   const netProfit = netSaleValue - realCost;
@@ -194,7 +205,7 @@ export const SalesView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-              {salesHistory.map(({ sale, item }) => {
+              {salesHistory.map(({ sale, item, itemCost }) => {
                 return (
                   <tr key={sale.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30">
                     <td className="p-3 font-bold text-slate-900 dark:text-white">
@@ -204,7 +215,7 @@ export const SalesView: React.FC = () => {
                     <td className="p-3 text-slate-700 dark:text-slate-300 font-medium">{sale.buyerName}</td>
                     <td className="p-3 text-slate-500">{sale.platform}</td>
                     <td className="p-3 text-right font-bold text-slate-900 dark:text-white">{formatCurrency(sale.finalPrice)}</td>
-                    <td className="p-3 text-right text-slate-500">{formatCurrency(item?.realTotalCost || 0)}</td>
+                    <td className="p-3 text-right text-slate-500">{formatCurrency(itemCost)}</td>
                     <td className="p-3 text-right font-extrabold text-emerald-600 dark:text-emerald-400">
                       {formatCurrency(sale.netProfit)}
                     </td>
@@ -246,8 +257,14 @@ export const SalesView: React.FC = () => {
 
       {/* Register Sale Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
-          <div className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm cursor-pointer"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                 <ShoppingBag className="w-5 h-5 text-emerald-500" />
