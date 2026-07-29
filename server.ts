@@ -43,8 +43,8 @@ app.post("/api/ai/analyze-item", async (req, res) => {
       const mimeType = imageBase64.startsWith("data:image/jpeg")
         ? "image/jpeg"
         : imageBase64.startsWith("data:image/png")
-        ? "image/png"
-        : "image/jpeg";
+          ? "image/png"
+          : "image/jpeg";
       const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
       parts.push({
         inlineData: {
@@ -80,7 +80,7 @@ Retorne um JSON válido estritamente com os seguintes campos em Português do Br
     parts.push({ text: promptText });
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
+      model: "gemini-3.5-flash-lite",
       contents: { parts },
       config: {
         responseMimeType: "application/json",
@@ -122,7 +122,7 @@ Retorne um JSON estruturado:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
+      model: "gemini-3.5-flash-lite",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -161,7 +161,7 @@ Retorne um JSON:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
+      model: "gemini-3.5-flash-lite",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
