@@ -109,11 +109,6 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
     updateItem(item.id, {
       name,
       category,
-      subcategory,
-      brand,
-      model,
-      serialNumber,
-      formerAssetTag,
       quantity: Number(quantity),
       condition,
       operationalState,
@@ -130,7 +125,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
       estimatedMarketMin: Number(estimatedMarketMin),
       estimatedMarketAvg: Number(estimatedMarketAvg),
       estimatedMarketMax: Number(estimatedMarketMax),
-      listedPrice: Number(listedPrice),
+      listedPrice: Number(estimatedMarketAvg),
       description,
     });
 
@@ -143,7 +138,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
       onClick={onClose}
     >
       <div
-        className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto cursor-default"
+        className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -162,14 +157,14 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {/* Informações Básicas */}
+          {/* Identificação do Bem */}
           <div className="space-y-2">
             <h4 className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5 border-b pb-1 border-slate-100 dark:border-slate-800">
               <Tag className="w-4 h-4 text-amber-500" />
               <span>Identificação do Bem</span>
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="md:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Nome do Item / Título *
                 </label>
@@ -180,6 +175,33 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                   onChange={(e) => setName(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
                 />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Categoria *
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                >
+                  <option value="Eletrodomésticos">Eletrodomésticos</option>
+                  <option value="Eletrônicos & TI">Eletrônicos & TI</option>
+                  <option value="Smartphones & Celulares">Smartphones & Celulares</option>
+                  <option value="Audio, Som & Vídeo">Audio, Som & Vídeo</option>
+                  <option value="Máquinas & Equipamentos">Máquinas & Equipamentos</option>
+                  <option value="Ferramentas Elétricas & Manuais">Ferramentas Elétricas & Manuais</option>
+                  <option value="Móveis & Escritório">Móveis & Escritório</option>
+                  <option value="Veículos & Automotivo">Veículos & Automotivo</option>
+                  <option value="Peças & Acessórios">Peças & Acessórios</option>
+                  <option value="Materiais de Construção">Materiais de Construção</option>
+                  <option value="Esporte & Lazer">Esporte & Lazer</option>
+                  <option value="Moda, Calçados & Acessórios">Moda, Calçados & Acessórios</option>
+                  <option value="Imóveis">Imóveis</option>
+                  <option value="Sucata & Reciclagem">Sucata & Reciclagem</option>
+                  <option value="Diversos">Diversos</option>
+                </select>
               </div>
 
               <div>
@@ -207,87 +229,6 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
 
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Categoria
-                </label>
-                <input
-                  type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Subcategoria
-                </label>
-                <input
-                  type="text"
-                  value={subcategory}
-                  onChange={(e) => setSubcategory(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Marca
-                </label>
-                <input
-                  type="text"
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Modelo
-                </label>
-                <input
-                  type="text"
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Nº de Série
-                </label>
-                <input
-                  type="text"
-                  value={serialNumber}
-                  onChange={(e) => setSerialNumber(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Patrimônio Anterior
-                </label>
-                <input
-                  type="text"
-                  value={formerAssetTag}
-                  onChange={(e) => setFormerAssetTag(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Condição & Estado */}
-          <div className="space-y-2">
-            <h4 className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5 border-b pb-1 border-slate-100 dark:border-slate-800">
-              <Package className="w-4 h-4 text-amber-500" />
-              <span>Condição Física e Operacional</span>
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Condição Física
                 </label>
                 <select
@@ -295,42 +236,14 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                   onChange={(e) => setCondition(e.target.value as ItemCondition)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                 >
-                  <option value="novo">Novo</option>
+                  <option value="novo">Novo / Lacrado</option>
                   <option value="seminovo">Seminovo</option>
-                  <option value="usado">Usado</option>
-                  <option value="avariado">Avariado</option>
+                  <option value="usado">Usado (Bom Estado)</option>
+                  <option value="recondicionado">Recondicionado / Revisado</option>
+                  <option value="avariado">Avariado / Para Peças</option>
                   <option value="sucata">Sucata</option>
                   <option value="nao_testado">Não Testado</option>
                 </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Estado Operacional
-                </label>
-                <select
-                  value={operationalState}
-                  onChange={(e) => setOperationalState(e.target.value as OperationalState)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
-                >
-                  <option value="funcionando">Funcionando Perfeitamente</option>
-                  <option value="parcialmente_funcionando">Parcialmente Funcionando</option>
-                  <option value="nao_funcionando">Não Funcionando</option>
-                  <option value="nao_testado">Não Testado</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Quantidade
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(Number(e.target.value))}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
               </div>
             </div>
           </div>
@@ -339,20 +252,22 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
           <div className="space-y-2">
             <h4 className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5 border-b pb-1 border-slate-100 dark:border-slate-800">
               <MapPin className="w-4 h-4 text-amber-500" />
-              <span>Localização e Foto Principal</span>
+              <span>Localização Física e Foto Principal</span>
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Localização Física (Texto Livre)
+                  Localização Física *
                 </label>
-                <input
-                  type="text"
+                <select
                   value={locationText}
                   onChange={(e) => setLocationText(e.target.value)}
-                  placeholder="Ex: Galpão Principal > Corredor 2 > Estante 3"
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                >
+                  <option value="apê Michell">apê Michell</option>
+                  <option value="apê William">apê William</option>
+                  <option value="apê Paulão">apê Paulão</option>
+                </select>
               </div>
 
               <div>
@@ -370,14 +285,13 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
             </div>
           </div>
 
-          {/* Valores & Valuation */}
+          {/* Precificação & Valuation */}
           <div className="space-y-2">
             <h4 className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5 border-b pb-1 border-slate-100 dark:border-slate-800">
               <DollarSign className="w-4 h-4 text-amber-500" />
-              <span>Custos e Precificação de Mercado (Valuation)</span>
+              <span>Precificação e Valuation (Idêntico ao Cadastro Guiado)</span>
             </h4>
 
-            {/* Campos de Desconto e Referência Novo */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs">
               <div>
                 <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1 text-[11px]">
@@ -426,7 +340,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pt-1">
+            <div className="grid grid-cols-2 gap-3 pt-1">
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Custo Rateado (R$)
@@ -452,19 +366,6 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                 />
               </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Preço Anunciado (R$)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={listedPrice}
-                  onChange={(e) => setListedPrice(Number(e.target.value))}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-blue-600"
-                />
-              </div>
             </div>
           </div>
 
@@ -473,7 +374,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
               Descrição Detalhada / Observações
             </label>
             <textarea
-              rows={3}
+              rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"

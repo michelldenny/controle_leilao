@@ -863,7 +863,12 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const targetItem = items.find((i) => i.id === saleData.itemId);
     if (!targetItem) return;
 
-    const realCost = targetItem.realTotalCost || 0;
+    let realCost = targetItem.realTotalCost || 0;
+    if (realCost === 0 && targetItem.lotId) {
+      const parentLot = lots.find((l) => l.id === targetItem.lotId);
+      realCost = parentLot?.totalLotCost || 0;
+    }
+
     const netSaleValue =
       (saleData.finalPrice || 0) -
       (saleData.sellerFreight || 0) -
@@ -936,7 +941,11 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!existing) return;
 
     const targetItem = items.find((i) => i.id === (saleData.itemId || existing.itemId));
-    const realCost = targetItem?.realTotalCost || 0;
+    let realCost = targetItem?.realTotalCost || 0;
+    if (realCost === 0 && targetItem?.lotId) {
+      const parentLot = lots.find((l) => l.id === targetItem.lotId);
+      realCost = parentLot?.totalLotCost || 0;
+    }
 
     const updatedFinalPrice = saleData.finalPrice !== undefined ? saleData.finalPrice : existing.finalPrice;
     const updatedFreight = saleData.sellerFreight !== undefined ? saleData.sellerFreight : existing.sellerFreight;

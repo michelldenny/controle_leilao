@@ -176,11 +176,14 @@ export const SalesView: React.FC = () => {
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
           <span className="text-xs font-medium text-slate-400 block">Retorno Sobre Investimento (ROI Médio)</span>
           <div className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-1">
-            {metrics.totalInvested > 0
-              ? `${((metrics.realizedProfit / metrics.totalInvested) * 100).toFixed(1)}%`
-              : "0%"}
+            {(() => {
+              const totalSoldItemsCost = salesHistory.reduce((sum, h) => sum + h.itemCost, 0);
+              return totalSoldItemsCost > 0
+                ? `${((metrics.realizedProfit / totalSoldItemsCost) * 100).toFixed(1)}%`
+                : "0%";
+            })()}
           </div>
-          <span className="text-[11px] text-amber-600 font-medium mt-1 block">Rendimento sobre o capital</span>
+          <span className="text-[11px] text-amber-600 font-medium mt-1 block">Rendimento das vendas realizadas</span>
         </div>
       </div>
 
