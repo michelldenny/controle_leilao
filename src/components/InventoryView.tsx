@@ -52,6 +52,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [editingItem, setEditingItem] = useState<AuctionItem | null>(null);
   const [deletingItem, setDeletingItem] = useState<AuctionItem | null>(null);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Filter States
   const [categoryFilter, setCategoryFilter] = useState<string>("todas");
@@ -341,8 +342,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
           <span>{selectedItemIds.length} itens selecionados</span>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setIsBulkDeleting(true)}
+              className="px-3 py-1.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold transition-colors flex items-center gap-1.5 shadow-sm shadow-red-500/20"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Remover Selecionados ({selectedItemIds.length})</span>
+            </button>
+            <button
               onClick={exportToExcel}
-              className="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold"
+              className="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-600 transition-colors"
             >
               Exportar Selecionados para Excel
             </button>
@@ -373,14 +381,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                       )}
                     </button>
                   </th>
-                  <th className="p-3">Foto / Código</th>
-                  <th className="p-3">Item / Descrição</th>
-                  <th className="p-3">Categoria</th>
-                  <th className="p-3 text-right">Custo Real Total</th>
-                  <th className="p-3 text-right">Valor Estimado</th>
-                  <th className="p-3 text-right">% Markup Est.</th>
+                  <th className="p-3 text-center">Foto / Código</th>
+                  <th className="p-3 text-center">Item / Descrição</th>
+                  <th className="p-3 text-center">Categoria</th>
+                  <th className="p-3 text-center">Custo Real Total</th>
+                  <th className="p-3 text-center">Valor Estimado</th>
+                  <th className="p-3 text-center">% Markup Est.</th>
                   <th className="p-3 text-center">Status</th>
-                  <th className="p-3 text-right">Ações</th>
+                  <th className="p-3 text-center">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
@@ -406,14 +414,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                         </button>
                       </td>
 
-                      <td className="p-3">
-                        <div className="flex items-center gap-3">
+                      <td className="p-3 text-center">
+                        <div className="flex items-center justify-center gap-3">
                           <img
                             src={item.primaryPhoto}
                             alt={item.name}
                             className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0"
                           />
-                          <div>
+                          <div className="text-left">
                             <span className="font-mono text-[10px] font-bold text-amber-600 dark:text-amber-400 block">
                               {item.code}
                             </span>
@@ -422,31 +430,31 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                         </div>
                       </td>
 
-                      <td className="p-3 max-w-xs">
+                      <td className="p-3 text-center max-w-xs">
                         <button
                           onClick={() => openItemDetail(item.id)}
-                          className="font-bold text-slate-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 text-left line-clamp-1"
+                          className="font-bold text-slate-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 text-center line-clamp-1 mx-auto"
                         >
                           {item.name}
                         </button>
-                        <p className="text-[11px] text-slate-400 line-clamp-1">{item.brand} {item.model}</p>
+                        <p className="text-[11px] text-slate-400 line-clamp-1 text-center">{item.brand} {item.model}</p>
                       </td>
 
-                      <td className="p-3 font-medium text-slate-600 dark:text-slate-300">
+                      <td className="p-3 text-center font-medium text-slate-600 dark:text-slate-300">
                         {item.category}
                       </td>
 
-                      <td className="p-3 text-right font-bold text-slate-900 dark:text-white">
+                      <td className="p-3 text-center font-bold text-slate-900 dark:text-white">
                         {formatCurrency(item.realTotalCost)}
                       </td>
 
-                      <td className="p-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                      <td className="p-3 text-center font-bold text-emerald-600 dark:text-emerald-400">
                         {formatCurrency(item.estimatedMarketAvg)}
                       </td>
 
-                      <td className="p-3 text-right font-bold">
+                      <td className="p-3 text-center font-bold">
                         <span
-                          className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] ${profitMarginPct >= 0
+                          className={`inline-flex items-center justify-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] ${profitMarginPct >= 0
                               ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                               : "bg-red-500/10 text-red-600 dark:text-red-400"
                             }`}
@@ -470,8 +478,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                         </span>
                       </td>
 
-                      <td className="p-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="p-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
                           <button
                             onClick={() => openItemDetail(item.id)}
                             className="p-1.5 rounded-lg text-slate-500 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-700"
@@ -499,13 +507,6 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                             title="Imprimir Etiqueta / QR Code"
                           >
                             <QrCode className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => openAiModal(item)}
-                            className="p-1.5 rounded-lg text-amber-500 hover:bg-amber-500/10"
-                            title="Análise com IA"
-                          >
-                            <Sparkles className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -627,6 +628,21 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
           }
         }}
         onCancel={() => setDeletingItem(null)}
+      />
+
+      <ConfirmModal
+        isOpen={isBulkDeleting}
+        title="Excluir Múltiplos Itens"
+        message={`Tem certeza que deseja excluir os ${selectedItemIds.length} itens selecionados do inventário? Esta ação é irreversível.`}
+        confirmText={`Excluir ${selectedItemIds.length} Itens`}
+        cancelText="Cancelar"
+        variant="danger"
+        onConfirm={() => {
+          selectedItemIds.forEach((id) => deleteItem(id));
+          setSelectedItemIds([]);
+          setIsBulkDeleting(false);
+        }}
+        onCancel={() => setIsBulkDeleting(false)}
       />
     </div>
   );
