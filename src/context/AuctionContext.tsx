@@ -425,8 +425,15 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const deleteAuction = (id: string) => {
+    // Excluir em cascata lotes e itens vinculados a este leilão
+    const auctionLots = lots.filter((l) => l.auctionId === id);
+    const auctionItems = items.filter((i) => i.auctionId === id);
+
+    auctionItems.forEach((item) => deleteDoc(doc(db, "items", item.id)).catch(console.error));
+    auctionLots.forEach((lot) => deleteDoc(doc(db, "lots", lot.id)).catch(console.error));
     deleteDoc(doc(db, "auctions", id)).catch(console.error);
-    addToast("Leilão Excluído", "O leilão foi removido do sistema.");
+
+    addToast("Leilão Excluído", "O leilão, seus lotes e itens no inventário foram removidos.");
   };
 
   // CRUD Lots
@@ -450,8 +457,17 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const deleteLot = (id: string) => {
+    // Excluir em cascata todos os itens pertencentes a este lote
+    const lotItems = items.filter((i) => i.lotId === id);
+    lotItems.forEach((item) => {
+      deleteDoc(doc(db, "items", item.id)).catch(console.error);
+    });
+
     deleteDoc(doc(db, "lots", id)).catch(console.error);
-    addToast("Lote Excluído", "O lote foi removido do sistema.");
+    addToast(
+      "Lote Excluído",
+      `O lote e seus ${lotItems.length} item(ns) cadastrados no inventário foram removidos.`
+    );
   };
 
   // CRUD Items

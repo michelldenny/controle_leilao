@@ -147,6 +147,9 @@ export const LotsView: React.FC = () => {
 
     setIsNewLotOpen(false);
     setEditingLot(null);
+    setLotNumber("");
+    setDescription("");
+    setWinningBid(0);
   };
 
   const filteredLots = lots.filter((l) => {
