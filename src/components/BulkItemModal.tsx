@@ -131,10 +131,21 @@ export const BulkItemModal: React.FC = () => {
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
               >
+                <option value="Eletrodomésticos">Eletrodomésticos</option>
                 <option value="Eletrônicos & TI">Eletrônicos & TI</option>
+                <option value="Smartphones & Celulares">Smartphones & Celulares</option>
+                <option value="Audio, Som & Vídeo">Audio, Som & Vídeo</option>
                 <option value="Máquinas & Equipamentos">Máquinas & Equipamentos</option>
+                <option value="Ferramentas Elétricas & Manuais">Ferramentas Elétricas & Manuais</option>
                 <option value="Móveis & Escritório">Móveis & Escritório</option>
-                <option value="Veículos">Veículos</option>
+                <option value="Veículos & Automotivo">Veículos & Automotivo</option>
+                <option value="Peças & Acessórios">Peças & Acessórios</option>
+                <option value="Materiais de Construção">Materiais de Construção</option>
+                <option value="Esporte & Lazer">Esporte & Lazer</option>
+                <option value="Moda, Calçados & Acessórios">Moda, Calçados & Acessórios</option>
+                <option value="Imóveis">Imóveis</option>
+                <option value="Sucata & Reciclagem">Sucata & Reciclagem</option>
+                <option value="Diversos">Diversos</option>
               </select>
             </div>
 

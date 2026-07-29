@@ -43,7 +43,15 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
     addExpense,
     addMaintenance,
     addAdvertisement,
+    setSelectedItemId,
+    setActiveTab: setGlobalActiveTab,
   } = useAuction();
+
+  const handleBackToInventory = () => {
+    setSelectedItemId(null);
+    setGlobalActiveTab("inventory");
+    if (onBack) onBack();
+  };
 
   const [activeTab, setActiveTab] = useState<
     "overview" | "financial" | "maintenance" | "ads" | "documents" | "history"
@@ -57,7 +65,7 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
     return (
       <div className="p-8 text-center space-y-4">
         <p className="text-slate-500">Item não encontrado ou foi removido.</p>
-        <button onClick={onBack} className="px-4 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs">
+        <button onClick={handleBackToInventory} className="px-4 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs">
           Voltar ao Inventário
         </button>
       </div>
@@ -154,7 +162,7 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
       {/* Back Button & Top Action Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <button
-          onClick={onBack}
+          onClick={handleBackToInventory}
           className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-amber-500 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
