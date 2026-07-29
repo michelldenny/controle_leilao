@@ -8,6 +8,7 @@ import {
   onSnapshot,
   getDocs,
   writeBatch,
+} from "firebase/firestore";
 import {
   Auction,
   Lot,

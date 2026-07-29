@@ -201,6 +201,13 @@ export const LotsView: React.FC = () => {
           const auc = auctions.find((a) => a.id === lot.auctionId);
           const lotItems = items.filter((i) => i.lotId === lot.id);
 
+          // Soma dos valores estimados de mercado de todos os itens cadastrados deste lote
+          const totalEstimatedSale = lotItems.reduce((sum, item) => sum + (item.estimatedMarketAvg || 0), 0);
+          // Soma do custo real total dos itens cadastrados (ou custo do lote)
+          const totalItemsCost = lotItems.reduce((sum, item) => sum + (item.realTotalCost || 0), 0);
+          // Lucro estimado (Venda estimada - Custo dos itens ou total do lote)
+          const estimatedProfit = totalEstimatedSale - (totalItemsCost > 0 ? totalItemsCost : lot.totalLotCost);
+
           return (
             <div
               key={lot.id}
@@ -242,6 +249,30 @@ export const LotsView: React.FC = () => {
 
                 <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                   Leilão: <strong className="text-slate-800 dark:text-slate-200">{auc?.name || "N/A"}</strong>
+                </div>
+
+                {/* Resumo de Valuation e Lucro Estimado do Lote */}
+                <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">
+                      Venda Estimada Total ({lotItems.length} itens)
+                    </span>
+                    <strong className="text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">
+                      {formatCurrency(totalEstimatedSale)}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">
+                      Lucro Estimado do Lote
+                    </span>
+                    <strong
+                      className={`font-extrabold text-sm ${
+                        estimatedProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"
+                      }`}
+                    >
+                      {estimatedProfit >= 0 ? "+" : ""}{formatCurrency(estimatedProfit)}
+                    </strong>
+                  </div>
                 </div>
 
                 {/* Costs breakdown chips */}
