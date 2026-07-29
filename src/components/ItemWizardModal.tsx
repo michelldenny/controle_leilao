@@ -43,7 +43,30 @@ export const ItemWizardModal: React.FC = () => {
   const [photoUrl, setPhotoUrl] = useState("https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800");
 
   // Step 5: Valoração de Mercado
-  const [estimatedValue, setEstimatedValue] = useState(2500);
+  const [newProductMarketValue, setNewProductMarketValue] = useState(3500);
+  const [discountPercentage, setDiscountPercentage] = useState(30);
+  const [estimatedValue, setEstimatedValue] = useState(2450);
+
+  // Auto-calculate sale price (estimatedValue) when newProductMarketValue or discountPercentage changes
+  const handleNewMarketValueChange = (val: number) => {
+    setNewProductMarketValue(val);
+    const calculatedSalePrice = val * (1 - discountPercentage / 100);
+    setEstimatedValue(Number(calculatedSalePrice.toFixed(2)));
+  };
+
+  const handleDiscountChange = (pct: number) => {
+    setDiscountPercentage(pct);
+    const calculatedSalePrice = newProductMarketValue * (1 - pct / 100);
+    setEstimatedValue(Number(calculatedSalePrice.toFixed(2)));
+  };
+
+  const handleSalePriceChange = (val: number) => {
+    setEstimatedValue(val);
+    if (newProductMarketValue > 0) {
+      const pct = ((newProductMarketValue - val) / newProductMarketValue) * 100;
+      setDiscountPercentage(Number(pct.toFixed(1)));
+    }
+  };
 
   // Initialize selected auction when modal opens
   useEffect(() => {
@@ -453,33 +476,76 @@ export const ItemWizardModal: React.FC = () => {
           {/* STEP 5: VALUATION DE MERCADO */}
           {step === 5 && (
             <div className="space-y-4">
-              <div>
-                <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1.5">
-                  Valor Estimado de Mercado para Revenda (R$)
-                </label>
-                <input
-                  type="number"
-                  value={estimatedValue}
-                  onChange={(e) => setEstimatedValue(Number(e.target.value))}
-                  className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold text-base"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* 1 - Valor de Mercado Produto Novo */}
+                <div>
+                  <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1.5 text-[11px]">
+                    1. Valor de Mercado (Produto Novo) (R$)
+                  </label>
+                  <input
+                    type="number"
+                    value={newProductMarketValue}
+                    onChange={(e) => handleNewMarketValueChange(Number(e.target.value))}
+                    placeholder="Ex: 3500"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
+                  />
+                </div>
+
+                {/* 2 - Valor de Desconto (% de Comercialização) */}
+                <div>
+                  <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1.5 text-[11px]">
+                    2. Desconto Comercial (%)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={discountPercentage}
+                      onChange={(e) => handleDiscountChange(Number(e.target.value))}
+                      className="w-full p-2.5 pr-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-amber-600 dark:text-amber-400 font-extrabold"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                      %
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3 - Valor de Venda (Estimado após Desconto) */}
+                <div>
+                  <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1.5 text-[11px]">
+                    3. Valor de Venda Estimado (R$)
+                  </label>
+                  <input
+                    type="number"
+                    value={estimatedValue}
+                    onChange={(e) => handleSalePriceChange(Number(e.target.value))}
+                    className="w-full p-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold text-sm"
+                  />
+                </div>
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
                 <span className="font-bold text-slate-800 dark:text-slate-200 block">
                   Simulação Financeira do Item:
                 </span>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div>
                     <span className="block text-[10px] text-slate-500">Custo Total Atribuído:</span>
-                    <strong className="text-slate-900 dark:text-white text-sm">
+                    <strong className="text-slate-900 dark:text-white text-xs sm:text-sm">
                       R$ {calculatedTotalLotCost.toLocaleString("pt-BR")}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-500">Valor de Venda (Revenda):</span>
+                    <strong className="text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">
+                      R$ {Number(estimatedValue).toLocaleString("pt-BR")}
                     </strong>
                   </div>
                   <div>
                     <span className="block text-[10px] text-slate-500">Lucro Bruto Estimado:</span>
                     <strong
-                      className={`text-sm ${
+                      className={`text-xs sm:text-sm ${
                         estimatedValue - calculatedTotalLotCost >= 0
                           ? "text-emerald-600 dark:text-emerald-400"
                           : "text-red-500"

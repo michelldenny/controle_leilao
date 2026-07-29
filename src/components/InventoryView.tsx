@@ -247,18 +247,16 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
             <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-700">
               <button
                 onClick={() => setViewMode("table")}
-                className={`p-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  viewMode === "table" ? "bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-white" : "text-slate-400"
-                }`}
+                className={`p-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "table" ? "bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-white" : "text-slate-400"
+                  }`}
                 title="Visualização em Tabela"
               >
                 <List className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  viewMode === "grid" ? "bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-white" : "text-slate-400"
-                }`}
+                className={`p-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "grid" ? "bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-white" : "text-slate-400"
+                  }`}
                 title="Visualização em Cards/Grid"
               >
                 <Grid className="w-4 h-4" />
@@ -378,7 +376,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                   <th className="p-3">Categoria</th>
                   <th className="p-3 text-right">Custo Real Total</th>
                   <th className="p-3 text-right">Valor Estimado</th>
-                  <th className="p-3 text-right">% Margem Est.</th>
+                  <th className="p-3 text-right">% Markup Est.</th>
                   <th className="p-3 text-center">Status</th>
                   <th className="p-3 text-right">Ações</th>
                 </tr>
@@ -390,16 +388,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
 
                   // Lucro estimado em relação ao valor estimado
                   const profitEst = item.estimatedMarketAvg - item.realTotalCost;
-                  const profitMarginPct = item.realTotalCost > 0 
-                    ? (profitEst / item.realTotalCost) * 100 
+                  const profitMarginPct = item.realTotalCost > 0
+                    ? (profitEst / item.realTotalCost) * 100
                     : 0;
 
                   return (
                     <tr
                       key={item.id}
-                      className={`hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors ${
-                        isSelected ? "bg-amber-500/5 dark:bg-amber-500/10" : ""
-                      }`}
+                      className={`hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors ${isSelected ? "bg-amber-500/5 dark:bg-amber-500/10" : ""
+                        }`}
                     >
                       <td className="p-3 text-center">
                         <button onClick={() => toggleSelectItem(item.id)} className="text-slate-400">
@@ -447,11 +444,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
 
                       <td className="p-3 text-right font-bold">
                         <span
-                          className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] ${
-                            profitMarginPct >= 0
+                          className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] ${profitMarginPct >= 0
                               ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                               : "bg-red-500/10 text-red-600 dark:text-red-400"
-                          }`}
+                            }`}
                         >
                           {profitMarginPct >= 0 ? (
                             <TrendingUp className="w-3 h-3" />
