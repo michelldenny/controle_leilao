@@ -208,8 +208,10 @@ export const LotsView: React.FC = () => {
           const costBase = totalItemsCost > 0 ? totalItemsCost : lot.totalLotCost;
           // Lucro estimado (Venda estimada - Custo dos itens ou total do lote)
           const estimatedProfit = totalEstimatedSale - costBase;
-          // Porcentagem da Margem de Lucro (% sobre o Custo)
-          const profitMarginPct = costBase > 0 ? (estimatedProfit / costBase) * 100 : 0;
+          // 3 - Markup sobre o custo (%) = (Lucro / Custo) * 100
+          const markupPct = costBase > 0 ? (estimatedProfit / costBase) * 100 : 0;
+          // 4 - Margem sobre a venda (%) = (Lucro / Venda Estimada) * 100
+          const marginOnSalePct = totalEstimatedSale > 0 ? (estimatedProfit / totalEstimatedSale) * 100 : 0;
 
           return (
             <div
@@ -254,22 +256,22 @@ export const LotsView: React.FC = () => {
                   Leilão: <strong className="text-slate-800 dark:text-slate-200">{auc?.name || "N/A"}</strong>
                 </div>
 
-                {/* Resumo de Valuation, Lucro Estimado e Margem de Lucro do Lote */}
-                <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 grid grid-cols-3 gap-2 text-xs">
+                {/* Resumo com os 4 Indicadores: Venda, Lucro, Markup e Margem sobre Venda */}
+                <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                   <div>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">
-                      Venda Estimada ({lotItems.length} itens)
+                      1. Venda Est. ({lotItems.length} it.)
                     </span>
-                    <strong className="text-emerald-600 dark:text-emerald-400 font-extrabold text-xs sm:text-sm">
+                    <strong className="text-emerald-600 dark:text-emerald-400 font-extrabold text-xs">
                       {formatCurrency(totalEstimatedSale)}
                     </strong>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">
-                      Lucro Estimado
+                      2. Lucro Est.
                     </span>
                     <strong
-                      className={`font-extrabold text-xs sm:text-sm ${
+                      className={`font-extrabold text-xs ${
                         estimatedProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"
                       }`}
                     >
@@ -278,14 +280,26 @@ export const LotsView: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">
-                      Margem Est.
+                      3. Markup/Custo
                     </span>
                     <strong
-                      className={`font-extrabold text-xs sm:text-sm ${
-                        profitMarginPct >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"
+                      className={`font-extrabold text-xs ${
+                        markupPct >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"
                       }`}
                     >
-                      {profitMarginPct >= 0 ? "+" : ""}{profitMarginPct.toFixed(1)}%
+                      {markupPct >= 0 ? "+" : ""}{markupPct.toFixed(1)}%
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">
+                      4. Margem/Venda
+                    </span>
+                    <strong
+                      className={`font-extrabold text-xs ${
+                        marginOnSalePct >= 0 ? "text-blue-600 dark:text-blue-400" : "text-red-500"
+                      }`}
+                    >
+                      {marginOnSalePct >= 0 ? "+" : ""}{marginOnSalePct.toFixed(1)}%
                     </strong>
                   </div>
                 </div>
