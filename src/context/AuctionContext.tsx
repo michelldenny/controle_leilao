@@ -139,6 +139,8 @@ interface AuctionContextType {
   deleteAdvertisement: (id: string) => void;
   recordSale: (sale: Omit<SaleRecord, "id" | "netSaleValue" | "netProfit" | "roiPercentage" | "marginPercentage">) => void;
   registerSale: (itemId: string, saleData: Partial<SaleRecord>) => void;
+  updateSale: (id: string, saleData: Partial<SaleRecord>) => void;
+  deleteSale: (id: string) => void;
 
   // Contacts & Documents
   addContact: (contact: Omit<Contact, "id">) => void;
@@ -929,6 +931,50 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   };
 
+  const updateSale = (id: string, saleData: Partial<SaleRecord>) => {
+    const existing = sales.find((s) => s.id === id);
+    if (!existing) return;
+
+    const targetItem = items.find((i) => i.id === (saleData.itemId || existing.itemId));
+    const realCost = targetItem?.realTotalCost || 0;
+
+    const updatedFinalPrice = saleData.finalPrice !== undefined ? saleData.finalPrice : existing.finalPrice;
+    const updatedFreight = saleData.sellerFreight !== undefined ? saleData.sellerFreight : existing.sellerFreight;
+    const updatedCommission = saleData.platformCommission !== undefined ? saleData.platformCommission : existing.platformCommission;
+    const updatedTaxes = saleData.taxes !== undefined ? saleData.taxes : existing.taxes;
+    const updatedOther = saleData.otherExpenses !== undefined ? saleData.otherExpenses : existing.otherExpenses;
+
+    const netSaleValue = updatedFinalPrice - updatedFreight - updatedCommission - updatedTaxes - updatedOther;
+    const netProfit = netSaleValue - realCost;
+    const roiPercentage = realCost > 0 ? (netProfit / realCost) * 100 : 0;
+    const marginPercentage = netSaleValue > 0 ? (netProfit / netSaleValue) * 100 : 0;
+
+    const updatedSale: SaleRecord = {
+      ...existing,
+      ...saleData,
+      netSaleValue: Number(netSaleValue.toFixed(2)),
+      netProfit: Number(netProfit.toFixed(2)),
+      roiPercentage: Number(roiPercentage.toFixed(2)),
+      marginPercentage: Number(marginPercentage.toFixed(2)),
+    };
+
+    setDoc(doc(db, "sales", id), updatedSale).catch(console.error);
+    addToast("Venda Atualizada", "As informações da venda foram salvas com sucesso.");
+  };
+
+  const deleteSale = (id: string) => {
+    const existing = sales.find((s) => s.id === id);
+    if (existing) {
+      // Reverter status do item para disponível
+      updateItem(existing.itemId, {
+        status: "disponivel",
+        isSold: false,
+      });
+    }
+    deleteDoc(doc(db, "sales", id)).catch(console.error);
+    addToast("Venda Excluída", "O registro de venda foi removido e o item retornou para disponível no estoque.");
+  };
+
   // Contacts
   const addContact = (contactData: Omit<Contact, "id">) => {
     const id = "cnt-" + Date.now();
@@ -1070,6 +1116,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         deleteAdvertisement,
         recordSale,
         registerSale,
+        updateSale,
+        deleteSale,
         addContact,
         updateContact,
         deleteContact,

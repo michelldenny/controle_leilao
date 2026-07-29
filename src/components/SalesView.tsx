@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import { useAuction } from "../context/AuctionContext";
-import { ShoppingBag, Plus, DollarSign, TrendingUp, CheckCircle2, X } from "lucide-react";
+import { SaleRecord } from "../types";
+import { ShoppingBag, Plus, DollarSign, TrendingUp, CheckCircle2, X, Eye, Pencil, Trash2 } from "lucide-react";
 
 export const SalesView: React.FC = () => {
-  const { items, sales, recordSale, metrics } = useAuction();
+  const { items, sales, recordSale, updateSale, deleteSale, openItemDetail, metrics } = useAuction();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSale, setEditingSale] = useState<SaleRecord | null>(null);
+  const [viewingSale, setViewingSale] = useState<SaleRecord | null>(null);
 
   // Sale Form State
   const [selectedItemId, setSelectedItemId] = useState("");
@@ -40,14 +43,63 @@ export const SalesView: React.FC = () => {
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
 
+  const handleOpenNewSale = () => {
+    setEditingSale(null);
+    setSelectedItemId("");
+    setBuyerName("");
+    setBuyerCpfCnpj("");
+    setSaleChannel("Mercado Livre");
+    setFinalPrice(0);
+    setPlatformCommission(0);
+    setSellerFreight(0);
+    setTaxes(0);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditSale = (sale: SaleRecord) => {
+    setEditingSale(sale);
+    setSelectedItemId(sale.itemId);
+    setBuyerName(sale.buyerName || "");
+    setBuyerCpfCnpj(sale.buyerDoc || "");
+    setSaleChannel(sale.platform || "Mercado Livre");
+    setFinalPrice(sale.finalPrice || 0);
+    setPlatformCommission(sale.platformCommission || 0);
+    setSellerFreight(sale.sellerFreight || 0);
+    setTaxes(sale.taxes || 0);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteSaleItem = (sale: SaleRecord) => {
+    const item = items.find((i) => i.id === sale.itemId);
+    const itemName = item ? item.name : "esta venda";
+    if (window.confirm(`Tem certeza que deseja excluir o registro de venda de "${itemName}"? O item retornará para o estoque como "Disponível".`)) {
+      deleteSale(sale.id);
+    }
+  };
+
   const handleSaleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (editingSale) {
+      updateSale(editingSale.id, {
+        buyerName,
+        buyerDoc: buyerCpfCnpj,
+        platform: saleChannel as any,
+        finalPrice: Number(finalPrice),
+        platformCommission: Number(platformCommission),
+        sellerFreight: Number(sellerFreight),
+        taxes: Number(taxes),
+      });
+      setIsModalOpen(false);
+      setEditingSale(null);
+      return;
+    }
+
     if (!selectedItemId || !buyerName || finalPrice <= 0) return;
 
     recordSale({
       itemId: selectedItemId,
       buyerName,
-      buyerContact: buyerCpfCnpj,
+      buyerDoc: buyerCpfCnpj,
       platform: saleChannel as any,
       saleDate: new Date().toISOString().split("T")[0],
       finalPrice: Number(finalPrice),
@@ -56,7 +108,7 @@ export const SalesView: React.FC = () => {
       taxes: Number(taxes),
       otherExpenses: 0,
       paymentMethod: "Pix",
-      receiptIssued: true,
+      paymentStatus: "pago",
     });
 
     setIsModalOpen(false);
@@ -84,7 +136,7 @@ export const SalesView: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenNewSale}
           className="flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/20 transition-all shrink-0"
         >
           <Plus className="w-4 h-4" />
@@ -138,6 +190,7 @@ export const SalesView: React.FC = () => {
                 <th className="p-3 text-right">Custo Real Total</th>
                 <th className="p-3 text-right">Lucro Líquido</th>
                 <th className="p-3 text-right">ROI %</th>
+                <th className="p-3 text-center">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
@@ -157,6 +210,31 @@ export const SalesView: React.FC = () => {
                     </td>
                     <td className="p-3 text-right font-extrabold text-amber-600 dark:text-amber-400">
                       {sale.roiPercentage.toFixed(1)}%
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => setViewingSale(sale)}
+                          title="Ver Detalhes da Venda"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleOpenEditSale(sale)}
+                          title="Editar Venda"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSaleItem(sale)}
+                          title="Excluir Venda"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -328,10 +406,124 @@ export const SalesView: React.FC = () => {
                   type="submit"
                   className="px-5 py-2 text-xs font-bold rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/20"
                 >
-                  Confirmar Venda
+                  {editingSale ? "Salvar Alterações" : "Confirmar Venda"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Visualização de Detalhes da Venda */}
+      {viewingSale && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm cursor-pointer"
+          onClick={() => setViewingSale(null)}
+        >
+          <div
+            className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <Eye className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                    Detalhes do Registro de Venda
+                  </h3>
+                  <span className="text-xs text-slate-400 font-mono">ID: {viewingSale.id}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setViewingSale(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                <span className="text-[10px] text-slate-400 font-medium block">Item Comercializado</span>
+                <strong className="text-sm font-bold text-slate-900 dark:text-white">
+                  {items.find((i) => i.id === viewingSale.itemId)?.name || "Item Não Localizado"}
+                </strong>
+                <span className="block text-[10px] text-amber-600 font-mono mt-0.5">
+                  Código: {items.find((i) => i.id === viewingSale.itemId)?.code || viewingSale.itemId}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+                  <span className="text-slate-400 block text-[10px]">Comprador</span>
+                  <strong className="text-slate-900 dark:text-white">{viewingSale.buyerName}</strong>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+                  <span className="text-slate-400 block text-[10px]">CPF / CNPJ</span>
+                  <strong className="text-slate-900 dark:text-white">{viewingSale.buyerDoc || "Não informado"}</strong>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+                  <span className="text-slate-400 block text-[10px]">Plataforma / Canal</span>
+                  <strong className="text-slate-900 dark:text-white">{viewingSale.platform}</strong>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+                  <span className="text-slate-400 block text-[10px]">Data da Venda</span>
+                  <strong className="text-slate-900 dark:text-white">{viewingSale.saleDate}</strong>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
+                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+                  <span className="text-slate-400 block text-[10px]">Valor Bruto</span>
+                  <strong className="text-slate-900 dark:text-white">{formatCurrency(viewingSale.finalPrice)}</strong>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+                  <span className="text-slate-400 block text-[10px]">Comissão</span>
+                  <strong className="text-slate-900 dark:text-white">{formatCurrency(viewingSale.platformCommission)}</strong>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+                  <span className="text-slate-400 block text-[10px]">Frete Vendedor</span>
+                  <strong className="text-slate-900 dark:text-white">{formatCurrency(viewingSale.sellerFreight)}</strong>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+                  <span className="text-slate-400 block text-[10px]">Impostos</span>
+                  <strong className="text-slate-900 dark:text-white">{formatCurrency(viewingSale.taxes)}</strong>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 grid grid-cols-3 gap-2">
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-medium">Valor Líquido</span>
+                  <strong className="text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">
+                    {formatCurrency(viewingSale.netSaleValue)}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-medium">Lucro Líquido</span>
+                  <strong className="text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">
+                    {formatCurrency(viewingSale.netProfit)}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-medium">ROI Obtido</span>
+                  <strong className="text-amber-600 dark:text-amber-400 font-extrabold text-sm">
+                    {viewingSale.roiPercentage?.toFixed(1)}%
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
+              <button
+                onClick={() => setViewingSale(null)}
+                className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
+              >
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}

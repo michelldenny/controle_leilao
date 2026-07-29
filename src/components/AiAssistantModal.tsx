@@ -43,57 +43,68 @@ export const AiAssistantModal: React.FC = () => {
     setResult(null);
 
     try {
-      if (mode === "analyze") {
-        const res = await fetch("/api/ai/analyze-item", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: itemName,
-            category,
-            condition,
-            brand,
-            model,
-            realTotalCost,
-          }),
-        });
-        const data = await res.json();
-        setResult(data);
-      } else if (mode === "ad") {
-        const res = await fetch("/api/ai/generate-ad", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: itemName,
-            category,
-            condition,
-            brand,
-            model,
-            platform,
-            totalCost: realTotalCost,
-            estimatedValue: aiModalItem?.estimatedMarketAvg || realTotalCost * 1.5,
-            specs: [],
-          }),
-        });
-        const data = await res.json();
-        setResult(data);
+      let endpoint = "/api/ai/analyze-item";
+      let bodyData: any = {
+        name: itemName,
+        category,
+        condition,
+        brand,
+        model,
+        realTotalCost,
+      };
+
+      if (mode === "ad") {
+        endpoint = "/api/ai/generate-ad";
+        bodyData = {
+          name: itemName,
+          category,
+          condition,
+          brand,
+          model,
+          platform,
+          totalCost: realTotalCost,
+          estimatedValue: aiModalItem?.estimatedMarketAvg || realTotalCost * 1.5,
+          specs: [],
+        };
       } else if (mode === "strategy") {
-        const res = await fetch("/api/ai/pricing-strategy", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: itemName,
-            category,
-            condition,
-            totalCost: realTotalCost,
-            estimatedAvg: aiModalItem?.estimatedMarketAvg || realTotalCost * 1.5,
-            daysInStock: aiModalItem?.daysInStock || 10,
-          }),
-        });
-        const data = await res.json();
-        setResult(data);
+        endpoint = "/api/ai/pricing-strategy";
+        bodyData = {
+          name: itemName,
+          category,
+          condition,
+          totalCost: realTotalCost,
+          estimatedAvg: aiModalItem?.estimatedMarketAvg || realTotalCost * 1.5,
+          daysInStock: aiModalItem?.daysInStock || 10,
+        };
       }
-    } catch (err) {
-      console.error(err);
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bodyData),
+      });
+
+      const contentType = res.headers.get("content-type");
+      if (!res.ok) {
+        let errMessage = `Erro HTTP ${res.status}: Servidor indisponível`;
+        if (contentType && contentType.includes("application/json")) {
+          const errData = await res.json();
+          errMessage = errData.error || errMessage;
+        } else {
+          const text = await res.text();
+          if (res.status === 404) {
+            errMessage = "A chave GEMINI_API_KEY ou a rota de API do Vercel precisa ser configurada nas Variáveis de Ambiente do projeto no Vercel.";
+          }
+        }
+        setResult({ error: errMessage });
+        return;
+      }
+
+      const data = await res.json();
+      setResult(data);
+    } catch (err: any) {
+      console.error("Erro na requisição IA:", err);
+      setResult({ error: err.message || "Erro de conexão com o serviço de IA." });
     } finally {
       setLoading(false);
     }
@@ -245,10 +256,17 @@ export const AiAssistantModal: React.FC = () => {
         {/* AI Results Output */}
         {result && (
           <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-3 text-xs animate-in fade-in">
-            <h4 className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Resultado da IA:</span>
-            </h4>
+            {result.error ? (
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 space-y-1">
+                <strong className="block font-bold">Falha na Requisição de IA</strong>
+                <p>{result.error}</p>
+              </div>
+            ) : (
+              <>
+                <h4 className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Resultado da IA:</span>
+                </h4>
 
             {mode === "analyze" && (
               <div className="space-y-2">
@@ -314,9 +332,11 @@ export const AiAssistantModal: React.FC = () => {
                 </div>
               </div>
             )}
-          </div>
-        )}
-      </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
-  );
+  </div>
+);
 };
