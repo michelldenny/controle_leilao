@@ -304,22 +304,37 @@ export const LotsView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Costs breakdown chips */}
+                {/* Costs breakdown chips: Lance Vencedor | Custos Extras | Custo Rateado | Itens no Lote */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60 text-[11px]">
                   <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-700/40">
                     <span className="text-slate-400 block text-[10px]">Lance Vencedor</span>
                     <strong className="text-slate-900 dark:text-white">{formatCurrency(lot.winningBid)}</strong>
                   </div>
                   <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-700/40">
-                    <span className="text-slate-400 block text-[10px]">Comissão/Taxas</span>
+                    <span className="text-slate-400 block text-[10px]">Custos Extras</span>
                     <strong className="text-slate-900 dark:text-white">
-                      {formatCurrency(lot.auctioneerCommission + lot.adminFee + lot.taxes)}
+                      {formatCurrency(
+                        (lot.auctioneerCommission || 0) +
+                          (lot.adminFee || 0) +
+                          (lot.taxes || 0) +
+                          (lot.transportCost || 0) +
+                          (lot.disassemblyCost || 0) +
+                          (lot.loadingCost || 0) +
+                          (lot.storageCost || 0) +
+                          (lot.otherCosts || 0)
+                      )}
                     </strong>
                   </div>
                   <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-700/40">
-                    <span className="text-slate-400 block text-[10px]">Transporte/Log.</span>
+                    <span className="text-slate-400 block text-[10px]">Custo Rateado</span>
                     <strong className="text-slate-900 dark:text-white">
-                      {formatCurrency(lot.transportCost + lot.disassemblyCost + lot.loadingCost)}
+                      {formatCurrency(
+                        lotItems.length > 0
+                          ? lot.totalLotCost / lotItems.length
+                          : (lot.itemCount || 1) > 0
+                          ? lot.totalLotCost / (lot.itemCount || 1)
+                          : lot.totalLotCost
+                      )}
                     </strong>
                   </div>
                   <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-700/40">
