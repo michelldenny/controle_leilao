@@ -3,10 +3,39 @@ import { useAuction } from "../context/AuctionContext";
 import { TrendingUp, BarChart3, PieChart as PieChartIcon, Clock, Award, ShieldAlert } from "lucide-react";
 
 export const BusinessIntelligenceView: React.FC = () => {
-  const { metrics, items, auctions } = useAuction();
+  const { metrics, items, sales, auctions } = useAuction();
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
+
+  // Dynamic stock turnover calculations
+  const turnoverStats = React.useMemo(() => {
+    const soldSales = sales.filter((s) => s.saleDate);
+    if (soldSales.length === 0) {
+      return { avgDays: 0, fastTurnoverPct: 0 };
+    }
+
+    let totalDays = 0;
+    let fastCount = 0;
+    let countedSales = 0;
+
+    soldSales.forEach((sale) => {
+      const item = items.find((i) => i.id === sale.itemId);
+      if (item && item.dateAdded && sale.saleDate) {
+        const startDate = new Date(item.dateAdded).getTime();
+        const endDate = new Date(sale.saleDate).getTime();
+        const diffDays = Math.max(0, Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)));
+        totalDays += diffDays;
+        if (diffDays <= 15) fastCount++;
+        countedSales++;
+      }
+    });
+
+    const avgDays = countedSales > 0 ? Math.round(totalDays / countedSales) : 0;
+    const fastTurnoverPct = countedSales > 0 ? Math.round((fastCount / countedSales) * 100) : 0;
+
+    return { avgDays, fastTurnoverPct };
+  }, [items, sales]);
 
   // Group profit by category
   const categoryStats: { [cat: string]: { cost: number; est: number; count: number } } = {};
@@ -59,14 +88,14 @@ export const BusinessIntelligenceView: React.FC = () => {
             <span>Tempo Médio de Giro do Estoque</span>
           </div>
           <div className="text-3xl font-extrabold text-slate-900 dark:text-white">
-            34 Dias
+            {turnoverStats.avgDays} Dias
           </div>
           <p className="text-xs text-slate-500 leading-relaxed">
             Média de dias entre a arrematação/entrada do bem no sistema até a venda final concluída.
           </p>
           <div className="pt-2 border-t border-slate-100 dark:border-slate-700 text-xs flex justify-between font-bold">
             <span className="text-slate-500">Giro Rápido (&lt; 15 dias):</span>
-            <span className="text-emerald-600">45% do estoque</span>
+            <span className="text-emerald-600">{turnoverStats.fastTurnoverPct}% das vendas</span>
           </div>
         </div>
       </div>

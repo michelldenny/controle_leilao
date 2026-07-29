@@ -137,6 +137,7 @@ interface AuctionContextType {
   updateAdStatus: (id: string, status: Advertisement["status"]) => void;
   deleteAdvertisement: (id: string) => void;
   recordSale: (sale: Omit<SaleRecord, "id" | "netSaleValue" | "netProfit" | "roiPercentage" | "marginPercentage">) => void;
+  registerSale: (itemId: string, saleData: Partial<SaleRecord>) => void;
 
   // Contacts & Documents
   addContact: (contact: Omit<Contact, "id">) => void;
@@ -507,49 +508,17 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const updated = { ...existing, ...itemData };
     updated.realTotalCost = (updated.apportionedCost || 0) + (updated.additionalCosts || 0);
 
-    // Se o status mudar para 'vendido', garantir a marcação e registro de venda se ainda não existir
     if (itemData.status === "vendido") {
       updated.isSold = true;
-      const existingSale = sales.find((s) => s.itemId === id);
-      if (!existingSale) {
-        const salePrice = updated.listedPrice || updated.estimatedMarketAvg || updated.realTotalCost;
-        const netProfit = salePrice - updated.realTotalCost;
-        const roiPercentage = updated.realTotalCost > 0 ? (netProfit / updated.realTotalCost) * 100 : 0;
-        const marginPercentage = salePrice > 0 ? (netProfit / salePrice) * 100 : 0;
-
-        const newSale: SaleRecord = {
-          id: "sale-" + Date.now(),
-          itemId: id,
-          saleDate: new Date().toISOString().split("T")[0],
-          finalPrice: salePrice,
-          platform: "Venda Direta / Inventário",
-          buyerName: "Cliente Direct",
-          buyerContact: "",
-          sellerFreight: 0,
-          platformCommission: 0,
-          taxes: 0,
-          otherExpenses: 0,
-          netSaleValue: Number(salePrice.toFixed(2)),
-          netProfit: Number(netProfit.toFixed(2)),
-          roiPercentage: Number(roiPercentage.toFixed(2)),
-          marginPercentage: Number(marginPercentage.toFixed(2)),
-          notes: "Registrado automaticamente ao alterar status do item para Vendido no Inventário",
-        };
-        setDoc(doc(db, "sales", newSale.id), newSale).catch(console.error);
-      }
-    } else if (itemData.status && itemData.status !== "vendido" && existing.status === "vendido") {
+    } else if (itemData.status && itemData.status !== "vendido") {
       updated.isSold = false;
-      const existingSale = sales.find((s) => s.itemId === id);
-      if (existingSale) {
-        deleteDoc(doc(db, "sales", existingSale.id)).catch(console.error);
-      }
     }
 
     if (itemData.status && itemData.status !== existing.status) {
       addLog("Status Alterado", `Status do item ${existing.code} alterado para ${itemData.status}.`, "status_change", id);
     }
     if (itemData.location && JSON.stringify(itemData.location) !== JSON.stringify(existing.location)) {
-      addLog("Status / Localização Alterada", `Localização do item ${existing.code} atualizada para ${itemData.location.customText}.`, "location_change", id);
+      addLog("Localização Alterada", `Localização do item ${existing.code} atualizada para ${itemData.location.customText}.`, "location_change", id);
     }
 
     setDoc(doc(db, "items", id), updated).catch(console.error);
@@ -932,6 +901,22 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
   };
 
+  const registerSale = (itemId: string, saleData: Partial<SaleRecord>) => {
+    recordSale({
+      itemId,
+      saleDate: saleData.saleDate || new Date().toISOString().split("T")[0],
+      finalPrice: saleData.finalPrice || 0,
+      platform: saleData.platform || saleData.saleChannel || "Venda Direta",
+      buyerName: saleData.buyerName || "Cliente",
+      buyerContact: saleData.buyerContact || saleData.buyerCpfCnpj || "",
+      sellerFreight: saleData.sellerFreight || 0,
+      platformCommission: saleData.platformCommission || 0,
+      taxes: saleData.taxes || 0,
+      otherExpenses: saleData.otherExpenses || 0,
+      notes: saleData.notes,
+    });
+  };
+
   // Contacts
   const addContact = (contactData: Omit<Contact, "id">) => {
     const id = "cnt-" + Date.now();
@@ -1069,6 +1054,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateAdStatus,
         deleteAdvertisement,
         recordSale,
+        registerSale,
         addContact,
         updateContact,
         deleteContact,

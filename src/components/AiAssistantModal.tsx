@@ -69,7 +69,9 @@ export const AiAssistantModal: React.FC = () => {
             brand,
             model,
             platform,
-            suggestedPrice: realTotalCost * 2,
+            totalCost: realTotalCost,
+            estimatedValue: aiModalItem?.estimatedMarketAvg || realTotalCost * 1.5,
+            specs: [],
           }),
         });
         const data = await res.json();
@@ -81,9 +83,10 @@ export const AiAssistantModal: React.FC = () => {
           body: JSON.stringify({
             name: itemName,
             category,
-            realTotalCost,
-            estimatedMarketMin: realTotalCost * 1.5,
-            estimatedMarketMax: realTotalCost * 2.5,
+            condition,
+            totalCost: realTotalCost,
+            estimatedAvg: aiModalItem?.estimatedMarketAvg || realTotalCost * 1.5,
+            daysInStock: aiModalItem?.daysInStock || 10,
           }),
         });
         const data = await res.json();
@@ -271,8 +274,8 @@ export const AiAssistantModal: React.FC = () => {
                 </div>
 
                 <div className="p-3 rounded-xl bg-white dark:bg-slate-800 space-y-1">
-                  <span className="font-bold text-slate-900 dark:text-white block">Resumo Técnico:</span>
-                  <p className="text-slate-600 dark:text-slate-300">{result.summary}</p>
+                  <span className="font-bold text-slate-900 dark:text-white block">Resumo Técnico & Parecer:</span>
+                  <p className="text-slate-600 dark:text-slate-300">{result.pricingAdvice || result.summary}</p>
                 </div>
               </div>
             )}
@@ -283,7 +286,7 @@ export const AiAssistantModal: React.FC = () => {
                   <span className="font-bold text-slate-900 dark:text-white block">
                     Título Otimizado (SEO):
                   </span>
-                  <p className="font-bold text-amber-600">{result.optimizedTitle}</p>
+                  <p className="font-bold text-amber-600">{result.title || result.optimizedTitle}</p>
 
                   <span className="font-bold text-slate-900 dark:text-white block pt-2">
                     Descrição Profissional do Anúncio:
@@ -299,9 +302,15 @@ export const AiAssistantModal: React.FC = () => {
               <div className="space-y-2">
                 <div className="p-3 rounded-xl bg-white dark:bg-slate-800 space-y-2">
                   <span className="font-bold text-slate-900 dark:text-white block">
-                    Precificação & Estratégia de Liquidez:
+                    Recomendação Estratégica:
                   </span>
-                  <p className="text-slate-600 dark:text-slate-300">{result.strategy}</p>
+                  <p className="text-slate-600 dark:text-slate-300">{result.recommendedAction || result.strategy}</p>
+                  
+                  {result.marginAnalysis && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 pt-1 font-semibold">
+                      Análise de Margem: {result.marginAnalysis}
+                    </p>
+                  )}
                 </div>
               </div>
             )}

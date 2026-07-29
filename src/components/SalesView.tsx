@@ -3,7 +3,7 @@ import { useAuction } from "../context/AuctionContext";
 import { ShoppingBag, Plus, DollarSign, TrendingUp, CheckCircle2, X } from "lucide-react";
 
 export const SalesView: React.FC = () => {
-  const { items, registerSale, metrics } = useAuction();
+  const { items, sales, recordSale, metrics } = useAuction();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -18,7 +18,15 @@ export const SalesView: React.FC = () => {
   const [taxes, setTaxes] = useState<number>(0);
 
   const availableItems = items.filter((i) => i.status !== "vendido");
-  const soldItems = items.filter((i) => i.status === "vendido" && i.saleDetails);
+  
+  // Associar o histórico de vendas gravado na coleção sales com o item correspondente
+  const salesHistory = sales.map((sale) => {
+    const item = items.find((i) => i.id === sale.itemId);
+    return {
+      sale,
+      item,
+    };
+  });
 
   const selectedItem = items.find((i) => i.id === selectedItemId);
 
@@ -36,10 +44,11 @@ export const SalesView: React.FC = () => {
     e.preventDefault();
     if (!selectedItemId || !buyerName || finalPrice <= 0) return;
 
-    registerSale(selectedItemId, {
+    recordSale({
+      itemId: selectedItemId,
       buyerName,
-      buyerCpfCnpj,
-      saleChannel,
+      buyerContact: buyerCpfCnpj,
+      platform: saleChannel as any,
       saleDate: new Date().toISOString().split("T")[0],
       finalPrice: Number(finalPrice),
       platformCommission: Number(platformCommission),
@@ -53,7 +62,11 @@ export const SalesView: React.FC = () => {
     setIsModalOpen(false);
     setSelectedItemId("");
     setBuyerName("");
+    setBuyerCpfCnpj("");
     setFinalPrice(0);
+    setPlatformCommission(0);
+    setSellerFreight(0);
+    setTaxes(0);
   };
 
   return (
@@ -86,7 +99,7 @@ export const SalesView: React.FC = () => {
           <div className="text-2xl font-extrabold text-slate-900 dark:text-white mt-1">
             {formatCurrency(metrics.totalSoldAmount)}
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">{soldItems.length} bens comercializados</span>
+          <span className="text-[11px] text-slate-500 mt-1 block">{sales.length} vendas registradas</span>
         </div>
 
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -111,7 +124,7 @@ export const SalesView: React.FC = () => {
       {/* Sales History Table */}
       <div className="border border-slate-200 dark:border-slate-800 rounded-3xl bg-white dark:bg-slate-800/80 shadow-sm overflow-hidden text-xs">
         <div className="p-4 border-b border-slate-100 dark:border-slate-700">
-          <h3 className="font-bold text-slate-900 dark:text-white">Histórico de Vendas Realizadas ({soldItems.length})</h3>
+          <h3 className="font-bold text-slate-900 dark:text-white">Histórico de Vendas Realizadas ({sales.length})</h3>
         </div>
 
         <div className="overflow-x-auto">
@@ -128,23 +141,22 @@ export const SalesView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-              {soldItems.map((item) => {
-                const s = item.saleDetails!;
+              {salesHistory.map(({ sale, item }) => {
                 return (
-                  <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30">
+                  <tr key={sale.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30">
                     <td className="p-3 font-bold text-slate-900 dark:text-white">
-                      <div>{item.name}</div>
-                      <span className="text-[10px] text-amber-600 font-mono">{item.code}</span>
+                      <div>{item ? item.name : "Item Excluído/Não Localizado"}</div>
+                      <span className="text-[10px] text-amber-600 font-mono">{item ? item.code : sale.itemId}</span>
                     </td>
-                    <td className="p-3 text-slate-700 dark:text-slate-300 font-medium">{s.buyerName}</td>
-                    <td className="p-3 text-slate-500">{s.saleChannel}</td>
-                    <td className="p-3 text-right font-bold text-slate-900 dark:text-white">{formatCurrency(s.finalPrice)}</td>
-                    <td className="p-3 text-right text-slate-500">{formatCurrency(item.realTotalCost)}</td>
+                    <td className="p-3 text-slate-700 dark:text-slate-300 font-medium">{sale.buyerName}</td>
+                    <td className="p-3 text-slate-500">{sale.platform}</td>
+                    <td className="p-3 text-right font-bold text-slate-900 dark:text-white">{formatCurrency(sale.finalPrice)}</td>
+                    <td className="p-3 text-right text-slate-500">{formatCurrency(item?.realTotalCost || 0)}</td>
                     <td className="p-3 text-right font-extrabold text-emerald-600 dark:text-emerald-400">
-                      {formatCurrency(s.netProfit)}
+                      {formatCurrency(sale.netProfit)}
                     </td>
                     <td className="p-3 text-right font-extrabold text-amber-600 dark:text-amber-400">
-                      {s.roiPercentage.toFixed(1)}%
+                      {sale.roiPercentage.toFixed(1)}%
                     </td>
                   </tr>
                 );

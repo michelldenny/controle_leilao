@@ -3,13 +3,12 @@ import { useAuction } from "../context/AuctionContext";
 import { DollarSign, ArrowUpRight, ArrowDownRight, TrendingUp, Calendar, FileSpreadsheet } from "lucide-react";
 
 export const FinancialView: React.FC = () => {
-  const { metrics, items } = useAuction();
+  const { metrics, items, sales } = useAuction();
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
 
-  const soldItems = items.filter((i) => i.status === "vendido" && i.saleDetails);
-  const totalInflows = soldItems.reduce((acc, curr) => acc + (curr.saleDetails?.finalPrice || 0), 0);
+  const totalInflows = sales.reduce((acc, curr) => acc + (curr.finalPrice || 0), 0);
   const totalOutflows = metrics.totalInvested;
   const netCashflow = totalInflows - totalOutflows;
 
@@ -77,19 +76,22 @@ export const FinancialView: React.FC = () => {
               <tr>
                 <td className="p-3 pl-6 text-slate-500">(-) Deduções de Venda (Comissões de Plataforma & Frete)</td>
                 <td className="p-3 text-right text-red-500">
-                  {formatCurrency(soldItems.reduce((acc, curr) => acc + (curr.saleDetails?.platformCommission || 0) + (curr.saleDetails?.sellerFreight || 0), 0))}
+                  {formatCurrency(sales.reduce((acc, curr) => acc + (curr.platformCommission || 0) + (curr.sellerFreight || 0) + (curr.taxes || 0), 0))}
                 </td>
               </tr>
               <tr className="bg-slate-50 dark:bg-slate-800/80">
                 <td className="p-3 font-bold text-slate-900 dark:text-white">(=) Receita Líquida de Vendas</td>
                 <td className="p-3 text-right font-bold text-slate-900 dark:text-white">
-                  {formatCurrency(soldItems.reduce((acc, curr) => acc + (curr.saleDetails?.netSaleValue || 0), 0))}
+                  {formatCurrency(sales.reduce((acc, curr) => acc + (curr.netSaleValue || 0), 0))}
                 </td>
               </tr>
               <tr>
                 <td className="p-3 pl-6 text-slate-500">(-) Custo dos Bens Vendidos (CPV do Leilão)</td>
                 <td className="p-3 text-right text-red-500">
-                  {formatCurrency(soldItems.reduce((acc, curr) => acc + curr.realTotalCost, 0))}
+                  {formatCurrency(sales.reduce((acc, curr) => {
+                    const item = items.find((i) => i.id === curr.itemId);
+                    return acc + (item?.realTotalCost || 0);
+                  }, 0))}
                 </td>
               </tr>
               <tr className="bg-emerald-500/10 font-bold text-emerald-600 dark:text-emerald-400">

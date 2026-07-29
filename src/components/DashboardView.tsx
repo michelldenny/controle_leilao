@@ -30,21 +30,49 @@ import {
 } from "recharts";
 
 export const DashboardView: React.FC = () => {
-  const { metrics, items, activityLogs, setIsWizardOpen, openItemDetail, setActiveTab } = useAuction();
+  const { metrics, items, sales, activityLogs, setIsWizardOpen, openItemDetail, setActiveTab } = useAuction();
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
 
-  // Mock monthly financial trend data derived from sales and items
-  const monthlyData = [
-    { month: "Jan", investimentos: 45000, vendas: 28000, lucro: 8200 },
-    { month: "Fev", investimentos: 62000, vendas: 51000, lucro: 14500 },
-    { month: "Mar", investimentos: 38000, vendas: 42000, lucro: 11200 },
-    { month: "Abr", investimentos: 89000, vendas: 64000, lucro: 18900 },
-    { month: "Mai", investimentos: 54000, vendas: 72000, lucro: 22400 },
-    { month: "Jun", investimentos: 13995, vendas: 3450, lucro: 738 },
-    { month: "Jul", investimentos: 136100, vendas: 174900, lucro: 44900 },
-  ];
+  // Dynamic monthly financial trend data derived from real items & sales
+  const monthlyData = React.useMemo(() => {
+    const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+    const monthMap: Record<number, { investimentos: number; vendas: number; lucro: number }> = {};
+
+    months.forEach((_, index) => {
+      monthMap[index] = { investimentos: 0, vendas: 0, lucro: 0 };
+    });
+
+    items.forEach((item) => {
+      if (item.dateAdded) {
+        const d = new Date(item.dateAdded);
+        if (!isNaN(d.getTime())) {
+          const monthIdx = d.getMonth();
+          monthMap[monthIdx].investimentos += item.realTotalCost || 0;
+        }
+      }
+    });
+
+    sales.forEach((sale) => {
+      if (sale.saleDate) {
+        const d = new Date(sale.saleDate);
+        if (!isNaN(d.getTime())) {
+          const monthIdx = d.getMonth();
+          monthMap[monthIdx].vendas += sale.finalPrice || 0;
+          monthMap[monthIdx].lucro += sale.netProfit || 0;
+        }
+      }
+    });
+
+    const currentMonth = new Date().getMonth();
+    return months.slice(0, currentMonth + 1).map((month, index) => ({
+      month,
+      investimentos: Number(monthMap[index].investimentos.toFixed(2)),
+      vendas: Number(monthMap[index].vendas.toFixed(2)),
+      lucro: Number(monthMap[index].lucro.toFixed(2)),
+    }));
+  }, [items, sales]);
 
   // Distribution by Status
   const statusCounts = [
