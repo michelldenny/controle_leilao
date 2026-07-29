@@ -205,8 +205,11 @@ export const LotsView: React.FC = () => {
           const totalEstimatedSale = lotItems.reduce((sum, item) => sum + (item.estimatedMarketAvg || 0), 0);
           // Soma do custo real total dos itens cadastrados (ou custo do lote)
           const totalItemsCost = lotItems.reduce((sum, item) => sum + (item.realTotalCost || 0), 0);
+          const costBase = totalItemsCost > 0 ? totalItemsCost : lot.totalLotCost;
           // Lucro estimado (Venda estimada - Custo dos itens ou total do lote)
-          const estimatedProfit = totalEstimatedSale - (totalItemsCost > 0 ? totalItemsCost : lot.totalLotCost);
+          const estimatedProfit = totalEstimatedSale - costBase;
+          // Porcentagem da Margem de Lucro (% sobre o Custo)
+          const profitMarginPct = costBase > 0 ? (estimatedProfit / costBase) * 100 : 0;
 
           return (
             <div
@@ -251,26 +254,38 @@ export const LotsView: React.FC = () => {
                   Leilão: <strong className="text-slate-800 dark:text-slate-200">{auc?.name || "N/A"}</strong>
                 </div>
 
-                {/* Resumo de Valuation e Lucro Estimado do Lote */}
-                <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 grid grid-cols-2 gap-3 text-xs">
+                {/* Resumo de Valuation, Lucro Estimado e Margem de Lucro do Lote */}
+                <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 grid grid-cols-3 gap-2 text-xs">
                   <div>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">
-                      Venda Estimada Total ({lotItems.length} itens)
+                      Venda Estimada ({lotItems.length} itens)
                     </span>
-                    <strong className="text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">
+                    <strong className="text-emerald-600 dark:text-emerald-400 font-extrabold text-xs sm:text-sm">
                       {formatCurrency(totalEstimatedSale)}
                     </strong>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">
-                      Lucro Estimado do Lote
+                      Lucro Estimado
                     </span>
                     <strong
-                      className={`font-extrabold text-sm ${
+                      className={`font-extrabold text-xs sm:text-sm ${
                         estimatedProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"
                       }`}
                     >
                       {estimatedProfit >= 0 ? "+" : ""}{formatCurrency(estimatedProfit)}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">
+                      Margem Est.
+                    </span>
+                    <strong
+                      className={`font-extrabold text-xs sm:text-sm ${
+                        profitMarginPct >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"
+                      }`}
+                    >
+                      {profitMarginPct >= 0 ? "+" : ""}{profitMarginPct.toFixed(1)}%
                     </strong>
                   </div>
                 </div>
