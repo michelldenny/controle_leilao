@@ -150,7 +150,9 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                 >
                   <option value="disponivel">Disponível</option>
                   <option value="anunciado">Anunciado</option>
-                  <option value="vendido">Vendido</option>
+                  <option value="vendido" disabled={status !== "vendido"}>
+                    Vendido {status !== "vendido" ? "(Registrar pelo Módulo de Vendas)" : ""}
+                  </option>
                   <option value="em_manutencao">Em Manutenção</option>
                   <option value="aguardando_retirada">Aguardando Retirada</option>
                   <option value="em_transporte">Em Transporte</option>

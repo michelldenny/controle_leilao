@@ -1,5 +1,6 @@
 import React from "react";
 import { useAuction } from "../context/AuctionContext";
+import { getYearMonthKey } from "../lib/dateUtils";
 import {
   DollarSign,
   TrendingUp,
@@ -35,38 +36,45 @@ export const DashboardView: React.FC = () => {
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
 
-  // Dynamic monthly financial trend data derived from real items & sales
+  // Dynamic monthly financial trend data grouped by YYYY-MM (avoids mixing years and UTC shifts)
   const monthlyData = React.useMemo(() => {
-    const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-    const monthMap: Record<number, { investimentos: number; vendas: number; lucro: number }> = {};
+    const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+    const now = new Date();
+    const currentYear = now.getFullYear();
 
-    months.forEach((_, index) => {
-      monthMap[index] = { investimentos: 0, vendas: 0, lucro: 0 };
-    });
+    // Map para os meses do ano corrente
+    const monthMap: Record<number, { investimentos: number; vendas: number; lucro: number }> = {};
+    for (let i = 0; i < 12; i++) {
+      monthMap[i] = { investimentos: 0, vendas: 0, lucro: 0 };
+    }
 
     items.forEach((item) => {
-      if (item.dateAdded) {
-        const d = new Date(item.dateAdded);
-        if (!isNaN(d.getTime())) {
-          const monthIdx = d.getMonth();
+      const key = getYearMonthKey(item.dateAdded); // ex: "2026-08"
+      if (key) {
+        const [yearStr, monthStr] = key.split("-");
+        const year = parseInt(yearStr, 10);
+        const monthIdx = parseInt(monthStr, 10) - 1;
+        if (year === currentYear && monthIdx >= 0 && monthIdx < 12) {
           monthMap[monthIdx].investimentos += item.realTotalCost || 0;
         }
       }
     });
 
     sales.forEach((sale) => {
-      if (sale.saleDate) {
-        const d = new Date(sale.saleDate);
-        if (!isNaN(d.getTime())) {
-          const monthIdx = d.getMonth();
+      const key = getYearMonthKey(sale.saleDate);
+      if (key) {
+        const [yearStr, monthStr] = key.split("-");
+        const year = parseInt(yearStr, 10);
+        const monthIdx = parseInt(monthStr, 10) - 1;
+        if (year === currentYear && monthIdx >= 0 && monthIdx < 12) {
           monthMap[monthIdx].vendas += sale.finalPrice || 0;
           monthMap[monthIdx].lucro += sale.netProfit || 0;
         }
       }
     });
 
-    const currentMonth = new Date().getMonth();
-    return months.slice(0, currentMonth + 1).map((month, index) => ({
+    const currentMonthIdx = now.getMonth();
+    return monthNames.slice(0, currentMonthIdx + 1).map((month, index) => ({
       month,
       investimentos: Number(monthMap[index].investimentos.toFixed(2)),
       vendas: Number(monthMap[index].vendas.toFixed(2)),

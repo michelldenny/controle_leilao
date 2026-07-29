@@ -8,7 +8,6 @@ import {
   onSnapshot,
   getDocs,
   writeBatch,
-} from "firebase/firestore";
 import {
   Auction,
   Lot,
@@ -26,6 +25,7 @@ import {
   ItemCondition,
   OperationalState,
 } from "../types";
+import { getLocalDateISO } from "../lib/dateUtils";
 import { initialAlerts } from "../mockData";
 
 interface ToastMessage {
@@ -459,7 +459,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const code = `LEIL-2026-${nextSeq.toString().padStart(3, "0")}`;
     const id = "itm-" + nextSeq + "-" + Date.now().toString(36);
     const realTotalCost = (itemData.apportionedCost || 0) + (itemData.additionalCosts || 0);
-    const dateAdded = new Date().toISOString().split("T")[0];
+    const dateAdded = getLocalDateISO();
 
     const newItem: AuctionItem = {
       ...itemData,
@@ -636,7 +636,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!targetLot) return;
 
     const startSeq = items.length + 1;
-    const dateAdded = new Date().toISOString().split("T")[0];
+    const dateAdded = getLocalDateISO();
 
     let defaultPhoto = "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80";
     if (baseData.category === "Veículos") {
@@ -722,7 +722,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const count = Math.max(1, Number(quantity) || 1);
     const targetLot = lots.find((l) => l.id === lotId) || lots[0];
     const startSeq = items.length + 1;
-    const dateAdded = new Date().toISOString().split("T")[0];
+    const dateAdded = getLocalDateISO();
 
     const defaultPhoto = photoUrl || "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80";
 
@@ -873,6 +873,11 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const marginPercentage = netSaleValue > 0 ? (netProfit / netSaleValue) * 100 : 0;
 
     const newSale: SaleRecord = {
+      listedPrice: targetItem.listedPrice || targetItem.estimatedMarketAvg || saleData.finalPrice,
+      negotiatedPrice: saleData.finalPrice,
+      discount: (targetItem.listedPrice || 0) > saleData.finalPrice ? (targetItem.listedPrice || 0) - saleData.finalPrice : 0,
+      paymentMethod: "Pix",
+      paymentStatus: "pago",
       ...saleData,
       id,
       netSaleValue: Number(netSaleValue.toFixed(2)),
@@ -901,18 +906,24 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
   };
 
-  const registerSale = (itemId: string, saleData: Partial<SaleRecord>) => {
+  const registerSale = (itemId: string, saleData: any) => {
+    const targetItem = items.find((i) => i.id === itemId);
     recordSale({
       itemId,
-      saleDate: saleData.saleDate || new Date().toISOString().split("T")[0],
+      saleDate: saleData.saleDate || getLocalDateISO(),
       finalPrice: saleData.finalPrice || 0,
+      listedPrice: targetItem?.listedPrice || targetItem?.estimatedMarketAvg || saleData.finalPrice || 0,
+      negotiatedPrice: saleData.finalPrice || 0,
+      discount: 0,
       platform: saleData.platform || saleData.saleChannel || "Venda Direta",
       buyerName: saleData.buyerName || "Cliente",
-      buyerContact: saleData.buyerContact || saleData.buyerCpfCnpj || "",
+      buyerDoc: saleData.buyerCpfCnpj || saleData.buyerDoc || "",
       sellerFreight: saleData.sellerFreight || 0,
       platformCommission: saleData.platformCommission || 0,
       taxes: saleData.taxes || 0,
       otherExpenses: saleData.otherExpenses || 0,
+      paymentMethod: saleData.paymentMethod || "Pix",
+      paymentStatus: saleData.paymentStatus || "pago",
       notes: saleData.notes,
     });
   };
@@ -961,8 +972,11 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Global Financial Metrics Calculation
   const totalInvested = items.reduce((acc, curr) => acc + (curr.realTotalCost || 0), 0);
   const totalEstimatedMarket = items.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 0), 0);
-  const totalSoldAmount = sales.reduce((acc, curr) => acc + (curr.finalPrice || 0), 0);
-  const realizedProfit = sales.reduce((acc, curr) => acc + (curr.netProfit || 0), 0);
+  
+  // Apenas vendas efetivamente pagas contam como entradas de caixa e lucro realizado
+  const paidSales = sales.filter((s) => s.paymentStatus === "pago" || !s.paymentStatus);
+  const totalSoldAmount = paidSales.reduce((acc, curr) => acc + (curr.finalPrice || 0), 0);
+  const realizedProfit = paidSales.reduce((acc, curr) => acc + (curr.netProfit || 0), 0);
 
   const unsoldItems = items.filter((i) => !i.isSold && i.status !== "descartado");
   const capitalInInventoryCost = unsoldItems.reduce((acc, curr) => acc + (curr.realTotalCost || 0), 0);

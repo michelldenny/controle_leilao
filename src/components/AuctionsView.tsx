@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuction } from "../context/AuctionContext";
 import { Auction, AuctionStatus } from "../types";
+import { formatDateBR } from "../lib/dateUtils";
 import {
   Gavel,
   Plus,
@@ -258,7 +259,7 @@ export const AuctionsView: React.FC = () => {
                 <div className="space-y-1.5 pt-2 text-xs text-slate-600 dark:text-slate-300">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>Data: {new Date(auc.auctionDate).toLocaleDateString("pt-BR")}</span>
+                    <span>Data: {formatDateBR(auc.auctionDate)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -555,7 +556,7 @@ export const AuctionsView: React.FC = () => {
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 space-y-2">
                 <h4 className="font-bold text-slate-900 dark:text-white">Informações Principais</h4>
                 <p><strong>Tipo:</strong> {selectedAuction.auctionType}</p>
-                <p><strong>Data:</strong> {new Date(selectedAuction.auctionDate).toLocaleDateString("pt-BR")}</p>
+                <p><strong>Data:</strong> {formatDateBR(selectedAuction.auctionDate)}</p>
                 <p><strong>Comissão:</strong> {selectedAuction.commissionPercentage}%</p>
                 <p><strong>Processo:</strong> {selectedAuction.processNumber || "N/A"}</p>
                 <p><strong>Órgão:</strong> {selectedAuction.responsibleEntity || "N/A"}</p>
