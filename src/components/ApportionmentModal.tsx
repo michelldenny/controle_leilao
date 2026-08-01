@@ -227,13 +227,20 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
                     let previewApportioned = 0;
                     let previewPercent = 0;
 
-                    if (method === "igualitario") {
-                      previewApportioned = lot.totalLotCost / Math.max(lotItems.length, 1);
-                      previewPercent = 100 / Math.max(lotItems.length, 1);
+                    const isDiscarded = item.status === "descartado";
+                    const activeLotItems = lotItems.filter((i) => i.status !== "descartado");
+                    const activeCount = Math.max(activeLotItems.length, 1);
+
+                    if (isDiscarded) {
+                      previewApportioned = 0;
+                      previewPercent = 0;
+                    } else if (method === "igualitario") {
+                      previewApportioned = lot.totalLotCost / activeCount;
+                      previewPercent = 100 / activeCount;
                     } else if (method === "valor_estimado") {
-                      const sumEst = lotItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 1), 0);
+                      const sumEst = activeLotItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 1), 0);
                       const itemEst = item.estimatedMarketAvg || 1;
-                      previewPercent = sumEst > 0 ? (itemEst / sumEst) * 100 : 100 / lotItems.length;
+                      previewPercent = sumEst > 0 ? (itemEst / sumEst) * 100 : 100 / activeCount;
                       previewApportioned = (lot.totalLotCost * previewPercent) / 100;
                     } else if (method === "percentual") {
                       previewPercent = customValues[item.id] || 0;
@@ -249,9 +256,16 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
                     const margin = salePrice > 0 ? (profit / salePrice) * 100 : 0;
 
                     return (
-                      <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                      <tr key={item.id} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 ${isDiscarded ? "opacity-60 bg-slate-100/50 dark:bg-slate-900/40" : ""}`}>
                         <td className="p-3 text-left font-semibold text-slate-900 dark:text-white">
-                          <div>{item.name}</div>
+                          <div className="flex items-center gap-1.5">
+                            <span>{item.name}</span>
+                            {isDiscarded && (
+                              <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-rose-500/10 text-rose-600 border border-rose-500/20 whitespace-nowrap">
+                                Descartado (R$ 0,00)
+                              </span>
+                            )}
+                          </div>
                           <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono">
                             {item.code}
                           </span>

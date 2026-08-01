@@ -315,7 +315,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const newCode = `lote-${lotNum}-${year}-${seqInLot.toString().padStart(2, "0")}`;
 
         if (item.code !== newCode) {
-          updateDoc(doc(db, "items", item.id), { code: newCode }).catch(console.error);
+          setDoc(doc(db, "items", item.id), { code: newCode }, { merge: true }).catch(console.error);
         }
       }
     });
@@ -624,14 +624,20 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (lotItems.length === 0) return;
 
     const totalLotCost = targetLot.totalLotCost || 0;
+    // Filtrar apenas itens que NÃO estão descartados para absorver o custo
+    const activeLotItems = lotItems.filter((i) => i.status !== "descartado");
+    const activeCount = Math.max(activeLotItems.length, 1);
 
     lotItems.forEach((item) => {
       let apportioned = 0;
       let assignedPercent = 0;
 
-      if (method === "igualitario") {
-        assignedPercent = 100 / lotItems.length;
-        apportioned = totalLotCost / lotItems.length;
+      if (item.status === "descartado") {
+        apportioned = 0;
+        assignedPercent = 0;
+      } else if (method === "igualitario") {
+        assignedPercent = 100 / activeCount;
+        apportioned = totalLotCost / activeCount;
       } else if (method === "manual" && customValues) {
         const found = customValues.find((cv) => cv.itemId === item.id);
         apportioned = found ? found.value : 0;
@@ -641,26 +647,26 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         assignedPercent = found ? found.value : 0;
         apportioned = (totalLotCost * assignedPercent) / 100;
       } else if (method === "valor_estimado") {
-        const sumEstimated = lotItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 1), 0);
+        const sumEstimated = activeLotItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 1), 0);
         const itemEst = item.estimatedMarketAvg || 1;
-        assignedPercent = sumEstimated > 0 ? (itemEst / sumEstimated) * 100 : 100 / lotItems.length;
+        assignedPercent = sumEstimated > 0 ? (itemEst / sumEstimated) * 100 : 100 / activeCount;
         apportioned = (totalLotCost * assignedPercent) / 100;
       }
 
       const realTotalCost = apportioned + (item.additionalCosts || 0);
 
-      const updated = {
+      const updatedItem = {
         ...item,
         apportionedCost: Number(apportioned.toFixed(2)),
         assignedPercent: Number(assignedPercent.toFixed(2)),
         realTotalCost: Number(realTotalCost.toFixed(2)),
       };
 
-      setDoc(doc(db, "items", item.id), updated).catch(console.error);
+      setDoc(doc(db, "items", item.id), updatedItem).catch(console.error);
     });
 
-    addToast("Rateio Concluído", `Custo de R$ ${totalLotCost.toFixed(2)} rateado entre ${lotItems.length} itens (${method}).`);
-    addLog("Rateio de Custo", `Rateio (${method}) aplicado no lote ${targetLot.lotNumber}.`, "expense");
+    addToast("Rateio Concluído", `Custo de R$ ${totalLotCost.toFixed(2)} rateado entre ${activeLotItems.length} item(ns) ativos do lote.`);
+    addLog("Rateio de Custo", `Rateio (${method}) aplicado no lote ${targetLot.lotNumber} (excluindo descartados).`, "expense");
   };
 
   // Bulk Item Generator (Cadastro em Massa)
@@ -1086,11 +1092,19 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const totalSoldAmount = paidSales.reduce((acc, curr) => acc + (curr.finalPrice || 0), 0);
   const realizedProfit = paidSales.reduce((acc, curr) => acc + (curr.netProfit || 0), 0);
 
-  const unsoldItems = items.filter((i) => !i.isSold && i.status !== "descartado");
+  // Itens em estoque à venda (exclui os vendidos, descartados e os retidos para uso próprio)
+  const unsoldItems = items.filter((i) => !i.isSold && i.status !== "descartado" && i.status !== "uso_proprio");
   const capitalInInventoryCost = unsoldItems.reduce((acc, curr) => acc + (curr.realTotalCost || 0), 0);
   const capitalInInventoryEstimated = unsoldItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 0), 0);
   const potentialProfit = Math.max(0, capitalInInventoryEstimated - capitalInInventoryCost);
   const potentialStockProfit = potentialProfit;
+
+  // Itens retidos para uso próprio / patrimônio interno
+  const ownUseItems = items.filter((i) => i.status === "uso_proprio");
+  const ownUseItemsCount = ownUseItems.length;
+  const ownUseCostTotal = ownUseItems.reduce((acc, curr) => acc + (curr.realTotalCost || 0), 0);
+  const ownUseEstimatedTotal = ownUseItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 0), 0);
+  const ownUseSavingsTotal = Math.max(0, ownUseEstimatedTotal - ownUseCostTotal);
 
   const metrics = {
     totalInvested,
@@ -1107,6 +1121,10 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     unassessedCount: items.filter((i) => !i.estimatedMarketAvg || i.estimatedMarketAvg === 0).length,
     reservedCount: items.filter((i) => i.status === "reservado").length,
     discardedCount: items.filter((i) => i.status === "descartado").length,
+    ownUseItemsCount,
+    ownUseCostTotal,
+    ownUseEstimatedTotal,
+    ownUseSavingsTotal,
     capitalInInventoryCost,
     capitalInInventoryEstimated,
     potentialStockProfit,

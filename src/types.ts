@@ -17,6 +17,7 @@ export type ItemStatus =
   | "disponivel"
   | "anunciado"
   | "reservado"
+  | "uso_proprio"
   | "vendido"
   | "descartado";
 

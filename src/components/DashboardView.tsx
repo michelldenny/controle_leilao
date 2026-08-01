@@ -7,6 +7,7 @@ import {
   ShoppingBag,
   Package,
   BookmarkCheck,
+  Home,
   Wrench,
   Megaphone,
   Trash2,
@@ -308,20 +309,20 @@ export const DashboardView: React.FC = () => {
           </div>
         </button>
 
-        {/* Reserved Items */}
+        {/* Own Use / Patrimony */}
         <button
           onClick={() => setActiveTab("inventory")}
-          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-indigo-500/50 transition-all text-left group cursor-pointer"
+          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-teal-500/50 transition-all text-left group cursor-pointer"
         >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-            <span>Itens Reservados</span>
-            <BookmarkCheck className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
+            <span>Uso Próprio (Patrimônio)</span>
+            <Home className="w-4 h-4 text-teal-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
-            {metrics.reservedCount}
+            {metrics.ownUseItemsCount}
           </div>
-          <div className="mt-1 text-[11px] text-indigo-600 dark:text-indigo-400 font-medium">
-            Reservados para venda/cliente
+          <div className="mt-1 text-[11px] text-teal-600 dark:text-teal-400 font-medium">
+            Economia: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(metrics.ownUseSavingsTotal)}
           </div>
         </button>
       </div>

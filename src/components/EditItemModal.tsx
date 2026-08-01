@@ -214,6 +214,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                   <option value="em_transporte">Em Transporte</option>
                   <option value="armazenado">Armazenado</option>
                   <option value="reservado">Reservado</option>
+                  <option value="uso_proprio">Uso Próprio (Patrimônio)</option>
                   <option value="descartado">Descartado</option>
                 </select>
               </div>

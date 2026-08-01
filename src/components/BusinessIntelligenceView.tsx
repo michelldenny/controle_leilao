@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuction } from "../context/AuctionContext";
-import { TrendingUp, BarChart3, PieChart as PieChartIcon, Clock, Award, ShieldAlert, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { TrendingUp, BarChart3, PieChart as PieChartIcon, Clock, Award, ShieldAlert, ArrowUpDown, ArrowUp, ArrowDown, Home } from "lucide-react";
 
 type SortField = "category" | "count" | "cost" | "est" | "margin";
 type SortDirection = "asc" | "desc";
@@ -107,35 +107,52 @@ export const BusinessIntelligenceView: React.FC = () => {
         </div>
       </div>
 
-      {/* Capital Immobilized Box */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Capital & Patrimony Boxes */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 space-y-3">
           <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-xs uppercase tracking-wider">
             <ShieldAlert className="w-4 h-4" />
-            <span>Capital Imobilizado em Estoque</span>
+            <span>Capital Imobilizado à Venda</span>
           </div>
           <div className="text-3xl font-extrabold text-slate-900 dark:text-white">
             {formatCurrency(metrics.capitalInInventoryCost)}
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-            Representa o total investido em bens arrematados que ainda estão no estoque aguardando comercialização.
+            Investimento em bens no estoque aguardando comercialização.
           </p>
           <div className="pt-2 border-t border-amber-500/20 text-xs flex justify-between font-bold">
-            <span className="text-slate-500">Valuation de Venda do Estoque:</span>
+            <span className="text-slate-500">Valuation de Venda:</span>
             <span className="text-emerald-600">{formatCurrency(metrics.capitalInInventoryEstimated)}</span>
+          </div>
+        </div>
+
+        <div className="p-6 rounded-3xl bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent border border-teal-500/20 space-y-3">
+          <div className="flex items-center gap-2 text-teal-600 dark:text-teal-400 font-bold text-xs uppercase tracking-wider">
+            <Home className="w-4 h-4" />
+            <span>Patrimônio Retido (Uso Próprio)</span>
+          </div>
+          <div className="text-3xl font-extrabold text-slate-900 dark:text-white">
+            {formatCurrency(metrics.ownUseEstimatedTotal)}
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            Valor estimado dos {metrics.ownUseItemsCount} bens retidos para uso próprio.
+          </p>
+          <div className="pt-2 border-t border-teal-500/20 text-xs flex justify-between font-bold">
+            <span className="text-slate-500">Economia Gerada (vs Mercado):</span>
+            <span className="text-teal-600">{formatCurrency(metrics.ownUseSavingsTotal)}</span>
           </div>
         </div>
 
         <div className="p-6 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-3">
           <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-xs uppercase tracking-wider">
             <Clock className="w-4 h-4" />
-            <span>Tempo Médio de Giro do Estoque</span>
+            <span>Giro Médio do Estoque</span>
           </div>
           <div className="text-3xl font-extrabold text-slate-900 dark:text-white">
             {turnoverStats.avgDays} Dias
           </div>
           <p className="text-xs text-slate-500 leading-relaxed">
-            Média de dias entre a arrematação/entrada do bem no sistema até a venda final concluída.
+            Tempo médio da arrematação até a venda concluída.
           </p>
           <div className="pt-2 border-t border-slate-100 dark:border-slate-700 text-xs flex justify-between font-bold">
             <span className="text-slate-500">Giro Rápido (&lt; 15 dias):</span>

@@ -185,6 +185,16 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
         return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
       case "aguardando_retirada":
         return "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20";
+      case "em_transporte":
+        return "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20";
+      case "armazenado":
+        return "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20";
+      case "reservado":
+        return "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20";
+      case "uso_proprio":
+        return "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20";
+      case "descartado":
+        return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20";
       default:
         return "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20";
     }
@@ -299,7 +309,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
               <option value="vendido">Vendido</option>
               <option value="em_manutencao">Em Manutenção</option>
               <option value="aguardando_retirada">Aguardando Retirada</option>
+              <option value="em_transporte">Em Transporte</option>
               <option value="armazenado">Armazenado</option>
+              <option value="reservado">Reservado</option>
+              <option value="uso_proprio">Uso Próprio (Patrimônio)</option>
+              <option value="descartado">Descartado</option>
             </select>
           </div>
 
