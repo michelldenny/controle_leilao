@@ -192,7 +192,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
       case "reservado":
         return "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20";
       case "uso_proprio":
-        return "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20";
+        return "bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400 border-fuchsia-500/20";
       case "descartado":
         return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20";
       default:
@@ -236,7 +236,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
             className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md shadow-amber-500/20 transition-all shrink-0"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Novo Item</span>
+            <span>Novo Item</span>
           </button>
         </div>
       </div>
@@ -532,8 +532,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
           </div>
         </div>
       ) : (
-        /* GRID CARDS VIEW - 4 cards por linha */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+        /* GRID CARDS VIEW - 5 cards por linha em telas grandes */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
           {filteredItems.map((item) => (
             <div
               key={item.id}

@@ -160,13 +160,15 @@ export const ItemWizardModal: React.FC = () => {
       primaryPhoto: photoUrl,
       apportionedCost: 0,
       additionalCosts: 0,
+      newProductMarketValue: Number(newProductMarketValue),
+      discountPercentage: Number(discountPercentage),
       estimatedMarketMin: Number(estimatedValue) * 0.85,
       estimatedMarketMax: Number(estimatedValue) * 1.15,
       estimatedMarketAvg: Number(estimatedValue),
-      listedPrice: Number(estimatedValue) * 0.95,
+      listedPrice: Number(estimatedValue),
       status: "disponivel",
       location: {
-        customText: "Depósito Central",
+        customText: "apê Michell",
       },
       documents: [],
     });

@@ -82,7 +82,9 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
       setCondition(item.condition || "usado");
       setOperationalState(item.operationalState || "funcionando");
       setStatus(item.status || "disponivel");
-      setLocationText(item.location?.customText || "");
+      const validLocations = ["apê Michell", "apê William", "apê Paulão"];
+      const savedLocation = item.location?.customText || "";
+      setLocationText(validLocations.includes(savedLocation) ? savedLocation : validLocations[0]);
       setPrimaryPhoto(item.primaryPhoto || "");
       setApportionedCost(item.apportionedCost || 0);
       setAdditionalCosts(item.additionalCosts || 0);
@@ -92,10 +94,11 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
       setEstimatedMarketMin(item.estimatedMarketMin || Number((estAvg * 0.85).toFixed(2)));
       setEstimatedMarketMax(item.estimatedMarketMax || Number((estAvg * 1.15).toFixed(2)));
       
-      // Estimar o valor do produto novo inicial como estAvg / 0.7 (considerando 30% desc padrão)
-      const initialNewVal = estAvg > 0 ? Number((estAvg / 0.7).toFixed(2)) : 0;
-      setNewProductMarketValue(initialNewVal);
-      setDiscountPercentage(30);
+      const newVal = item.newProductMarketValue || (estAvg > 0 ? Number((estAvg / 0.7).toFixed(2)) : 0);
+      const discPct = item.discountPercentage || (newVal > 0 && estAvg > 0 ? Number((((newVal - estAvg) / newVal) * 100).toFixed(1)) : 30);
+      
+      setNewProductMarketValue(newVal);
+      setDiscountPercentage(discPct);
 
       setListedPrice(item.listedPrice || estAvg);
       setDescription(item.description || "");
@@ -123,6 +126,8 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
       apportionedCost: Number(apportionedCost),
       additionalCosts: Number(additionalCosts),
       realTotalCost: Number(apportionedCost) + Number(additionalCosts),
+      newProductMarketValue: Number(newProductMarketValue),
+      discountPercentage: Number(discountPercentage),
       estimatedMarketMin: Number(estimatedMarketMin),
       estimatedMarketAvg: Number(estimatedMarketAvg),
       estimatedMarketMax: Number(estimatedMarketMax),
@@ -284,8 +289,8 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
               <span>Precificação e Valuation (Idêntico ao Cadastro Guiado)</span>
             </h4>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs items-end">
+              <div className="flex flex-col">
                 <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1 text-[11px]">
                   1. Valor Mercado (Produto Novo) (R$)
                 </label>
@@ -299,7 +304,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                 />
               </div>
 
-              <div>
+              <div className="flex flex-col">
                 <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1 text-[11px]">
                   2. Desconto Comercial (%)
                 </label>
@@ -318,7 +323,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                 </div>
               </div>
 
-              <div>
+              <div className="flex flex-col">
                 <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1 text-[11px]">
                   3. Valor de Venda (Estimado) (R$)
                 </label>

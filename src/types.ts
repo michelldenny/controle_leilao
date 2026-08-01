@@ -137,8 +137,10 @@ export interface AuctionItem {
   apportionedCost: number; // cost assigned from lot
   additionalCosts: number; // expenses accumulated
   realTotalCost: number; // apportionedCost + additionalCosts
+  newProductMarketValue?: number; // Valor de Mercado (Produto Novo)
+  discountPercentage?: number; // Desconto Comercial (%)
   estimatedMarketMin: number;
-  estimatedMarketAvg: number;
+  estimatedMarketAvg: number; // Valor de Venda Estimado (R$)
   estimatedMarketMax: number;
   evaluationSource?: string;
   evaluationDate?: string;

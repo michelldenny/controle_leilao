@@ -64,16 +64,6 @@ export const Header: React.FC = () => {
           <span>Firestore Ativo</span>
         </div>
 
-        {/* Zerar Dados Button */}
-        <button
-          onClick={() => setShowConfirmReset(true)}
-          title="Apagar todos os dados do banco real"
-          className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 border border-red-200 dark:border-red-900/40 transition-all"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          <span>Zerar Banco</span>
-        </button>
-
         {/* IA Assistant Button */}
         <button
           onClick={() => openAiModal()}
@@ -82,82 +72,6 @@ export const Header: React.FC = () => {
           <Sparkles className="w-4 h-4 text-amber-200 animate-pulse" />
           <span>IA Leilões</span>
         </button>
-
-        {/* Quick Action Button */}
-        <div className="relative">
-          <button
-            onClick={() => setShowQuickMenu(!showQuickMenu)}
-            className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white transition-all shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden md:inline">Ações Rápidas</span>
-          </button>
-
-          {showQuickMenu && (
-            <div className="absolute right-0 mt-2 w-56 py-2 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 text-xs">
-              <button
-                onClick={() => {
-                  setShowQuickMenu(false);
-                  setIsWizardOpen(true);
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 font-medium"
-              >
-                <Zap className="w-4 h-4 text-amber-500" />
-                <span>+ Fluxo Completo Arrematação</span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowQuickMenu(false);
-                  setIsBulkModalOpen(true);
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 font-medium"
-              >
-                <PackagePlus className="w-4 h-4 text-blue-500" />
-                <span>+ Cadastro de Itens em Massa</span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowQuickMenu(false);
-                  setActiveTab("auctions");
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 font-medium"
-              >
-                <Gavel className="w-4 h-4 text-purple-500" />
-                <span>+ Novo Leilão</span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowQuickMenu(false);
-                  setActiveTab("lots");
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 font-medium"
-              >
-                <Boxes className="w-4 h-4 text-emerald-500" />
-                <span>+ Novo Lote</span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowQuickMenu(false);
-                  setActiveTab("sales");
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 font-medium border-t border-slate-100 dark:border-slate-700"
-              >
-                <ShoppingBag className="w-4 h-4 text-emerald-600" />
-                <span>+ Registrar Venda</span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowQuickMenu(false);
-                  setShowConfirmReset(true);
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 font-medium border-t border-slate-100 dark:border-slate-700"
-              >
-                <Trash2 className="w-4 h-4 text-red-500" />
-                <span>Zerar Todos os Dados</span>
-              </button>
-            </div>
-          )}
-        </div>
 
         {/* Notification Bell */}
         <div className="relative">

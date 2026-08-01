@@ -392,7 +392,6 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const openItemDetail = (itemId: string) => {
     setSelectedItemId(itemId);
-    setActiveTab("item-detail");
   };
 
   const openApportionmentModal = (lot: Lot) => {
@@ -724,7 +723,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         condition: baseData.condition,
         operationalState: baseData.operationalState,
         location: {
-          customText: baseData.locationText || "Depósito Central",
+          customText: baseData.locationText || "apê Michell",
         },
         photos: [defaultPhoto],
         primaryPhoto: defaultPhoto,
@@ -804,7 +803,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         condition,
         operationalState: "funcionando",
         location: {
-          customText: "Depósito Central",
+          customText: "apê Michell",
         },
         photos: [defaultPhoto],
         primaryPhoto: defaultPhoto,

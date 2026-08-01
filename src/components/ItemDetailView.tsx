@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Gavel,
   Edit,
+  X,
 } from "lucide-react";
 
 interface ItemDetailViewProps {
@@ -49,7 +50,6 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
 
   const handleBackToInventory = () => {
     setSelectedItemId(null);
-    setGlobalActiveTab("inventory");
     if (onBack) onBack();
   };
 
@@ -65,8 +65,8 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
     return (
       <div className="p-8 text-center space-y-4">
         <p className="text-slate-500">Item não encontrado ou foi removido.</p>
-        <button onClick={handleBackToInventory} className="px-4 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs">
-          Voltar ao Inventário
+        <button onClick={() => setSelectedItemId(null)} className="px-4 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs">
+          Fechar
         </button>
       </div>
     );
@@ -159,16 +159,8 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Back Button & Top Action Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <button
-          onClick={handleBackToInventory}
-          className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-amber-500 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Voltar ao Inventário</span>
-        </button>
-
+      {/* Top Action Controls */}
+      <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-100 dark:border-slate-800">
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setIsEditModalOpen(true)}
@@ -202,6 +194,17 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
             <span>Gerar Anúncio com IA</span>
           </button>
         </div>
+
+        <button
+          onClick={() => {
+            setSelectedItemId(null);
+            if (onBack) onBack();
+          }}
+          className="p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+          title="Fechar Janela"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Item Master Summary Card */}
@@ -229,7 +232,11 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
               <option value="vendido">Status: Vendido</option>
               <option value="em_manutencao">Status: Em Manutenção</option>
               <option value="aguardando_retirada">Status: Aguardando Retirada</option>
+              <option value="em_transporte">Status: Em Transporte</option>
               <option value="armazenado">Status: Armazenado</option>
+              <option value="reservado">Status: Reservado</option>
+              <option value="uso_proprio">Status: Uso Próprio (Patrimônio)</option>
+              <option value="descartado">Status: Descartado</option>
             </select>
           </div>
 
@@ -241,7 +248,6 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
             {item.brand && <span><strong>Marca:</strong> {item.brand}</span>}
             {item.model && <span><strong>Modelo:</strong> {item.model}</span>}
             <span><strong>Condição:</strong> {item.condition}</span>
-            <span><strong>Estado Op.:</strong> {item.operationalState}</span>
           </div>
 
           <div className="flex items-center gap-2 text-xs text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-700">
@@ -251,33 +257,41 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
-            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/40">
-              <span className="text-[10px] text-slate-400 block">Custo Total Real</span>
-              <strong className="text-sm text-slate-900 dark:text-white">{formatCurrency(item.realTotalCost)}</strong>
-            </div>
+          {(() => {
+            const marketNewVal = item.newProductMarketValue || (item.estimatedMarketAvg > 0 ? Number((item.estimatedMarketAvg / 0.7).toFixed(2)) : 0);
+            const estSaleVal = item.estimatedMarketAvg || 0;
+            const discPct = item.discountPercentage || (marketNewVal > estSaleVal && marketNewVal > 0 ? Math.round(((marketNewVal - estSaleVal) / marketNewVal) * 100) : 30);
 
-            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/40">
-              <span className="text-[10px] text-slate-400 block">Valuation de Mercado</span>
-              <strong className="text-sm text-emerald-600 dark:text-emerald-400">
-                {formatCurrency(item.estimatedMarketAvg)}
-              </strong>
-            </div>
+            return (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-700/40 flex flex-col justify-between h-full min-h-[72px]">
+                  <span className="text-[10px] text-slate-400 font-semibold leading-tight block mb-1">Custo Total Real</span>
+                  <strong className="text-sm text-slate-900 dark:text-white leading-none">{formatCurrency(item.realTotalCost)}</strong>
+                </div>
 
-            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/40">
-              <span className="text-[10px] text-slate-400 block">Preço Anunciado</span>
-              <strong className="text-sm text-blue-600 dark:text-blue-400">
-                {formatCurrency(item.listedPrice || 0)}
-              </strong>
-            </div>
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-700/40 flex flex-col justify-between h-full min-h-[72px]">
+                  <span className="text-[10px] text-slate-400 font-semibold leading-tight block mb-1">Valor de Mercado (Produto Novo)</span>
+                  <strong className="text-sm text-slate-900 dark:text-white leading-none">
+                    {formatCurrency(marketNewVal)}
+                  </strong>
+                </div>
 
-            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/40">
-              <span className="text-[10px] text-slate-400 block">Lucro Estimado</span>
-              <strong className="text-sm text-amber-600 dark:text-amber-400">
-                {formatCurrency(item.estimatedMarketAvg - item.realTotalCost)}
-              </strong>
-            </div>
-          </div>
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-700/40 flex flex-col justify-between h-full min-h-[72px]">
+                  <span className="text-[10px] text-slate-400 font-semibold leading-tight block mb-1">Valor de Venda Estimado</span>
+                  <strong className="text-sm text-emerald-600 dark:text-emerald-400 leading-none">
+                    {formatCurrency(estSaleVal)}
+                  </strong>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-700/40 flex flex-col justify-between h-full min-h-[72px]">
+                  <span className="text-[10px] text-slate-400 font-semibold leading-tight block mb-1">Desconto Aplicado</span>
+                  <strong className="text-sm text-amber-600 dark:text-amber-400 leading-none">
+                    {discPct}% OFF
+                  </strong>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -361,8 +375,10 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-xs">
           <div className="lg:col-span-2 space-y-6">
             <div className="p-5 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 space-y-3">
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Descrição Detalhada</h3>
-              <p className="text-slate-600 dark:text-slate-300 leading-relaxed">{item.description}</p>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Descrição Detalhada & Observações</h3>
+              <p className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                {item.description || "Nenhuma observação ou descrição cadastrada."}
+              </p>
             </div>
 
             <div className="p-5 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 space-y-3">
@@ -385,10 +401,19 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
                 <MapPin className="w-4 h-4 text-amber-500" />
                 <span>Rastreio de Localização Física</span>
               </h3>
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/40 space-y-1">
-                <span className="font-semibold text-slate-900 dark:text-white block">{item.location?.customText || "Depósito Central"}</span>
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-700/40 space-y-1">
+                <span className="font-bold text-slate-900 dark:text-white block text-sm">
+                  {(() => {
+                    const loc = item.location;
+                    if (!loc) return "Não informada";
+                    if (typeof loc === "string") return loc;
+                    if (loc.customText && loc.customText.trim() !== "") return loc.customText;
+                    if (loc.warehouse && loc.warehouse.trim() !== "") return loc.warehouse;
+                    return "Não informada";
+                  })()}
+                </span>
                 <p className="text-slate-400 text-[11px]">
-                  Armazém: {item.location?.warehouse || "Sede Principal"}
+                  Localização cadastrada para controle interno do inventário.
                 </p>
               </div>
             </div>
