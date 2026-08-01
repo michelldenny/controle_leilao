@@ -1,9 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuction } from "../context/AuctionContext";
-import { TrendingUp, BarChart3, PieChart as PieChartIcon, Clock, Award, ShieldAlert } from "lucide-react";
+import { TrendingUp, BarChart3, PieChart as PieChartIcon, Clock, Award, ShieldAlert, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+
+type SortField = "category" | "count" | "cost" | "est" | "margin";
+type SortDirection = "asc" | "desc";
 
 export const BusinessIntelligenceView: React.FC = () => {
   const { metrics, items, sales, auctions } = useAuction();
+
+  const [sortField, setSortField] = useState<SortField>("category");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
@@ -38,15 +53,44 @@ export const BusinessIntelligenceView: React.FC = () => {
   }, [items, sales]);
 
   // Group profit by category
-  const categoryStats: { [cat: string]: { cost: number; est: number; count: number } } = {};
-  items.forEach((it) => {
-    if (!categoryStats[it.category]) {
-      categoryStats[it.category] = { cost: 0, est: 0, count: 0 };
-    }
-    categoryStats[it.category].cost += it.realTotalCost;
-    categoryStats[it.category].est += it.estimatedMarketAvg;
-    categoryStats[it.category].count += 1;
-  });
+  const sortedCategories = React.useMemo(() => {
+    const categoryStats: { [cat: string]: { cat: string; cost: number; est: number; count: number; margin: number } } = {};
+    items.forEach((it) => {
+      if (!categoryStats[it.category]) {
+        categoryStats[it.category] = { cat: it.category, cost: 0, est: 0, count: 0, margin: 0 };
+      }
+      categoryStats[it.category].cost += it.realTotalCost;
+      categoryStats[it.category].est += it.estimatedMarketAvg;
+      categoryStats[it.category].count += 1;
+    });
+
+    const list = Object.values(categoryStats).map((st) => {
+      const profitEst = st.est - st.cost;
+      const margin = st.cost > 0 ? (profitEst / st.cost) * 100 : 0;
+      return { ...st, margin };
+    });
+
+    list.sort((a, b) => {
+      let aVal: any = a[sortField];
+      let bVal: any = b[sortField];
+
+      if (typeof aVal === "string") {
+        return sortDirection === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
+    });
+
+    return list;
+  }, [items, sortField, sortDirection]);
+
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity" />;
+    return sortDirection === "asc" ? (
+      <ArrowUp className="w-3 h-3 text-amber-500" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-amber-500" />
+    );
+  };
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -108,26 +152,62 @@ export const BusinessIntelligenceView: React.FC = () => {
           <table className="w-full text-left">
             <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-semibold border-b border-slate-200 dark:border-slate-700">
               <tr>
-                <th className="p-3">Categoria</th>
-                <th className="p-3 text-center">Itens Em Carteira</th>
-                <th className="p-3 text-right">Custo Total (R$)</th>
-                <th className="p-3 text-right">Valuation Estimado (R$)</th>
-                <th className="p-3 text-right">Margem Bruta Estimada %</th>
+                <th className="p-3">
+                  <button
+                    onClick={() => handleSort("category")}
+                    className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white font-bold transition-colors group cursor-pointer"
+                  >
+                    <span>Categoria</span>
+                    {renderSortIcon("category")}
+                  </button>
+                </th>
+                <th className="p-3">
+                  <button
+                    onClick={() => handleSort("count")}
+                    className="flex items-center justify-center gap-1.5 hover:text-slate-900 dark:hover:text-white font-bold transition-colors group cursor-pointer w-full"
+                  >
+                    <span>Itens Em Carteira</span>
+                    {renderSortIcon("count")}
+                  </button>
+                </th>
+                <th className="p-3">
+                  <button
+                    onClick={() => handleSort("cost")}
+                    className="flex items-center justify-end gap-1.5 hover:text-slate-900 dark:hover:text-white font-bold transition-colors group cursor-pointer w-full"
+                  >
+                    <span>Custo Total (R$)</span>
+                    {renderSortIcon("cost")}
+                  </button>
+                </th>
+                <th className="p-3">
+                  <button
+                    onClick={() => handleSort("est")}
+                    className="flex items-center justify-end gap-1.5 hover:text-slate-900 dark:hover:text-white font-bold transition-colors group cursor-pointer w-full"
+                  >
+                    <span>Valuation Estimado (R$)</span>
+                    {renderSortIcon("est")}
+                  </button>
+                </th>
+                <th className="p-3">
+                  <button
+                    onClick={() => handleSort("margin")}
+                    className="flex items-center justify-end gap-1.5 hover:text-slate-900 dark:hover:text-white font-bold transition-colors group cursor-pointer w-full"
+                  >
+                    <span>Margem Bruta Estimada %</span>
+                    {renderSortIcon("margin")}
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {Object.keys(categoryStats).map((cat) => {
-                const stat = categoryStats[cat];
-                const profitEst = stat.est - stat.cost;
-                const marginPct = stat.cost > 0 ? (profitEst / stat.cost) * 100 : 0;
-
+              {sortedCategories.map((stat) => {
                 return (
-                  <tr key={cat} className="hover:bg-slate-50 dark:hover:bg-slate-700/40">
-                    <td className="p-3 font-bold text-slate-900 dark:text-white">{cat}</td>
+                  <tr key={stat.cat} className="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                    <td className="p-3 font-bold text-slate-900 dark:text-white">{stat.cat}</td>
                     <td className="p-3 text-center font-medium text-slate-600">{stat.count}</td>
                     <td className="p-3 text-right font-semibold text-slate-900 dark:text-white">{formatCurrency(stat.cost)}</td>
                     <td className="p-3 text-right font-bold text-emerald-600">{formatCurrency(stat.est)}</td>
-                    <td className="p-3 text-right font-extrabold text-amber-600 dark:text-amber-400">{marginPct.toFixed(1)}%</td>
+                    <td className="p-3 text-right font-extrabold text-amber-600 dark:text-amber-400">{stat.margin.toFixed(1)}%</td>
                   </tr>
                 );
               })}

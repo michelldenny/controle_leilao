@@ -636,7 +636,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Bulk Item Generator (Cadastro em Massa)
-  const bulkCreateItems = (
+  const createBulkItems = (
     lotId: string,
     count: number,
     baseData: {
@@ -647,7 +647,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       model?: string;
       condition: ItemCondition;
       operationalState: OperationalState;
-      locationText: string;
+      locationText?: string;
       estimatedMarketAvg?: number;
     }
   ) => {
@@ -656,6 +656,9 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const startSeq = items.length + 1;
     const dateAdded = getLocalDateISO();
+    const lotNum = targetLot.lotNumber || "0";
+    const year = new Date().getFullYear();
+    const existingCountInLot = items.filter((i) => i.lotId === lotId).length;
 
     let defaultPhoto = "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80";
     if (baseData.category === "Veículos") {
@@ -668,7 +671,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     for (let i = 0; i < count; i++) {
       const seq = startSeq + i;
-      const code = `LEIL-2026-${seq.toString().padStart(3, "0")}`;
+      const seqInLot = existingCountInLot + i + 1;
+      const code = `lote-${lotNum}-${year}-${seqInLot.toString().padStart(2, "0")}`;
       const id = "itm-" + seq + "-" + Date.now().toString(36) + "-" + i;
 
       const item: AuctionItem = {
@@ -742,12 +746,16 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const targetLot = lots.find((l) => l.id === lotId) || lots[0];
     const startSeq = items.length + 1;
     const dateAdded = getLocalDateISO();
+    const lotNum = targetLot ? targetLot.lotNumber : "0";
+    const year = new Date().getFullYear();
+    const existingCountInLot = items.filter((i) => i.lotId === (targetLot ? targetLot.id : lotId)).length;
 
     const defaultPhoto = photoUrl || "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80";
 
     for (let i = 0; i < count; i++) {
       const seq = startSeq + i;
-      const code = `LEIL-2026-${seq.toString().padStart(3, "0")}`;
+      const seqInLot = existingCountInLot + i + 1;
+      const code = `lote-${lotNum}-${year}-${seqInLot.toString().padStart(2, "0")}`;
       const id = "itm-" + seq + "-" + Date.now().toString(36) + "-" + i;
 
       const item: AuctionItem = {
@@ -1069,6 +1077,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     inMaintenanceCount: items.filter((i) => i.status === "em_manutencao").length,
     advertisedCount: items.filter((i) => i.status === "anunciado").length,
     unassessedCount: items.filter((i) => !i.estimatedMarketAvg || i.estimatedMarketAvg === 0).length,
+    reservedCount: items.filter((i) => i.status === "reservado").length,
+    discardedCount: items.filter((i) => i.status === "descartado").length,
     capitalInInventoryCost,
     capitalInInventoryEstimated,
     potentialStockProfit,

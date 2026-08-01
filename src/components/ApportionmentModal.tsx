@@ -215,11 +215,11 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
                 <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 font-semibold">
                   <tr>
                     <th className="p-3">Código / Item</th>
-                    <th className="p-3">Valor Estimado</th>
                     <th className="p-3 text-center">Atribuição / %</th>
                     <th className="p-3 text-right">Custo Rateado</th>
-                    <th className="p-3 text-right">Despesas Ext.</th>
-                    <th className="p-3 text-right">Custo Total Real</th>
+                    <th className="p-3 text-right">Valor Venda</th>
+                    <th className="p-3 text-right">Lucro / R$</th>
+                    <th className="p-3 text-right">Margem / %</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -243,7 +243,10 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
                       previewPercent = lot.totalLotCost > 0 ? (previewApportioned / lot.totalLotCost) * 100 : 0;
                     }
 
+                    const salePrice = item.listedPrice || item.estimatedMarketAvg || 0;
                     const previewRealTotal = previewApportioned + (item.additionalCosts || 0);
+                    const profit = salePrice - previewRealTotal;
+                    const margin = salePrice > 0 ? (profit / salePrice) * 100 : 0;
 
                     return (
                       <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
@@ -252,10 +255,6 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
                           <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono">
                             {item.code}
                           </span>
-                        </td>
-
-                        <td className="p-3 text-slate-600 dark:text-slate-300">
-                          {formatCurrency(item.estimatedMarketAvg || 0)}
                         </td>
 
                         <td className="p-3 text-center">
@@ -292,12 +291,16 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
                           {formatCurrency(previewApportioned)}
                         </td>
 
-                        <td className="p-3 text-right text-slate-500">
-                          {formatCurrency(item.additionalCosts || 0)}
+                        <td className="p-3 text-right text-slate-600 dark:text-slate-300 font-semibold">
+                          {formatCurrency(salePrice)}
                         </td>
 
-                        <td className="p-3 text-right font-extrabold text-slate-900 dark:text-white">
-                          {formatCurrency(previewRealTotal)}
+                        <td className={`p-3 text-right font-bold ${profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                          {formatCurrency(profit)}
+                        </td>
+
+                        <td className={`p-3 text-right font-extrabold ${margin >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                          {margin.toFixed(1)}%
                         </td>
                       </tr>
                     );

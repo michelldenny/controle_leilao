@@ -6,10 +6,10 @@ import {
   TrendingUp,
   ShoppingBag,
   Package,
-  Clock,
+  BookmarkCheck,
   Wrench,
   Megaphone,
-  AlertCircle,
+  Trash2,
   Gavel,
   Zap,
   ArrowUpRight,
@@ -274,20 +274,20 @@ export const DashboardView: React.FC = () => {
           </div>
         </button>
 
-        {/* Awaiting Pickup */}
+        {/* Discarded Items */}
         <button
-          onClick={() => setActiveTab("lots")}
-          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-amber-500/50 transition-all text-left group cursor-pointer"
+          onClick={() => setActiveTab("inventory")}
+          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-slate-500/50 transition-all text-left group cursor-pointer"
         >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-            <span>Aguardando Retirada</span>
-            <Clock className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
+            <span>Itens Descartados</span>
+            <Trash2 className="w-4 h-4 text-slate-500 group-hover:scale-110 transition-transform" />
           </div>
-          <div className="mt-2 text-xl font-bold text-amber-600 dark:text-amber-400">
-            {metrics.awaitingPickupCount}
+          <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
+            {metrics.discardedCount}
           </div>
-          <div className="mt-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-            Prazos nos leiloeiros
+          <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+            Descartes ou perda de estoque
           </div>
         </button>
 
@@ -308,20 +308,20 @@ export const DashboardView: React.FC = () => {
           </div>
         </button>
 
-        {/* Unassessed Items */}
+        {/* Reserved Items */}
         <button
           onClick={() => setActiveTab("inventory")}
-          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-red-500/50 transition-all text-left group cursor-pointer"
+          className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-indigo-500/50 transition-all text-left group cursor-pointer"
         >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-            <span>Sem Avaliação</span>
-            <AlertCircle className="w-4 h-4 text-red-500 group-hover:scale-110 transition-transform" />
+            <span>Itens Reservados</span>
+            <BookmarkCheck className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
-            {metrics.unassessedCount}
+            {metrics.reservedCount}
           </div>
-          <div className="mt-1 text-[11px] text-red-500 font-medium">
-            Requerem pesquisa de preço
+          <div className="mt-1 text-[11px] text-indigo-600 dark:text-indigo-400 font-medium">
+            Reservados para venda/cliente
           </div>
         </button>
       </div>
