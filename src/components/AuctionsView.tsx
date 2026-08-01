@@ -225,7 +225,7 @@ export const AuctionsView: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <span
-                    className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-full border ${getBadgeColor(
+                    className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-full border whitespace-nowrap ${getBadgeColor(
                       auc.status
                     )}`}
                   >

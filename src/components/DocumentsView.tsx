@@ -1,14 +1,15 @@
 import React, { useState } from "react";
 import { useAuction } from "../context/AuctionContext";
 import { AppDocument, DocType } from "../types";
-import { FileText, ExternalLink, Plus, Search, Trash2, X, File } from "lucide-react";
+import { FileText, Plus, Search, Trash2, X, File, Eye, Pencil } from "lucide-react";
 
 export const DocumentsView: React.FC = () => {
-  const { documents, addDocument, deleteDocument, auctions, lots, items } = useAuction();
+  const { documents, addDocument, updateDocument, deleteDocument, auctions } = useAuction();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("todos");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingDoc, setEditingDoc] = useState<AppDocument | null>(null);
   const [title, setTitle] = useState("");
   const [docType, setDocType] = useState<DocType>("edital");
   const [entityType, setEntityType] = useState<"auction" | "lot" | "item" | "sale">("auction");
@@ -26,14 +27,26 @@ export const DocumentsView: React.FC = () => {
     return matchesSearch && matchesType;
   });
 
-  const handleOpenModal = () => {
-    setTitle("");
-    setDocType("edital");
-    setEntityType("auction");
-    setEntityId(auctions[0]?.id || "");
-    setFileName("");
-    setFileUrl("");
-    setNotes("");
+  const handleOpenModal = (docToEdit?: AppDocument) => {
+    if (docToEdit) {
+      setEditingDoc(docToEdit);
+      setTitle(docToEdit.title);
+      setDocType(docToEdit.docType || docToEdit.type || "edital");
+      setEntityType(docToEdit.entityType || "auction");
+      setEntityId(docToEdit.entityId || "geral");
+      setFileName(docToEdit.fileName || "");
+      setFileUrl(docToEdit.fileUrl || "");
+      setNotes(docToEdit.notes || "");
+    } else {
+      setEditingDoc(null);
+      setTitle("");
+      setDocType("edital");
+      setEntityType("auction");
+      setEntityId(auctions[0]?.id || "");
+      setFileName("");
+      setFileUrl("");
+      setNotes("");
+    }
     setIsModalOpen(true);
   };
 
@@ -41,17 +54,30 @@ export const DocumentsView: React.FC = () => {
     e.preventDefault();
     if (!title) return;
 
-    addDocument({
-      title,
-      docType,
-      entityType,
-      entityId: entityId || "geral",
-      fileName: fileName || title,
-      fileUrl: fileUrl || "#",
-      notes,
-    });
+    if (editingDoc) {
+      updateDocument(editingDoc.id, {
+        title,
+        docType,
+        entityType,
+        entityId: entityId || "geral",
+        fileName: fileName || title,
+        fileUrl: fileUrl || "#",
+        notes,
+      });
+    } else {
+      addDocument({
+        title,
+        docType,
+        entityType,
+        entityId: entityId || "geral",
+        fileName: fileName || title,
+        fileUrl: fileUrl || "#",
+        notes,
+      });
+    }
 
     setIsModalOpen(false);
+    setEditingDoc(null);
   };
 
   const handleDelete = (id: string, docTitle: string) => {
@@ -61,7 +87,7 @@ export const DocumentsView: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto text-left">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -75,8 +101,8 @@ export const DocumentsView: React.FC = () => {
         </div>
 
         <button
-          onClick={handleOpenModal}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md shadow-amber-500/20 transition-all shrink-0"
+          onClick={() => handleOpenModal()}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md shadow-amber-500/20 transition-all shrink-0 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Anexar Documento</span>
@@ -129,19 +155,10 @@ export const DocumentsView: React.FC = () => {
             >
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                    {(doc.docType || doc.type || "outros").replace("_", " ")}
+                  <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 whitespace-nowrap">
+                    {(doc.docType || doc.type || "outros").replace(/_/g, " ")}
                   </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-slate-400">{doc.uploadDate || doc.dateUploaded}</span>
-                    <button
-                      onClick={() => handleDelete(doc.id, doc.title)}
-                      className="text-slate-400 hover:text-red-500 p-1"
-                      title="Excluir Documento"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  <span className="text-[10px] text-slate-400">{doc.uploadDate || doc.dateUploaded}</span>
                 </div>
 
                 <h3 className="font-bold text-sm text-slate-900 dark:text-white">{doc.title}</h3>
@@ -149,27 +166,46 @@ export const DocumentsView: React.FC = () => {
                 {doc.notes && <p className="text-slate-500 dark:text-slate-400 text-[11px]">{doc.notes}</p>}
               </div>
 
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end">
-                {doc.fileUrl && doc.fileUrl !== "#" ? (
-                  <a
-                    href={doc.fileUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 font-bold text-amber-600 dark:text-amber-400 hover:underline"
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  {doc.fileUrl && doc.fileUrl !== "#" ? (
+                    <a
+                      href={doc.fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="Visualizar Documento"
+                      className="p-2 rounded-xl text-slate-500 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-1"
+                    >
+                      <Eye className="w-4 h-4 text-amber-500" />
+                    </a>
+                  ) : (
+                    <span className="text-slate-400 text-[10px]">Sem anexo</span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleOpenModal(doc)}
+                    title="Editar Documento"
+                    className="p-2 rounded-xl text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                   >
-                    <span>Visualizar Documento</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                ) : (
-                  <span className="text-slate-400 text-[11px]">Sem anexo digital</span>
-                )}
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(doc.id, doc.title)}
+                    title="Excluir Documento"
+                    className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Modal Novo Documento */}
+      {/* Modal Novo/Editar Documento */}
       {isModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm cursor-pointer"
@@ -180,7 +216,9 @@ export const DocumentsView: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="font-bold text-base text-slate-900 dark:text-white">Anexar Documento</h3>
+              <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                {editingDoc ? "Editar Documento" : "Anexar Documento"}
+              </h3>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
@@ -262,7 +300,7 @@ export const DocumentsView: React.FC = () => {
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-amber-500 font-bold text-slate-950"
                 >
-                  Salvar Documento
+                  {editingDoc ? "Atualizar Documento" : "Salvar Documento"}
                 </button>
               </div>
             </form>

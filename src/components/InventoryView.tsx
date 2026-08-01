@@ -470,11 +470,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
 
                       <td className="p-3 text-center">
                         <span
-                          className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-full border ${getStatusBadge(
+                          className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-full border whitespace-nowrap ${getStatusBadge(
                             item.status
                           )}`}
                         >
-                          {item.status.replace("_", " ")}
+                          {item.status.replace(/_/g, " ")}
                         </span>
                       </td>
 
@@ -532,11 +532,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <span
-                  className={`absolute top-3 right-3 px-2.5 py-1 text-[10px] font-bold uppercase rounded-full border backdrop-blur-md shadow-sm ${getStatusBadge(
+                  className={`absolute top-3 right-3 px-2.5 py-1 text-[10px] font-bold uppercase rounded-full border backdrop-blur-md shadow-sm whitespace-nowrap ${getStatusBadge(
                     item.status
                   )}`}
                 >
-                  {item.status.replace("_", " ")}
+                  {item.status.replace(/_/g, " ")}
                 </span>
                 <span className="absolute bottom-3 left-3 px-2 py-0.5 text-[10px] font-mono font-bold rounded-lg bg-slate-950/70 text-amber-400 backdrop-blur-md">
                   {item.code}

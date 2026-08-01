@@ -298,6 +298,29 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [darkMode]);
 
+  // Migração retroativa dos códigos de todos os itens já cadastrados
+  useEffect(() => {
+    if (items.length === 0 || lots.length === 0) return;
+
+    items.forEach((item) => {
+      if (!item.code || !item.code.startsWith("lote-")) {
+        const targetLot = lots.find((l) => l.id === item.lotId);
+        const lotNum = targetLot ? targetLot.lotNumber : "0";
+        const year = item.dateAdded ? new Date(item.dateAdded).getFullYear() : new Date().getFullYear();
+        
+        // Obter os itens do mesmo lote ordenados por ID/data para manter sequencial estável
+        const sameLotItems = items.filter((i) => i.lotId === item.lotId);
+        const itemIdx = sameLotItems.findIndex((i) => i.id === item.id);
+        const seqInLot = itemIdx >= 0 ? itemIdx + 1 : 1;
+        const newCode = `lote-${lotNum}-${year}-${seqInLot.toString().padStart(2, "0")}`;
+
+        if (item.code !== newCode) {
+          updateDoc(doc(db, "items", item.id), { code: newCode }).catch(console.error);
+        }
+      }
+    });
+  }, [items, lots]);
+
   const toggleDarkMode = () => setDarkMode((prev) => !prev);
 
   // Toast notifications
@@ -474,8 +497,14 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addItem = (
     itemData: Omit<AuctionItem, "id" | "code" | "dateAdded" | "realTotalCost">
   ): AuctionItem => {
+    const targetLot = lots.find((l) => l.id === itemData.lotId);
+    const lotNum = targetLot ? targetLot.lotNumber : "0";
+    const year = new Date().getFullYear();
+    const existingCountInLot = items.filter((i) => i.lotId === itemData.lotId).length;
+    const seqInLot = existingCountInLot + 1;
+    const code = `lote-${lotNum}-${year}-${seqInLot.toString().padStart(2, "0")}`;
+
     const nextSeq = items.length + 1;
-    const code = `LEIL-2026-${nextSeq.toString().padStart(3, "0")}`;
     const id = "itm-" + nextSeq + "-" + Date.now().toString(36);
     const realTotalCost = (itemData.apportionedCost || 0) + (itemData.additionalCosts || 0);
     const dateAdded = getLocalDateISO();
@@ -492,7 +521,6 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     setDoc(doc(db, "items", id), newItem).catch(console.error);
 
-    const targetLot = lots.find((l) => l.id === newItem.lotId);
     if (targetLot) {
       const newCount = (targetLot.itemCount || 0) + 1;
       updateLot(targetLot.id, { itemCount: newCount });
@@ -636,7 +664,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Bulk Item Generator (Cadastro em Massa)
-  const createBulkItems = (
+  const bulkCreateItems = (
     lotId: string,
     count: number,
     baseData: {
