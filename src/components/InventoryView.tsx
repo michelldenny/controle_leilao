@@ -202,7 +202,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 space-y-6 w-full mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -384,10 +384,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
         /* TABLE VIEW */
         <div className="border border-slate-200 dark:border-slate-800 rounded-3xl bg-white dark:bg-slate-800/80 shadow-sm overflow-hidden text-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left min-w-[1350px]">
+            <table className="w-full text-left">
               <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-700">
                 <tr>
-                  <th className="p-3 w-10 text-center">
+                  <th className="p-2.5 w-10 text-center">
                     <button onClick={toggleSelectAll} className="text-slate-400">
                       {selectedItemIds.length === filteredItems.length && filteredItems.length > 0 ? (
                         <CheckSquare className="w-4 h-4 text-amber-500" />
@@ -396,16 +396,16 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                       )}
                     </button>
                   </th>
-                  <th className="p-3 text-center">Foto / Código</th>
-                  <th className="p-3 text-center">Item / Descrição</th>
-                  <th className="p-3 text-center">Categoria</th>
-                  <th className="p-3 text-center">Custo Real Total</th>
-                  <th className="p-3 text-center">Valor Venda</th>
-                  <th className="p-3 text-center">% Markup</th>
-                  <th className="p-3 text-center">Margem</th>
-                  <th className="p-3 text-center">Dias Estoque</th>
-                  <th className="p-3 text-center">Status</th>
-                  <th className="p-3 text-center">Ações</th>
+                  <th className="p-2.5 text-center">Foto / Código</th>
+                  <th className="p-2.5 text-center">Item / Descrição</th>
+                  <th className="p-2.5 text-center">Categoria</th>
+                  <th className="p-2.5 text-center">Custo Real</th>
+                  <th className="p-2.5 text-center">Valor Venda</th>
+                  <th className="p-2.5 text-center">% Markup</th>
+                  <th className="p-2.5 text-center">Margem</th>
+                  <th className="p-2.5 text-center">Dias Estoque</th>
+                  <th className="p-2.5 text-center">Status</th>
+                  <th className="p-2.5 text-center">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
@@ -422,8 +422,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                     ? (profitEst / item.estimatedMarketAvg) * 100
                     : 0;
 
-                  // Dias no estoque
-                  const purchaseDateStr = item.purchaseDate || item.dateAdded;
+                  // Dias no estoque: Data Inicial = Data do Leilão (ou data da compra/entrada se indisponível)
+                  const itemAuction = auctions.find((a) => a.id === item.auctionId);
+                  const startDateStr = itemAuction?.auctionDate || item.purchaseDate || item.dateAdded;
                   let endDate = new Date();
                   if (item.status === "vendido" || item.isSold) {
                     const saleRecord = sales.find((s) => s.itemId === item.id);
@@ -432,9 +433,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                     }
                   }
                   let daysInStock = 0;
-                  if (purchaseDateStr) {
-                    const pDate = new Date(purchaseDateStr);
-                    const diffTime = endDate.getTime() - pDate.getTime();
+                  if (startDateStr) {
+                    const sDate = new Date(startDateStr);
+                    const diffTime = endDate.getTime() - sDate.getTime();
                     daysInStock = Math.max(0, Math.floor(diffTime / (1000 * 3600 * 24)));
                   }
 

@@ -5,7 +5,7 @@ import { ShoppingBag, Plus, DollarSign, TrendingUp, CheckCircle2, X, Eye, Pencil
 import { ConfirmModal } from "./ConfirmModal";
 
 export const SalesView: React.FC = () => {
-  const { items, lots, sales, recordSale, updateSale, deleteSale, openItemDetail, metrics } = useAuction();
+  const { items, lots, auctions, sales, recordSale, updateSale, deleteSale, openItemDetail, metrics } = useAuction();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<SaleRecord | null>(null);
@@ -17,6 +17,7 @@ export const SalesView: React.FC = () => {
   const [buyerName, setBuyerName] = useState("");
   const [buyerCpfCnpj, setBuyerCpfCnpj] = useState("");
   const [saleChannel, setSaleChannel] = useState("Mercado Livre");
+  const [saleDate, setSaleDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [finalPrice, setFinalPrice] = useState<number>(0);
   const [platformCommission, setPlatformCommission] = useState<number>(0);
   const [sellerFreight, setSellerFreight] = useState<number>(0);
@@ -71,6 +72,7 @@ export const SalesView: React.FC = () => {
     setBuyerName("");
     setBuyerCpfCnpj("");
     setSaleChannel("Mercado Livre");
+    setSaleDate(new Date().toISOString().split("T")[0]);
     setFinalPrice(0);
     setPlatformCommission(0);
     setSellerFreight(0);
@@ -84,6 +86,7 @@ export const SalesView: React.FC = () => {
     setBuyerName(sale.buyerName || "");
     setBuyerCpfCnpj(sale.buyerDoc || "");
     setSaleChannel(sale.platform || "Mercado Livre");
+    setSaleDate(sale.saleDate || new Date().toISOString().split("T")[0]);
     setFinalPrice(sale.finalPrice || 0);
     setPlatformCommission(sale.platformCommission || 0);
     setSellerFreight(sale.sellerFreight || 0);
@@ -106,6 +109,7 @@ export const SalesView: React.FC = () => {
         buyerName,
         buyerDoc: buyerCpfCnpj,
         platform: saleChannel as any,
+        saleDate: saleDate || new Date().toISOString().split("T")[0],
         finalPrice: Number(finalPrice),
         platformCommission: Number(platformCommission),
         sellerFreight: Number(sellerFreight),
@@ -123,7 +127,7 @@ export const SalesView: React.FC = () => {
       buyerName,
       buyerDoc: buyerCpfCnpj,
       platform: saleChannel as any,
-      saleDate: new Date().toISOString().split("T")[0],
+      saleDate: saleDate || new Date().toISOString().split("T")[0],
       finalPrice: Number(finalPrice),
       platformCommission: Number(platformCommission),
       sellerFreight: Number(sellerFreight),
@@ -221,12 +225,13 @@ export const SalesView: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
               {salesHistory.map(({ sale, item, itemCost }) => {
-                const purchaseDateStr = item?.purchaseDate || item?.dateAdded;
+                const itemAuction = item ? auctions.find((a) => a.id === item.auctionId) : undefined;
+                const startDateStr = itemAuction?.auctionDate || item?.purchaseDate || item?.dateAdded;
                 let daysToRoi = 0;
-                if (purchaseDateStr && sale.saleDate) {
-                  const pDate = new Date(purchaseDateStr);
-                  const sDate = new Date(sale.saleDate);
-                  const diffTime = sDate.getTime() - pDate.getTime();
+                if (startDateStr && sale.saleDate) {
+                  const sDate = new Date(startDateStr);
+                  const saleD = new Date(sale.saleDate);
+                  const diffTime = saleD.getTime() - sDate.getTime();
                   daysToRoi = Math.max(0, Math.floor(diffTime / (1000 * 3600 * 24)));
                 }
 
@@ -378,7 +383,7 @@ export const SalesView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Canal de Venda *
@@ -395,6 +400,19 @@ export const SalesView: React.FC = () => {
                     <option value="Instagram / Redes">Instagram / Redes</option>
                     <option value="Outros">Outros</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Data da Venda *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={saleDate}
+                    onChange={(e) => setSaleDate(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                  />
                 </div>
 
                 <div>
