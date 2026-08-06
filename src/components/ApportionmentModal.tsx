@@ -250,16 +250,28 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
                       previewPercent = lot.totalLotCost > 0 ? (previewApportioned / lot.totalLotCost) * 100 : 0;
                     }
 
+                    const isSold = item.status === "vendido" || item.isSold;
                     const salePrice = item.listedPrice || item.estimatedMarketAvg || 0;
                     const previewRealTotal = previewApportioned + (item.additionalCosts || 0);
                     const profit = salePrice - previewRealTotal;
                     const margin = salePrice > 0 ? (profit / salePrice) * 100 : 0;
 
+                    const rowBgClass = isSold
+                      ? "bg-emerald-100/70 dark:bg-emerald-900/35 border-l-4 border-l-emerald-500 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+                      : isDiscarded
+                      ? "opacity-60 bg-slate-100/50 dark:bg-slate-900/40"
+                      : "hover:bg-slate-50/50 dark:hover:bg-slate-800/50";
+
                     return (
-                      <tr key={item.id} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 ${isDiscarded ? "opacity-60 bg-slate-100/50 dark:bg-slate-900/40" : ""}`}>
+                      <tr key={item.id} className={rowBgClass}>
                         <td className="p-3 text-left font-semibold text-slate-900 dark:text-white">
                           <div className="flex items-center gap-1.5">
                             <span>{item.name}</span>
+                            {isSold && (
+                              <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-emerald-600 text-white dark:bg-emerald-500 border border-emerald-600 whitespace-nowrap">
+                                Vendido
+                              </span>
+                            )}
                             {isDiscarded && (
                               <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-rose-500/10 text-rose-600 border border-rose-500/20 whitespace-nowrap">
                                 Descartado (R$ 0,00)

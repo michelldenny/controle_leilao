@@ -22,7 +22,16 @@ export const SalesView: React.FC = () => {
   const [sellerFreight, setSellerFreight] = useState<number>(0);
   const [taxes, setTaxes] = useState<number>(0);
 
-  const availableItems = items.filter((i) => i.status !== "vendido" || (editingSale && i.id === editingSale.itemId));
+  const [itemSearchText, setItemSearchText] = useState("");
+
+  const availableItems = items
+    .filter((i) => i.status !== "vendido" || (editingSale && i.id === editingSale.itemId))
+    .sort((a, b) => (a.name || "").localeCompare(b.name || "", "pt-BR", { sensitivity: "base" }));
+
+  const filteredAvailableItems = availableItems.filter((i) => {
+    const q = itemSearchText.toLowerCase();
+    return i.name.toLowerCase().includes(q) || i.code.toLowerCase().includes(q);
+  });
   
   // Função para determinar o custo real do item (puxando o custo do item ou o custo total do lote caso zerado)
   const getItemRealCost = (itemObj?: any) => {
@@ -206,11 +215,21 @@ export const SalesView: React.FC = () => {
                 <th className="p-3 text-right">Custo Real Total</th>
                 <th className="p-3 text-right">Lucro Líquido</th>
                 <th className="p-3 text-right">ROI %</th>
+                <th className="p-3 text-center">Dias p/ ROI</th>
                 <th className="p-3 text-center">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
               {salesHistory.map(({ sale, item, itemCost }) => {
+                const purchaseDateStr = item?.purchaseDate || item?.dateAdded;
+                let daysToRoi = 0;
+                if (purchaseDateStr && sale.saleDate) {
+                  const pDate = new Date(purchaseDateStr);
+                  const sDate = new Date(sale.saleDate);
+                  const diffTime = sDate.getTime() - pDate.getTime();
+                  daysToRoi = Math.max(0, Math.floor(diffTime / (1000 * 3600 * 24)));
+                }
+
                 return (
                   <tr key={sale.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30">
                     <td className="p-3 font-bold text-slate-900 dark:text-white">
@@ -221,11 +240,24 @@ export const SalesView: React.FC = () => {
                     <td className="p-3 text-slate-500">{sale.platform}</td>
                     <td className="p-3 text-right font-bold text-slate-900 dark:text-white">{formatCurrency(sale.finalPrice)}</td>
                     <td className="p-3 text-right text-slate-500">{formatCurrency(itemCost)}</td>
-                    <td className="p-3 text-right font-extrabold text-emerald-600 dark:text-emerald-400">
-                      {formatCurrency(sale.netProfit)}
+                    <td
+                      className={`p-3 text-right font-extrabold ${
+                        (sale.netProfit || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+                      }`}
+                    >
+                      {(sale.netProfit || 0) >= 0 ? "+" : ""}{formatCurrency(sale.netProfit)}
                     </td>
-                    <td className="p-3 text-right font-extrabold text-amber-600 dark:text-amber-400">
-                      {sale.roiPercentage.toFixed(1)}%
+                    <td
+                      className={`p-3 text-right font-extrabold ${
+                        (sale.roiPercentage || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+                      }`}
+                    >
+                      {(sale.roiPercentage || 0) >= 0 ? "+" : ""}{(sale.roiPercentage || 0).toFixed(1)}%
+                    </td>
+                    <td className="p-3 text-center">
+                      <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold">
+                        {daysToRoi} {daysToRoi === 1 ? "dia" : "dias"}
+                      </span>
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1">
@@ -288,6 +320,13 @@ export const SalesView: React.FC = () => {
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Selecione o Item do Estoque *
                 </label>
+                <input
+                  type="text"
+                  value={itemSearchText}
+                  onChange={(e) => setItemSearchText(e.target.value)}
+                  placeholder="Digite para filtrar itens por nome ou código..."
+                  className="w-full mb-1.5 p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
+                />
                 <select
                   required
                   value={selectedItemId}
@@ -301,8 +340,8 @@ export const SalesView: React.FC = () => {
                   }}
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
                 >
-                  <option value="">Selecione um item...</option>
-                  {availableItems.map((i) => (
+                  <option value="">Selecione um item ({filteredAvailableItems.length} encontrado(s))...</option>
+                  {filteredAvailableItems.map((i) => (
                     <option key={i.id} value={i.id}>
                       [{i.code}] {i.name} (Custo: R$ {getItemRealCost(i).toFixed(2)})
                     </option>
@@ -351,6 +390,7 @@ export const SalesView: React.FC = () => {
                   >
                     <option value="Mercado Livre">Mercado Livre</option>
                     <option value="OLX">OLX</option>
+                    <option value="Grupo WhatsApp">Grupo WhatsApp</option>
                     <option value="Direto / Balcão">Direto / Balcão</option>
                     <option value="Instagram / Redes">Instagram / Redes</option>
                     <option value="Outros">Outros</option>
@@ -552,6 +592,23 @@ export const SalesView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Confirm Delete Sale Modal */}
+      <ConfirmModal
+        isOpen={!!deletingSale}
+        title="Excluir Registro de Venda"
+        message={`Tem certeza que deseja excluir o registro de venda? O item retornará para o estoque como "Disponível".`}
+        confirmText="Excluir Venda"
+        cancelText="Cancelar"
+        variant="danger"
+        onConfirm={() => {
+          if (deletingSale) {
+            deleteSale(deletingSale.id);
+            setDeletingSale(null);
+          }
+        }}
+        onCancel={() => setDeletingSale(null)}
+      />
     </div>
   );
 };

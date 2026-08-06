@@ -35,6 +35,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
   const [estimatedMarketMax, setEstimatedMarketMax] = useState(0);
   const [listedPrice, setListedPrice] = useState(0);
   const [description, setDescription] = useState("");
+  const [purchaseDate, setPurchaseDate] = useState("");
 
   const handleNewMarketValueChange = (val: number) => {
     setNewProductMarketValue(val);
@@ -102,6 +103,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
 
       setListedPrice(item.listedPrice || estAvg);
       setDescription(item.description || "");
+      setPurchaseDate(item.purchaseDate || item.dateAdded || new Date().toISOString().split("T")[0]);
     }
   }, [item]);
 
@@ -117,6 +119,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
       condition,
       operationalState,
       status,
+      purchaseDate,
       location: {
         ...item.location,
         customText: locationText,
@@ -241,6 +244,18 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                   <option value="sucata">Sucata</option>
                   <option value="nao_testado">Não Testado</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Data da Compra
+                </label>
+                <input
+                  type="date"
+                  value={purchaseDate}
+                  onChange={(e) => setPurchaseDate(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                />
               </div>
             </div>
           </div>

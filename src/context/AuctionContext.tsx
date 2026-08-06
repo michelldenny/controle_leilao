@@ -556,7 +556,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     if (itemData.status === "vendido") {
       updated.isSold = true;
-    } else if (itemData.status && itemData.status !== "vendido") {
+    } else if (itemData.status) {
       updated.isSold = false;
     }
 

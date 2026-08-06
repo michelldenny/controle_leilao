@@ -32,6 +32,7 @@ export type AdPlatform =
   | "Facebook Marketplace"
   | "Shopee"
   | "Instagram"
+  | "Grupo WhatsApp"
   | "Loja própria"
   | "Venda direta"
   | "Outro";
@@ -150,7 +151,9 @@ export interface AuctionItem {
   isAdvertised: boolean;
   isSold: boolean;
   dateAdded: string;
+  purchaseDate?: string;
   daysInStock?: number;
+  seal?: "prime" | "premium" | "excelente" | "muito_bom" | "bom" | "oportunidade";
   archived?: boolean;
 }
 

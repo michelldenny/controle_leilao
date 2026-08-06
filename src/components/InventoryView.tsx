@@ -40,6 +40,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
     items,
     auctions,
     lots,
+    sales,
     openItemDetail,
     openAiModal,
     globalSearch,
@@ -383,7 +384,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
         /* TABLE VIEW */
         <div className="border border-slate-200 dark:border-slate-800 rounded-3xl bg-white dark:bg-slate-800/80 shadow-sm overflow-hidden text-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-left min-w-[1350px]">
               <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th className="p-3 w-10 text-center">
@@ -399,8 +400,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
                   <th className="p-3 text-center">Item / Descrição</th>
                   <th className="p-3 text-center">Categoria</th>
                   <th className="p-3 text-center">Custo Real Total</th>
-                  <th className="p-3 text-center">Valor Estimado</th>
-                  <th className="p-3 text-center">% Markup Est.</th>
+                  <th className="p-3 text-center">Valor Venda</th>
+                  <th className="p-3 text-center">% Markup</th>
+                  <th className="p-3 text-center">Margem</th>
+                  <th className="p-3 text-center">Dias Estoque</th>
                   <th className="p-3 text-center">Status</th>
                   <th className="p-3 text-center">Ações</th>
                 </tr>
@@ -412,9 +415,28 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
 
                   // Lucro estimado em relação ao valor estimado
                   const profitEst = item.estimatedMarketAvg - item.realTotalCost;
-                  const profitMarginPct = item.realTotalCost > 0
+                  const markupPct = item.realTotalCost > 0
                     ? (profitEst / item.realTotalCost) * 100
                     : 0;
+                  const marginPct = item.estimatedMarketAvg > 0
+                    ? (profitEst / item.estimatedMarketAvg) * 100
+                    : 0;
+
+                  // Dias no estoque
+                  const purchaseDateStr = item.purchaseDate || item.dateAdded;
+                  let endDate = new Date();
+                  if (item.status === "vendido" || item.isSold) {
+                    const saleRecord = sales.find((s) => s.itemId === item.id);
+                    if (saleRecord?.saleDate) {
+                      endDate = new Date(saleRecord.saleDate);
+                    }
+                  }
+                  let daysInStock = 0;
+                  if (purchaseDateStr) {
+                    const pDate = new Date(purchaseDateStr);
+                    const diffTime = endDate.getTime() - pDate.getTime();
+                    daysInStock = Math.max(0, Math.floor(diffTime / (1000 * 3600 * 24)));
+                  }
 
                   return (
                     <tr
@@ -468,17 +490,34 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
 
                       <td className="p-3 text-center font-bold">
                         <span
-                          className={`inline-flex items-center justify-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] ${profitMarginPct >= 0
+                          className={`inline-flex items-center justify-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] ${markupPct >= 0
                               ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                               : "bg-red-500/10 text-red-600 dark:text-red-400"
                             }`}
                         >
-                          {profitMarginPct >= 0 ? (
+                          {markupPct >= 0 ? (
                             <TrendingUp className="w-3 h-3" />
                           ) : (
                             <TrendingDown className="w-3 h-3" />
                           )}
-                          {profitMarginPct >= 0 ? "+" : ""}{profitMarginPct.toFixed(1)}%
+                          {markupPct >= 0 ? "+" : ""}{markupPct.toFixed(1)}%
+                        </span>
+                      </td>
+
+                      <td className="p-3 text-center font-bold">
+                        <span
+                          className={`inline-flex items-center justify-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] ${marginPct >= 0
+                              ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                              : "bg-red-500/10 text-red-600 dark:text-red-400"
+                            }`}
+                        >
+                          {marginPct >= 0 ? "+" : ""}{marginPct.toFixed(1)}%
+                        </span>
+                      </td>
+
+                      <td className="p-3 text-center font-semibold">
+                        <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold">
+                          {daysInStock} {daysInStock === 1 ? "dia" : "dias"}
                         </span>
                       </td>
 

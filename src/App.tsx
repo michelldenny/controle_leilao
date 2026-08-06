@@ -123,7 +123,7 @@ export function App() {
   return (
     <AuctionProvider>
       {isPublicMode ? (
-        <div className="min-h-screen bg-slate-950 text-slate-100">
+        <div className="min-h-screen bg-slate-50 text-slate-800">
           <PublicMarketplaceView />
           <ToastContainer />
         </div>

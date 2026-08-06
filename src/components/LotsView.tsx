@@ -28,7 +28,51 @@ export const LotsView: React.FC = () => {
   const { lots, auctions, addLot, updateLot, deleteLot, items, openApportionmentModal, setIsBulkModalOpen, setActiveTab } = useAuction();
 
   const [search, setSearch] = useState("");
+  const [sortFilter, setSortFilter] = useState<
+    "padrao" | "maior_margem" | "menor_margem" | "maior_markup" | "menor_markup" | "maior_custo" | "menor_custo"
+  >("padrao");
   const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
+
+  // Helper to compute metrics for a lot for sorting
+  const getLotMetrics = (l: Lot) => {
+    const lotItems = items.filter((i) => i.lotId === l.id);
+    const totalEstimatedSale = lotItems.reduce((sum, item) => sum + (item.estimatedMarketAvg || 0), 0);
+    const totalItemsCost = lotItems.reduce((sum, item) => sum + (item.realTotalCost || 0), 0);
+    const costBase = totalItemsCost > 0 ? totalItemsCost : l.totalLotCost;
+    const estimatedProfit = totalEstimatedSale - costBase;
+    const markupPct = costBase > 0 ? (estimatedProfit / costBase) * 100 : 0;
+    const marginOnSalePct = totalEstimatedSale > 0 ? (estimatedProfit / totalEstimatedSale) * 100 : 0;
+    return {
+      totalEstimatedSale,
+      costBase,
+      estimatedProfit,
+      markupPct,
+      marginOnSalePct,
+      cost: l.totalLotCost,
+    };
+  };
+
+  const filteredLots = lots
+    .filter((l) => {
+      const auc = auctions.find((a) => a.id === l.auctionId);
+      return (
+        l.lotNumber.toLowerCase().includes(search.toLowerCase()) ||
+        l.description.toLowerCase().includes(search.toLowerCase()) ||
+        auc?.name.toLowerCase().includes(search.toLowerCase())
+      );
+    })
+    .sort((a, b) => {
+      if (sortFilter === "padrao") return 0;
+      const mA = getLotMetrics(a);
+      const mB = getLotMetrics(b);
+      if (sortFilter === "maior_margem") return mB.marginOnSalePct - mA.marginOnSalePct;
+      if (sortFilter === "menor_margem") return mA.marginOnSalePct - mB.marginOnSalePct;
+      if (sortFilter === "maior_markup") return mB.markupPct - mA.markupPct;
+      if (sortFilter === "menor_markup") return mA.markupPct - mB.markupPct;
+      if (sortFilter === "maior_custo") return mB.cost - mA.cost;
+      if (sortFilter === "menor_custo") return mA.cost - mB.cost;
+      return 0;
+    });
   const [isNewLotOpen, setIsNewLotOpen] = useState(false);
   const [editingLot, setEditingLot] = useState<Lot | null>(null);
 
@@ -164,15 +208,6 @@ export const LotsView: React.FC = () => {
     setNotes("");
   };
 
-  const filteredLots = lots.filter((l) => {
-    const auc = auctions.find((a) => a.id === l.auctionId);
-    return (
-      l.lotNumber.toLowerCase().includes(search.toLowerCase()) ||
-      l.description.toLowerCase().includes(search.toLowerCase()) ||
-      auc?.name.toLowerCase().includes(search.toLowerCase())
-    );
-  });
-
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -196,9 +231,9 @@ export const LotsView: React.FC = () => {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="flex items-center gap-3 p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <div className="relative flex-1">
+      {/* Search & Filters */}
+      <div className="flex flex-col sm:flex-row items-center gap-3 p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="relative flex-1 w-full">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
@@ -207,6 +242,22 @@ export const LotsView: React.FC = () => {
             placeholder="Pesquisar por número do lote, leilão, descrição..."
             className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white"
           />
+        </div>
+
+        <div className="w-full sm:w-auto">
+          <select
+            value={sortFilter}
+            onChange={(e) => setSortFilter(e.target.value as any)}
+            className="w-full sm:w-auto px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white"
+          >
+            <option value="padrao">Organizar por: Padrão</option>
+            <option value="maior_margem">Maior Margem (Venda %)</option>
+            <option value="menor_margem">Menor Margem (Venda %)</option>
+            <option value="maior_markup">Maior Markup (Custo %)</option>
+            <option value="menor_markup">Menor Markup (Custo %)</option>
+            <option value="maior_custo">Maior Custo Total</option>
+            <option value="menor_custo">Menor Custo Total</option>
+          </select>
         </div>
       </div>
 
