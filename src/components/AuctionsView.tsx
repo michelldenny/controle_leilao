@@ -20,10 +20,15 @@ import {
   ChevronRight,
   Pencil,
   Trash2,
+  Coins,
+  TrendingUp,
+  TrendingDown,
+  Home,
+  Percent,
 } from "lucide-react";
 
 export const AuctionsView: React.FC = () => {
-  const { auctions, addAuction, updateAuction, deleteAuction, lots, items, setActiveTab } = useAuction();
+  const { auctions, addAuction, updateAuction, deleteAuction, lots, items, sales, setActiveTab } = useAuction();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
@@ -216,6 +221,40 @@ export const AuctionsView: React.FC = () => {
         {filteredAuctions.map((auc) => {
           const aucLots = lots.filter((l) => l.auctionId === auc.id);
           const aucItems = items.filter((i) => i.auctionId === auc.id);
+          const aucSales = sales.filter((s) => aucItems.some((i) => i.id === s.itemId));
+
+          // 1- Custo por item: custo total de todos os lotes / quantidade de itens cadastrados
+          const totalLotsCost = aucLots.reduce((acc, l) => acc + (l.totalLotCost || 0), 0);
+          const totalItemsCount = aucItems.reduce((acc, i) => acc + (i.quantity || 1), 0);
+          const costPerItem = totalItemsCount > 0 ? totalLotsCost / totalItemsCount : 0;
+
+          // 2- % de itens dados como baixa (quantidade descartada / total cadastrado)
+          const discardedCount = aucItems
+            .filter((i) => i.status === "descartado")
+            .reduce((acc, i) => acc + (i.quantity || 1), 0);
+          const pctDiscarded = totalItemsCount > 0 ? (discardedCount / totalItemsCount) * 100 : 0;
+
+          // 3- % de itens de uso próprio (quantidade de uso próprio / total cadastrado)
+          const ownUseCount = aucItems
+            .filter((i) => i.status === "uso_proprio")
+            .reduce((acc, i) => acc + (i.quantity || 1), 0);
+          const pctOwnUse = totalItemsCount > 0 ? (ownUseCount / totalItemsCount) * 100 : 0;
+
+          // 4- ROI do leilão
+          const totalInvestment =
+            totalLotsCost > 0 ? totalLotsCost : aucItems.reduce((acc, i) => acc + (i.realTotalCost || 0), 0);
+          const netSalesTotal = aucSales.reduce((acc, s) => acc + (s.netSaleValue || 0), 0);
+          const unsoldItems = aucItems.filter((i) => !i.isSold && i.status !== "descartado" && i.status !== "uso_proprio");
+          const unsoldEstimatedTotal = unsoldItems.reduce((acc, i) => acc + (i.estimatedMarketAvg || 0), 0);
+          const ownUseEstimatedTotal = aucItems
+            .filter((i) => i.status === "uso_proprio")
+            .reduce((acc, i) => acc + (i.estimatedMarketAvg || 0), 0);
+          const totalValueGenerated = netSalesTotal + unsoldEstimatedTotal + ownUseEstimatedTotal;
+          const netProfitAuction = totalValueGenerated - totalInvestment;
+          const auctionRoi = totalInvestment > 0 ? (netProfitAuction / totalInvestment) * 100 : 0;
+
+          const formatCurrency = (val: number) =>
+            new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
 
           return (
             <div
@@ -274,10 +313,75 @@ export const AuctionsView: React.FC = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Grid das 4 Métricas do Leilão */}
+                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
+                  {/* 1. Custo por Item */}
+                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                      <Coins className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      Custo / Item
+                    </span>
+                    <span className="text-xs font-bold text-slate-900 dark:text-white mt-1 truncate" title={formatCurrency(costPerItem)}>
+                      {formatCurrency(costPerItem)}
+                    </span>
+                  </div>
+
+                  {/* 4. ROI do Leilão */}
+                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                      <TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      ROI Leilão
+                    </span>
+                    <span
+                      className={`text-xs font-bold mt-1 truncate ${
+                        auctionRoi > 0
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : auctionRoi < 0
+                          ? "text-red-600 dark:text-red-400"
+                          : "text-slate-600 dark:text-slate-400"
+                      }`}
+                    >
+                      {auctionRoi > 0 ? `+${auctionRoi.toFixed(1)}%` : `${auctionRoi.toFixed(1)}%`}
+                    </span>
+                  </div>
+
+                  {/* 2. % Baixa (Perda) */}
+                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                      <TrendingDown className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                      % Baixa (Perda)
+                    </span>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white">
+                        {pctDiscarded.toFixed(1)}%
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-normal">
+                        ({discardedCount}/{totalItemsCount})
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 3. % Uso Próprio */}
+                  <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                      <Home className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                      % Uso Próprio
+                    </span>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white">
+                        {pctOwnUse.toFixed(1)}%
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-normal">
+                        ({ownUseCount}/{totalItemsCount})
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Stats Footer & Actions */}
-              <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
                 <div className="flex items-center gap-3 text-xs font-semibold text-slate-700 dark:text-slate-300">
                   <div className="flex items-center gap-1">
                     <Boxes className="w-3.5 h-3.5 text-amber-500" />
@@ -523,79 +627,168 @@ export const AuctionsView: React.FC = () => {
       )}
 
       {/* Auction Detail Modal */}
-      {selectedAuction && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm cursor-pointer"
-          onClick={() => setSelectedAuction(null)}
-        >
+      {selectedAuction && (() => {
+        const selLots = lots.filter((l) => l.auctionId === selectedAuction.id);
+        const selItems = items.filter((i) => i.auctionId === selectedAuction.id);
+        const selSales = sales.filter((s) => selItems.some((i) => i.id === s.itemId));
+
+        const selTotalLotsCost = selLots.reduce((acc, l) => acc + (l.totalLotCost || 0), 0);
+        const selTotalItemsCount = selItems.reduce((acc, i) => acc + (i.quantity || 1), 0);
+        const selCostPerItem = selTotalItemsCount > 0 ? selTotalLotsCost / selTotalItemsCount : 0;
+
+        const selDiscardedCount = selItems
+          .filter((i) => i.status === "descartado")
+          .reduce((acc, i) => acc + (i.quantity || 1), 0);
+        const selPctDiscarded = selTotalItemsCount > 0 ? (selDiscardedCount / selTotalItemsCount) * 100 : 0;
+
+        const selOwnUseCount = selItems
+          .filter((i) => i.status === "uso_proprio")
+          .reduce((acc, i) => acc + (i.quantity || 1), 0);
+        const selPctOwnUse = selTotalItemsCount > 0 ? (selOwnUseCount / selTotalItemsCount) * 100 : 0;
+
+        const selTotalInvestment =
+          selTotalLotsCost > 0 ? selTotalLotsCost : selItems.reduce((acc, i) => acc + (i.realTotalCost || 0), 0);
+        const selNetSalesTotal = selSales.reduce((acc, s) => acc + (s.netSaleValue || 0), 0);
+        const selUnsoldItems = selItems.filter((i) => !i.isSold && i.status !== "descartado" && i.status !== "uso_proprio");
+        const selUnsoldEstimatedTotal = selUnsoldItems.reduce((acc, i) => acc + (i.estimatedMarketAvg || 0), 0);
+        const selOwnUseEstimatedTotal = selItems
+          .filter((i) => i.status === "uso_proprio")
+          .reduce((acc, i) => acc + (i.estimatedMarketAvg || 0), 0);
+        const selTotalValueGenerated = selNetSalesTotal + selUnsoldEstimatedTotal + selOwnUseEstimatedTotal;
+        const selNetProfitAuction = selTotalValueGenerated - selTotalInvestment;
+        const selAuctionRoi = selTotalInvestment > 0 ? (selNetProfitAuction / selTotalInvestment) * 100 : 0;
+
+        const formatCurrency = (val: number) =>
+          new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
+
+        return (
           <div
-            className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto cursor-default"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm cursor-pointer"
+            onClick={() => setSelectedAuction(null)}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-500">
-                  <Gavel className="w-6 h-6" />
+            <div
+              className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto cursor-default"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-500">
+                    <Gavel className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                      {selectedAuction.name}
+                    </h3>
+                    <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold">
+                      {selectedAuction.auctioneer} • {selectedAuction.platform}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                    {selectedAuction.name}
-                  </h3>
-                  <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold">
-                    {selectedAuction.auctioneer} • {selectedAuction.platform}
-                  </p>
+                <button
+                  onClick={() => setSelectedAuction(null)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Indicadores de Desempenho do Leilão */}
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60 space-y-2">
+                <h4 className="font-bold text-xs text-slate-900 dark:text-white uppercase tracking-wider">
+                  Indicadores de Desempenho
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                    <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
+                      <Coins className="w-3.5 h-3.5 text-amber-500" /> Custo / Item
+                    </span>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white mt-1">
+                      {formatCurrency(selCostPerItem)}
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                    <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
+                      <TrendingUp className="w-3.5 h-3.5 text-emerald-500" /> ROI do Leilão
+                    </span>
+                    <p
+                      className={`text-sm font-bold mt-1 ${
+                        selAuctionRoi > 0
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : selAuctionRoi < 0
+                          ? "text-red-600 dark:text-red-400"
+                          : "text-slate-600 dark:text-slate-400"
+                      }`}
+                    >
+                      {selAuctionRoi > 0 ? `+${selAuctionRoi.toFixed(1)}%` : `${selAuctionRoi.toFixed(1)}%`}
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                    <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
+                      <TrendingDown className="w-3.5 h-3.5 text-red-500" /> % Baixa (Perda)
+                    </span>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white mt-1">
+                      {selPctDiscarded.toFixed(1)}%
+                    </p>
+                    <p className="text-[10px] text-slate-400">({selDiscardedCount}/{selTotalItemsCount} itens)</p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                    <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
+                      <Home className="w-3.5 h-3.5 text-blue-500" /> % Uso Próprio
+                    </span>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white mt-1">
+                      {selPctOwnUse.toFixed(1)}%
+                    </p>
+                    <p className="text-[10px] text-slate-400">({selOwnUseCount}/{selTotalItemsCount} itens)</p>
+                  </div>
                 </div>
               </div>
-              <button
-                onClick={() => setSelectedAuction(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 space-y-2">
-                <h4 className="font-bold text-slate-900 dark:text-white">Informações Principais</h4>
-                <p><strong>Tipo:</strong> {selectedAuction.auctionType}</p>
-                <p><strong>Data:</strong> {formatDateBR(selectedAuction.auctionDate)}</p>
-                <p><strong>Comissão:</strong> {selectedAuction.commissionPercentage}%</p>
-                <p><strong>Processo:</strong> {selectedAuction.processNumber || "N/A"}</p>
-                <p><strong>Órgão:</strong> {selectedAuction.responsibleEntity || "N/A"}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 space-y-2">
+                  <h4 className="font-bold text-slate-900 dark:text-white">Informações Principais</h4>
+                  <p><strong>Tipo:</strong> {selectedAuction.auctionType}</p>
+                  <p><strong>Data:</strong> {formatDateBR(selectedAuction.auctionDate)}</p>
+                  <p><strong>Comissão:</strong> {selectedAuction.commissionPercentage}%</p>
+                  <p><strong>Processo:</strong> {selectedAuction.processNumber || "N/A"}</p>
+                  <p><strong>Órgão:</strong> {selectedAuction.responsibleEntity || "N/A"}</p>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 space-y-2">
+                  <h4 className="font-bold text-slate-900 dark:text-white">Logística de Retirada</h4>
+                  <p><strong>Cidade/UF:</strong> {selectedAuction.city} - {selectedAuction.state}</p>
+                  <p><strong>Endereço:</strong> {selectedAuction.pickupAddress || "Não informado"}</p>
+                  {selectedAuction.editalUrl && (
+                    <a
+                      href={selectedAuction.editalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-semibold underline mt-1"
+                    >
+                      <span>Acessar Edital Oficial</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 space-y-2">
-                <h4 className="font-bold text-slate-900 dark:text-white">Logística de Retirada</h4>
-                <p><strong>Cidade/UF:</strong> {selectedAuction.city} - {selectedAuction.state}</p>
-                <p><strong>Endereço:</strong> {selectedAuction.pickupAddress || "Não informado"}</p>
-                {selectedAuction.editalUrl && (
-                  <a
-                    href={selectedAuction.editalUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-semibold underline mt-1"
-                  >
-                    <span>Acessar Edital Oficial</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                <button
+                  onClick={() => {
+                    setSelectedAuction(null);
+                    setActiveTab("lots");
+                  }}
+                  className="px-4 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950"
+                >
+                  Ver Lotes Deste Leilão &rarr;
+                </button>
               </div>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-              <button
-                onClick={() => {
-                  setSelectedAuction(null);
-                  setActiveTab("lots");
-                }}
-                className="px-4 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950"
-              >
-                Ver Lotes Deste Leilão &rarr;
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Modal de Confirmação para Exclusão de Leilão */}
       <ConfirmModal

@@ -29,6 +29,7 @@ export const Header: React.FC = () => {
     setActiveTab,
     isFirebaseConnected,
     clearAllDatabaseData,
+    setIsBackupModalOpen,
   } = useAuction();
 
   const [showAlertsMenu, setShowAlertsMenu] = useState(false);
@@ -63,6 +64,16 @@ export const Header: React.FC = () => {
           <Database className="w-3.5 h-3.5 animate-pulse" />
           <span>Firestore Ativo</span>
         </div>
+
+        {/* Backup Button */}
+        <button
+          onClick={() => setIsBackupModalOpen(true)}
+          className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-all"
+          title="Backup & Restauração"
+        >
+          <Database className="w-3.5 h-3.5 text-amber-500" />
+          <span>Backup</span>
+        </button>
 
         {/* IA Assistant Button */}
         <button

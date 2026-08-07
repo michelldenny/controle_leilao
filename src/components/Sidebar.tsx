@@ -19,6 +19,9 @@ import {
   ChevronLeft,
   ChevronRight,
   TrendingUp,
+  Scan,
+  Building,
+  Target,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -34,10 +37,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
     { id: "auctions", label: "Leilões", icon: Gavel },
     { id: "lots", label: "Lotes", icon: Boxes },
     { id: "inventory", label: "Inventário", icon: Package, badge: metrics.totalItemsCount },
+    { id: "assets", label: "Patrimônio & Descarte", icon: Building },
     { id: "advertisements", label: "Anúncios", icon: Megaphone, badge: metrics.advertisedCount },
     { id: "sales", label: "Vendas & ROI", icon: ShoppingBag, badge: metrics.soldItemsCount },
     { id: "marketplace", label: "Vitrine Virtual", icon: Store, badge: metrics.availableItemsCount, badgeColor: "bg-emerald-500 text-slate-950" },
     { id: "financial", label: "Financeiro", icon: DollarSign },
+    { id: "accounts", label: "Contas Pagar/Receber", icon: DollarSign },
+    { id: "ledger", label: "Razão & Ledger", icon: FileText },
+    { id: "aging", label: "Aging & Giro", icon: TrendingUp },
+    { id: "profitability", label: "Rentabilidade", icon: BarChart3 },
+    { id: "goals", label: "Metas & Indicadores", icon: Target },
     { id: "bi", label: "BI & Capital", icon: TrendingUp },
     { id: "opportunities", label: "Oportunidades", icon: Lightbulb, badge: "IA", badgeColor: "bg-amber-500 text-white" },
     { id: "documents", label: "Documentos", icon: FileText },
@@ -47,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
 
   return (
     <aside
-      className={`relative flex flex-col border-r transition-all duration-300 z-20 ${
+      className={`sticky top-0 h-screen flex flex-col border-r transition-all duration-300 z-20 shrink-0 ${
         darkMode ? "bg-slate-900 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-800"
       } ${collapsed ? "w-20" : "w-64"}`}
     >

@@ -54,10 +54,10 @@ export const BusinessIntelligenceView: React.FC = () => {
 
   // Group profit by category
   const sortedCategories = React.useMemo(() => {
-    const categoryStats: { [cat: string]: { cat: string; cost: number; est: number; count: number; margin: number } } = {};
+    const categoryStats: { [cat: string]: { cat: string; cost: number; est: number; count: number; roi: number; netMargin: number } } = {};
     items.forEach((it) => {
       if (!categoryStats[it.category]) {
-        categoryStats[it.category] = { cat: it.category, cost: 0, est: 0, count: 0, margin: 0 };
+        categoryStats[it.category] = { cat: it.category, cost: 0, est: 0, count: 0, roi: 0, netMargin: 0 };
       }
       categoryStats[it.category].cost += it.realTotalCost;
       categoryStats[it.category].est += it.estimatedMarketAvg;
@@ -66,8 +66,9 @@ export const BusinessIntelligenceView: React.FC = () => {
 
     const list = Object.values(categoryStats).map((st) => {
       const profitEst = st.est - st.cost;
-      const margin = st.cost > 0 ? (profitEst / st.cost) * 100 : 0;
-      return { ...st, margin };
+      const roi = st.cost > 0 ? (profitEst / st.cost) * 100 : 0;
+      const netMargin = st.est > 0 ? (profitEst / st.est) * 100 : 0;
+      return { ...st, margin: roi, roi, netMargin };
     });
 
     list.sort((a, b) => {
@@ -209,8 +210,9 @@ export const BusinessIntelligenceView: React.FC = () => {
                   <button
                     onClick={() => handleSort("margin")}
                     className="flex items-center justify-end gap-1.5 hover:text-slate-900 dark:hover:text-white font-bold transition-colors group cursor-pointer w-full"
+                    title="Fórmula: (Valuation Estimado - Custo Total) / Custo Total * 100"
                   >
-                    <span>Margem Bruta Estimada %</span>
+                    <span>ROI / Markup Estimado %</span>
                     {renderSortIcon("margin")}
                   </button>
                 </th>
@@ -224,7 +226,9 @@ export const BusinessIntelligenceView: React.FC = () => {
                     <td className="p-3 text-center font-medium text-slate-600">{stat.count}</td>
                     <td className="p-3 text-right font-semibold text-slate-900 dark:text-white">{formatCurrency(stat.cost)}</td>
                     <td className="p-3 text-right font-bold text-emerald-600">{formatCurrency(stat.est)}</td>
-                    <td className="p-3 text-right font-extrabold text-amber-600 dark:text-amber-400">{stat.margin.toFixed(1)}%</td>
+                    <td className="p-3 text-right font-extrabold text-amber-600 dark:text-amber-400">
+                      {stat.roi > 0 ? `+${stat.roi.toFixed(1)}%` : `${stat.roi.toFixed(1)}%`}
+                    </td>
                   </tr>
                 );
               })}
