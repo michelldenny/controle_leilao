@@ -47,7 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
 
   return (
     <aside
-      className={`relative flex flex-col border-r transition-all duration-300 z-20 ${
+      className={`sticky top-0 h-screen shrink-0 flex flex-col border-r transition-all duration-300 z-30 ${
         darkMode ? "bg-slate-900 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-800"
       } ${collapsed ? "w-20" : "w-64"}`}
     >
