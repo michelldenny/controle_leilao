@@ -8,6 +8,7 @@ import {
   onSnapshot,
   getDocs,
   writeBatch,
+  runTransaction,
 } from "firebase/firestore";
 import {
   Auction,
@@ -26,8 +27,18 @@ import {
   ItemCondition,
   OperationalState,
 } from "../types";
+import {
+  auctionSchema,
+  lotSchema,
+  auctionItemSchema,
+  saleRecordSchema,
+  additionalExpenseSchema,
+} from "../schemas/zodSchemas";
 import { getLocalDateISO } from "../lib/dateUtils";
 import { initialAlerts } from "../mockData";
+import { SalesService } from "../services/salesService";
+import { LotService } from "../services/lotService";
+import { InventoryService } from "../services/inventoryService";
 
 interface ToastMessage {
   id: string;
@@ -68,6 +79,8 @@ interface AuctionContextType {
   closeAiModal: () => void;
   isImportModalOpen: boolean;
   setIsImportModalOpen: (open: boolean) => void;
+  isBackupModalOpen: boolean;
+  setIsBackupModalOpen: (open: boolean) => void;
 
   // Database Connection & Reset
   isFirebaseConnected: boolean;
@@ -137,7 +150,7 @@ interface AuctionContextType {
   addAdvertisement: (ad: Omit<Advertisement, "id">) => void;
   updateAdStatus: (id: string, status: Advertisement["status"]) => void;
   deleteAdvertisement: (id: string) => void;
-  recordSale: (sale: Omit<SaleRecord, "id" | "netSaleValue" | "netProfit" | "roiPercentage" | "marginPercentage">) => void;
+  recordSale: (sale: Omit<SaleRecord, "id" | "netSaleValue" | "netProfit" | "roiPercentage" | "marginPercentage" | "costBasisAtSale">) => void;
   registerSale: (itemId: string, saleData: Partial<SaleRecord>) => void;
   updateSale: (id: string, saleData: Partial<SaleRecord>) => void;
   deleteSale: (id: string) => void;
@@ -197,6 +210,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
   const [aiModalItem, setAiModalItem] = useState<AuctionItem | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
+  const [isBackupModalOpen, setIsBackupModalOpen] = useState<boolean>(false);
 
   // Firestore connection status
   const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(true);
@@ -213,7 +227,6 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [documents, setDocuments] = useState<AppDocument[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
 
-  const [alerts] = useState<AlertItem[]>(initialAlerts);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [globalSearch, setGlobalSearch] = useState<string>("");
 
@@ -233,46 +246,101 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       "leilao_activity_logs",
     ].forEach((k) => localStorage.removeItem(k));
 
-    const unsubAuctions = onSnapshot(collection(db, "auctions"), (snap) => {
-      setAuctions(snap.docs.map((d) => d.data() as Auction));
-    }, () => setIsFirebaseConnected(false));
+    const handleError = (err: any) => {
+      console.error("Erro na conexão com Firestore:", err);
+      setIsFirebaseConnected(false);
+    };
 
-    const unsubLots = onSnapshot(collection(db, "lots"), (snap) => {
-      setLots(snap.docs.map((d) => d.data() as Lot));
-    });
+    const unsubAuctions = onSnapshot(
+      collection(db, "auctions"),
+      (snap) => {
+        setAuctions(snap.docs.map((d) => d.data() as Auction));
+        setIsFirebaseConnected(true);
+      },
+      handleError
+    );
 
-    const unsubItems = onSnapshot(collection(db, "items"), (snap) => {
-      setItems(snap.docs.map((d) => d.data() as AuctionItem));
-    });
+    const unsubLots = onSnapshot(
+      collection(db, "lots"),
+      (snap) => {
+        setLots(snap.docs.map((d) => d.data() as Lot));
+        setIsFirebaseConnected(true);
+      },
+      handleError
+    );
 
-    const unsubExpenses = onSnapshot(collection(db, "expenses"), (snap) => {
-      setExpenses(snap.docs.map((d) => d.data() as AdditionalExpense));
-    });
+    const unsubItems = onSnapshot(
+      collection(db, "items"),
+      (snap) => {
+        setItems(snap.docs.map((d) => d.data() as AuctionItem));
+        setIsFirebaseConnected(true);
+      },
+      handleError
+    );
 
-    const unsubMaint = onSnapshot(collection(db, "maintenanceRecords"), (snap) => {
-      setMaintenanceRecords(snap.docs.map((d) => d.data() as MaintenanceRecord));
-    });
+    const unsubExpenses = onSnapshot(
+      collection(db, "expenses"),
+      (snap) => {
+        setExpenses(snap.docs.map((d) => d.data() as AdditionalExpense));
+        setIsFirebaseConnected(true);
+      },
+      handleError
+    );
 
-    const unsubAds = onSnapshot(collection(db, "advertisements"), (snap) => {
-      setAdvertisements(snap.docs.map((d) => d.data() as Advertisement));
-    });
+    const unsubMaint = onSnapshot(
+      collection(db, "maintenanceRecords"),
+      (snap) => {
+        setMaintenanceRecords(snap.docs.map((d) => d.data() as MaintenanceRecord));
+        setIsFirebaseConnected(true);
+      },
+      handleError
+    );
 
-    const unsubSales = onSnapshot(collection(db, "sales"), (snap) => {
-      setSales(snap.docs.map((d) => d.data() as SaleRecord));
-    });
+    const unsubAds = onSnapshot(
+      collection(db, "advertisements"),
+      (snap) => {
+        setAdvertisements(snap.docs.map((d) => d.data() as Advertisement));
+        setIsFirebaseConnected(true);
+      },
+      handleError
+    );
 
-    const unsubContacts = onSnapshot(collection(db, "contacts"), (snap) => {
-      setContacts(snap.docs.map((d) => d.data() as Contact));
-    });
+    const unsubSales = onSnapshot(
+      collection(db, "sales"),
+      (snap) => {
+        setSales(snap.docs.map((d) => d.data() as SaleRecord));
+        setIsFirebaseConnected(true);
+      },
+      handleError
+    );
 
-    const unsubDocs = onSnapshot(collection(db, "documents"), (snap) => {
-      setDocuments(snap.docs.map((d) => d.data() as AppDocument));
-    });
+    const unsubContacts = onSnapshot(
+      collection(db, "contacts"),
+      (snap) => {
+        setContacts(snap.docs.map((d) => d.data() as Contact));
+        setIsFirebaseConnected(true);
+      },
+      handleError
+    );
 
-    const unsubLogs = onSnapshot(collection(db, "activityLogs"), (snap) => {
-      const list = snap.docs.map((d) => d.data() as ActivityLog);
-      setActivityLogs(list.sort((a, b) => (b.id || "").localeCompare(a.id || "")));
-    });
+    const unsubDocs = onSnapshot(
+      collection(db, "documents"),
+      (snap) => {
+        setDocuments(snap.docs.map((d) => d.data() as AppDocument));
+        setIsFirebaseConnected(true);
+      },
+      handleError
+    );
+
+    const unsubLogs = onSnapshot(
+      collection(db, "activityLogs"),
+      (snap) => {
+        const list = snap.docs.map((d) => d.data() as ActivityLog);
+        setActivityLogs(list.sort((a, b) => (b.id || "").localeCompare(a.id || "")));
+        setIsFirebaseConnected(true);
+      },
+      handleError
+    );
 
     return () => {
       unsubAuctions();
@@ -430,9 +498,17 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // CRUD Auctions
   const addAuction = (auctionData: Omit<Auction, "id">): Auction => {
-    const id = "auc-" + Date.now().toString(36);
+    const parseRes = auctionSchema.safeParse(auctionData);
+    if (!parseRes.success) {
+      const msg = (parseRes as any).error?.issues?.[0]?.message || "Dados do leilão inválidos";
+      addToast("Erro de Validação", msg, "error");
+    }
+    const id = "auc-" + crypto.randomUUID();
     const newAuction: Auction = { ...auctionData, id };
-    setDoc(doc(db, "auctions", id), newAuction).catch(console.error);
+    setDoc(doc(db, "auctions", id), newAuction).catch((err) => {
+      console.error(err);
+      addToast("Erro ao Salvar", "Não foi possível salvar o leilão no banco.", "error");
+    });
     addToast("Leilão Cadastrado", `Leilão "${newAuction.name}" adicionado com sucesso!`);
     addLog("Novo Leilão", `Leilão ${newAuction.name} cadastrado.`, "creation");
     return newAuction;
@@ -447,22 +523,52 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const deleteAuction = (id: string) => {
-    // Excluir em cascata lotes e itens vinculados a este leilão
-    const auctionLots = lots.filter((l) => l.auctionId === id);
     const auctionItems = items.filter((i) => i.auctionId === id);
+    if (auctionItems.some((i) => i.isSold)) {
+      addToast(
+        "Operação Bloqueada",
+        "Este leilão possui itens vendidos e não pode ser excluído para preservar o histórico financeiro.",
+        "warning"
+      );
+      return;
+    }
 
-    auctionItems.forEach((item) => deleteDoc(doc(db, "items", item.id)).catch(console.error));
-    auctionLots.forEach((lot) => deleteDoc(doc(db, "lots", lot.id)).catch(console.error));
-    deleteDoc(doc(db, "auctions", id)).catch(console.error);
+    const auctionLots = lots.filter((l) => l.auctionId === id);
+    const batch = writeBatch(db);
 
-    addToast("Leilão Excluído", "O leilão, seus lotes e itens no inventário foram removidos.");
+    auctionItems.forEach((item) => batch.delete(doc(db, "items", item.id)));
+    auctionLots.forEach((lot) => batch.delete(doc(db, "lots", lot.id)));
+    batch.delete(doc(db, "auctions", id));
+
+    batch
+      .commit()
+      .then(() => {
+        addToast("Leilão Excluído", "O leilão, seus lotes e itens no inventário foram removidos.");
+      })
+      .catch((err) => {
+        console.error("Erro na exclusão do leilão:", err);
+        addToast("Erro ao Excluir", "Falha ao remover leilão no servidor.", "error");
+      });
   };
 
   // CRUD Lots
   const addLot = (lotData: Omit<Lot, "id" | "totalLotCost">): Lot => {
-    const id = "lot-" + Date.now().toString(36);
+    const parseRes = lotSchema.safeParse(lotData);
+    if (!parseRes.success) {
+      const msg = (parseRes as any).error?.issues?.[0]?.message || "Dados do lote inválidos";
+      addToast("Erro de Validação", msg, "error");
+    }
+    const id = "lot-" + crypto.randomUUID();
     const totalLotCost = calculateTotalLotCost(lotData);
-    const newLot: Lot = { ...lotData, id, totalLotCost };
+    const newLot: Lot = {
+      ...lotData,
+      id,
+      totalLotCost,
+      allocationStatus: "pendente",
+      allocationVersion: 1,
+      allocatedTotal: 0,
+      unallocatedAmount: totalLotCost,
+    };
     setDoc(doc(db, "lots", id), newLot).catch(console.error);
     addToast("Lote Cadastrado", `Lote ${newLot.lotNumber} adicionado com custo total de R$ ${totalLotCost.toFixed(2)}.`);
     addLog("Novo Lote", `Lote ${newLot.lotNumber} cadastrado com valor de lance R$ ${newLot.winningBid.toFixed(2)}.`, "creation");
@@ -473,29 +579,56 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const existing = lots.find((l) => l.id === id);
     if (!existing) return;
     const updated = { ...existing, ...lotData };
+    const oldCost = existing.totalLotCost || 0;
     updated.totalLotCost = calculateTotalLotCost(updated);
+
+    if (oldCost !== updated.totalLotCost) {
+      updated.allocationStatus = "desatualizado";
+    }
+
     setDoc(doc(db, "lots", id), updated).catch(console.error);
     addToast("Lote Atualizado", "Dados do lote atualizados com sucesso.");
   };
 
   const deleteLot = (id: string) => {
-    // Excluir em cascata todos os itens pertencentes a este lote
     const lotItems = items.filter((i) => i.lotId === id);
-    lotItems.forEach((item) => {
-      deleteDoc(doc(db, "items", item.id)).catch(console.error);
-    });
+    if (lotItems.some((i) => i.isSold)) {
+      addToast(
+        "Operação Bloqueada",
+        "Este lote possui itens vendidos e não pode ser excluído para não corromper demonstrações históricas.",
+        "warning"
+      );
+      return;
+    }
 
-    deleteDoc(doc(db, "lots", id)).catch(console.error);
-    addToast(
-      "Lote Excluído",
-      `O lote e seus ${lotItems.length} item(ns) cadastrados no inventário foram removidos.`
-    );
+    const batch = writeBatch(db);
+    lotItems.forEach((item) => batch.delete(doc(db, "items", item.id)));
+    batch.delete(doc(db, "lots", id));
+
+    batch
+      .commit()
+      .then(() => {
+        addToast(
+          "Lote Excluído",
+          `O lote e seus ${lotItems.length} item(ns) cadastrados no inventário foram removidos.`
+        );
+      })
+      .catch((err) => {
+        console.error("Erro ao excluir lote:", err);
+        addToast("Erro", "Falha ao excluir lote no banco.", "error");
+      });
   };
 
   // CRUD Items
   const addItem = (
     itemData: Omit<AuctionItem, "id" | "code" | "dateAdded" | "realTotalCost">
   ): AuctionItem => {
+    const parseRes = auctionItemSchema.safeParse(itemData);
+    if (!parseRes.success) {
+      const msg = (parseRes as any).error?.issues?.[0]?.message || "Dados do item inválidos";
+      addToast("Erro de Validação", msg, "error");
+    }
+
     const targetLot = lots.find((l) => l.id === itemData.lotId);
     const lotNum = targetLot ? targetLot.lotNumber : "0";
     const year = new Date().getFullYear();
@@ -503,8 +636,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const seqInLot = existingCountInLot + 1;
     const code = `lote-${lotNum}-${year}-${seqInLot.toString().padStart(2, "0")}`;
 
-    const nextSeq = items.length + 1;
-    const id = "itm-" + nextSeq + "-" + Date.now().toString(36);
+    const id = "itm-" + crypto.randomUUID();
     const realTotalCost = (itemData.apportionedCost || 0) + (itemData.additionalCosts || 0);
     const dateAdded = getLocalDateISO();
 
@@ -516,30 +648,14 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       dateAdded,
       daysInStock: 0,
       archived: false,
+      costAllocationStatus: itemData.apportionedCost > 0 ? "concluido" : "pendente",
     };
 
     setDoc(doc(db, "items", id), newItem).catch(console.error);
 
     if (targetLot) {
       const newCount = (targetLot.itemCount || 0) + 1;
-      updateLot(targetLot.id, { itemCount: newCount });
-
-      // Recalcula o rateio do lote considerando todos os itens existentes mais o novo item
-      const currentLotItems = [...items.filter((i) => i.lotId === targetLot.id), newItem];
-      const totalLotCost = targetLot.totalLotCost || 0;
-      const equalShare = Number((totalLotCost / currentLotItems.length).toFixed(2));
-      const equalPercent = Number((100 / currentLotItems.length).toFixed(2));
-
-      currentLotItems.forEach((item) => {
-        const realTotalCost = equalShare + (item.additionalCosts || 0);
-        const updatedItem = {
-          ...item,
-          apportionedCost: equalShare,
-          assignedPercent: equalPercent,
-          realTotalCost: Number(realTotalCost.toFixed(2)),
-        };
-        setDoc(doc(db, "items", item.id), updatedItem).catch(console.error);
-      });
+      updateLot(targetLot.id, { itemCount: newCount, allocationStatus: "desatualizado" });
     }
 
     addToast("Item Cadastrado", `Item ${newItem.code} - ${newItem.name} adicionado ao inventário.`);
@@ -573,35 +689,30 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const deleteItem = (id: string) => {
     const itemToDelete = items.find((i) => i.id === id);
-    deleteDoc(doc(db, "items", id)).catch(console.error);
-
-    if (itemToDelete) {
-      const targetLot = lots.find((l) => l.id === itemToDelete.lotId);
-      if (targetLot) {
-        const remainingItems = items.filter((i) => i.lotId === targetLot.id && i.id !== id);
-        const newCount = Math.max(0, (targetLot.itemCount || 1) - 1);
-        updateLot(targetLot.id, { itemCount: newCount });
-
-        if (remainingItems.length > 0) {
-          const totalLotCost = targetLot.totalLotCost || 0;
-          const equalShare = Number((totalLotCost / remainingItems.length).toFixed(2));
-          const equalPercent = Number((100 / remainingItems.length).toFixed(2));
-
-          remainingItems.forEach((item) => {
-            const realTotalCost = equalShare + (item.additionalCosts || 0);
-            const updatedItem = {
-              ...item,
-              apportionedCost: equalShare,
-              assignedPercent: equalPercent,
-              realTotalCost: Number(realTotalCost.toFixed(2)),
-            };
-            setDoc(doc(db, "items", item.id), updatedItem).catch(console.error);
-          });
-        }
-      }
+    if (itemToDelete?.isSold) {
+      addToast(
+        "Operação Bloqueada",
+        "Não é possível excluir um item que já possui venda realizada.",
+        "warning"
+      );
+      return;
     }
 
-    addToast("Item Excluído", "O item foi removido do inventário.");
+    deleteDoc(doc(db, "items", id))
+      .then(() => {
+        if (itemToDelete) {
+          const targetLot = lots.find((l) => l.id === itemToDelete.lotId);
+          if (targetLot) {
+            const newCount = Math.max(0, (targetLot.itemCount || 1) - 1);
+            updateLot(targetLot.id, { itemCount: newCount, allocationStatus: "desatualizado" });
+          }
+        }
+        addToast("Item Excluído", "O item foi removido do inventário.");
+      })
+      .catch((err) => {
+        console.error("Erro ao excluir item:", err);
+        addToast("Erro", "Falha ao remover item.", "error");
+      });
   };
 
   const archiveItem = (id: string) => {
@@ -610,8 +721,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     updateItem(id, { archived: !existing.archived });
   };
 
-  // Apportion Lot Cost
-  const apportionLotCost = (
+  // Rateio Protegido de Custos do Lote com Compensação de Centavos
+  const apportionLotCost = async (
     lotId: string,
     method: ApportionmentMethod,
     customValues?: { itemId: string; value: number }[]
@@ -622,50 +733,14 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const lotItems = items.filter((i) => i.lotId === lotId);
     if (lotItems.length === 0) return;
 
-    const totalLotCost = targetLot.totalLotCost || 0;
-    // Filtrar apenas itens que NÃO estão descartados para absorver o custo
-    const activeLotItems = lotItems.filter((i) => i.status !== "descartado");
-    const activeCount = Math.max(activeLotItems.length, 1);
-
-    lotItems.forEach((item) => {
-      let apportioned = 0;
-      let assignedPercent = 0;
-
-      if (item.status === "descartado") {
-        apportioned = 0;
-        assignedPercent = 0;
-      } else if (method === "igualitario") {
-        assignedPercent = 100 / activeCount;
-        apportioned = totalLotCost / activeCount;
-      } else if (method === "manual" && customValues) {
-        const found = customValues.find((cv) => cv.itemId === item.id);
-        apportioned = found ? found.value : 0;
-        assignedPercent = totalLotCost > 0 ? (apportioned / totalLotCost) * 100 : 0;
-      } else if (method === "percentual" && customValues) {
-        const found = customValues.find((cv) => cv.itemId === item.id);
-        assignedPercent = found ? found.value : 0;
-        apportioned = (totalLotCost * assignedPercent) / 100;
-      } else if (method === "valor_estimado") {
-        const sumEstimated = activeLotItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 1), 0);
-        const itemEst = item.estimatedMarketAvg || 1;
-        assignedPercent = sumEstimated > 0 ? (itemEst / sumEstimated) * 100 : 100 / activeCount;
-        apportioned = (totalLotCost * assignedPercent) / 100;
-      }
-
-      const realTotalCost = apportioned + (item.additionalCosts || 0);
-
-      const updatedItem = {
-        ...item,
-        apportionedCost: Number(apportioned.toFixed(2)),
-        assignedPercent: Number(assignedPercent.toFixed(2)),
-        realTotalCost: Number(realTotalCost.toFixed(2)),
-      };
-
-      setDoc(doc(db, "items", item.id), updatedItem).catch(console.error);
-    });
-
-    addToast("Rateio Concluído", `Custo de R$ ${totalLotCost.toFixed(2)} rateado entre ${activeLotItems.length} item(ns) ativos do lote.`);
-    addLog("Rateio de Custo", `Rateio (${method}) aplicado no lote ${targetLot.lotNumber} (excluindo descartados).`, "expense");
+    try {
+      await LotService.applyApportionment(targetLot, lotItems, method, customValues);
+      addToast("Rateio Concluído", `Custo do lote rateado entre os itens ativos em estoque.`);
+      addLog("Rateio de Custo", `Rateio (${method}) aplicado no lote ${targetLot.lotNumber}.`, "expense");
+    } catch (err: any) {
+      console.error("Erro ao aplicar rateio:", err);
+      addToast("Erro no Rateio", err.message || "Não foi possível gravar o rateio no Firestore.", "error");
+    }
   };
 
   // Bulk Item Generator (Cadastro em Massa)
@@ -706,7 +781,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const seq = startSeq + i;
       const seqInLot = existingCountInLot + i + 1;
       const code = `lote-${lotNum}-${year}-${seqInLot.toString().padStart(2, "0")}`;
-      const id = "itm-" + seq + "-" + Date.now().toString(36) + "-" + i;
+      const id = "itm-" + crypto.randomUUID();
 
       const item: AuctionItem = {
         id,
@@ -741,12 +816,13 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         dateAdded,
         daysInStock: 0,
         archived: false,
+        costAllocationStatus: "concluido",
       };
 
       setDoc(doc(db, "items", id), item).catch(console.error);
     }
 
-    updateLot(lotId, { itemCount: (targetLot.itemCount || 0) + count });
+    updateLot(lotId, { itemCount: (targetLot.itemCount || 0) + count, allocationStatus: "desatualizado" });
 
     addToast(`Gerados ${count} Itens`, `Criados com sucesso no lote ${targetLot.lotNumber}.`);
     addLog("Cadastro em Massa", `${count} itens (${baseData.name}) criados no lote ${targetLot.lotNumber}.`, "creation");
@@ -777,7 +853,6 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const count = Math.max(1, Number(quantity) || 1);
     const targetLot = lots.find((l) => l.id === lotId) || lots[0];
-    const startSeq = items.length + 1;
     const dateAdded = getLocalDateISO();
     const lotNum = targetLot ? targetLot.lotNumber : "0";
     const year = new Date().getFullYear();
@@ -786,10 +861,9 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const defaultPhoto = photoUrl || "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80";
 
     for (let i = 0; i < count; i++) {
-      const seq = startSeq + i;
       const seqInLot = existingCountInLot + i + 1;
       const code = `lote-${lotNum}-${year}-${seqInLot.toString().padStart(2, "0")}`;
-      const id = "itm-" + seq + "-" + Date.now().toString(36) + "-" + i;
+      const id = "itm-" + crypto.randomUUID();
 
       const item: AuctionItem = {
         id,
@@ -821,71 +895,59 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         dateAdded,
         daysInStock: 0,
         archived: false,
+        costAllocationStatus: "concluido",
       };
 
       setDoc(doc(db, "items", id), item).catch(console.error);
     }
 
     if (targetLot) {
-      updateLot(targetLot.id, { itemCount: (targetLot.itemCount || 0) + count });
+      updateLot(targetLot.id, { itemCount: (targetLot.itemCount || 0) + count, allocationStatus: "desatualizado" });
     }
 
     addToast(`Gerados ${count} Itens`, `Criados com sucesso no banco de dados.`);
     addLog("Cadastro em Massa", `${count} itens (${baseName}) criados.`, "creation");
   };
 
-  // Add Expense
-  const addExpense = (expenseData: Omit<AdditionalExpense, "id">) => {
-    const id = "exp-" + Date.now();
-    const newExp: AdditionalExpense = { ...expenseData, id };
-
-    setDoc(doc(db, "expenses", id), newExp).catch(console.error);
-
-    const targetItem = items.find((i) => i.id === newExp.itemId);
-    if (targetItem) {
-      const additionalCosts = (targetItem.additionalCosts || 0) + newExp.amount;
-      const realTotalCost = (targetItem.apportionedCost || 0) + additionalCosts;
-      updateItem(targetItem.id, { additionalCosts, realTotalCost });
+  // Add Expense Atômico via InventoryService
+  const addExpense = async (expenseData: Omit<AdditionalExpense, "id">) => {
+    try {
+      const exp = await InventoryService.addExpense(expenseData, userRole);
+      addToast("Despesa Adicionada", `R$ ${exp.amount.toFixed(2)} - ${exp.description}`);
+    } catch (err: any) {
+      console.error("Erro ao adicionar despesa:", err);
+      addToast("Erro ao Salvar Despesa", err.message || "Falha na transação de despesa.", "error");
     }
-
-    addToast("Despesa Adicionada", `R$ ${newExp.amount.toFixed(2)} - ${newExp.description}`);
-    addLog("Nova Despesa", `Despesa de R$ ${newExp.amount.toFixed(2)} adicionada: ${newExp.description}.`, "expense", newExp.itemId);
   };
 
-  // Add Maintenance
-  const addMaintenance = (maintData: Omit<MaintenanceRecord, "id">) => {
-    const id = "maint-" + Date.now();
-    const newMaint: MaintenanceRecord = { ...maintData, id };
-
-    setDoc(doc(db, "maintenanceRecords", id), newMaint).catch(console.error);
-
-    if (newMaint.cost > 0) {
-      addExpense({
-        itemId: newMaint.itemId,
-        category: "Manutenção",
-        description: `Serviço: ${newMaint.serviceType}`,
-        amount: newMaint.cost,
-        date: newMaint.date,
-        supplier: newMaint.supplier,
-      });
+  // Add Maintenance Atômico via InventoryService
+  const addMaintenance = async (maintData: Omit<MaintenanceRecord, "id">) => {
+    try {
+      const maint = await InventoryService.addMaintenance(maintData, userRole);
+      addToast("Manutenção Registrada", `${maint.serviceType} para o item.`);
+      addLog("Manutenção Registrada", `${maint.serviceType} (${maint.description}).`, "maintenance", maint.itemId);
+    } catch (err: any) {
+      console.error("Erro ao registrar manutenção:", err);
+      addToast("Erro", err.message || "Falha na transação de manutenção.", "error");
     }
-
-    updateItem(newMaint.itemId, { status: "em_manutencao" });
-
-    addToast("Manutenção Registrada", `${newMaint.serviceType} para o item.`);
-    addLog("Manutenção Registrada", `${newMaint.serviceType} (${newMaint.description}).`, "maintenance", newMaint.itemId);
   };
 
-  const updateMaintenanceStatus = (id: string, status: MaintenanceRecord["status"]) => {
+  const updateMaintenanceStatus = async (id: string, status: MaintenanceRecord["status"], newOperationalState?: OperationalState) => {
     const existing = maintenanceRecords.find((m) => m.id === id);
     if (!existing) return;
-    setDoc(doc(db, "maintenanceRecords", id), { ...existing, status }).catch(console.error);
-    addToast("Manutenção Atualizada", "Status do serviço alterado.");
+
+    try {
+      await InventoryService.updateMaintenanceStatus(id, existing, status, newOperationalState);
+      addToast("Manutenção Atualizada", `Status alterado para ${status}.`);
+    } catch (err: any) {
+      console.error("Erro ao atualizar manutenção:", err);
+      addToast("Erro", "Falha ao atualizar status da manutenção.", "error");
+    }
   };
 
   // Ads
   const addAdvertisement = (adData: Omit<Advertisement, "id">) => {
-    const id = "ad-" + Date.now();
+    const id = "ad-" + crypto.randomUUID();
     const newAd: Advertisement = { ...adData, id };
 
     setDoc(doc(db, "advertisements", id), newAd).catch(console.error);
@@ -912,63 +974,20 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addToast("Anúncio Removido", "O anúncio foi excluído.");
   };
 
-  // Record Sale
-  const recordSale = (
-    saleData: Omit<SaleRecord, "id" | "netSaleValue" | "netProfit" | "roiPercentage" | "marginPercentage">
+  // Record Sale Atômico com Congelamento de CMV via SalesService
+  const recordSale = async (
+    saleData: Omit<SaleRecord, "id" | "netSaleValue" | "netProfit" | "roiPercentage" | "marginPercentage" | "costBasisAtSale">
   ) => {
-    const id = "sale-" + Date.now();
-    const targetItem = items.find((i) => i.id === saleData.itemId);
-    if (!targetItem) return;
-
-    let realCost = targetItem.realTotalCost || 0;
-    if (realCost === 0 && targetItem.lotId) {
-      const parentLot = lots.find((l) => l.id === targetItem.lotId);
-      realCost = parentLot?.totalLotCost || 0;
+    try {
+      const { netProfit, roi } = await SalesService.executeSale(saleData, userRole);
+      addToast(
+        "Venda Registrada!",
+        `Item vendido por R$ ${saleData.finalPrice.toFixed(2)}. Lucro Líquido: R$ ${netProfit.toFixed(2)} (ROI: ${roi.toFixed(1)}%).`
+      );
+    } catch (err: any) {
+      console.error("Erro na transação de venda:", err);
+      addToast("Erro na Venda", err.message || "Falha ao registrar venda no banco.", "error");
     }
-
-    const netSaleValue =
-      (saleData.finalPrice || 0) -
-      (saleData.sellerFreight || 0) -
-      (saleData.platformCommission || 0) -
-      (saleData.taxes || 0) -
-      (saleData.otherExpenses || 0);
-
-    const netProfit = netSaleValue - realCost;
-    const roiPercentage = realCost > 0 ? (netProfit / realCost) * 100 : 0;
-    const marginPercentage = netSaleValue > 0 ? (netProfit / netSaleValue) * 100 : 0;
-
-    const newSale: SaleRecord = {
-      listedPrice: targetItem.listedPrice || targetItem.estimatedMarketAvg || saleData.finalPrice,
-      negotiatedPrice: saleData.finalPrice,
-      discount: (targetItem.listedPrice || 0) > saleData.finalPrice ? (targetItem.listedPrice || 0) - saleData.finalPrice : 0,
-      paymentMethod: "Pix",
-      paymentStatus: "pago",
-      ...saleData,
-      id,
-      netSaleValue: Number(netSaleValue.toFixed(2)),
-      netProfit: Number(netProfit.toFixed(2)),
-      roiPercentage: Number(roiPercentage.toFixed(2)),
-      marginPercentage: Number(marginPercentage.toFixed(2)),
-    };
-
-    setDoc(doc(db, "sales", id), newSale).catch(console.error);
-
-    updateItem(saleData.itemId, {
-      status: "vendido",
-      isSold: true,
-    });
-
-    addToast(
-      "Venda Registrada!",
-      `Item vendido por R$ ${saleData.finalPrice.toFixed(2)}. Lucro Líquido: R$ ${netProfit.toFixed(2)} (ROI: ${roiPercentage.toFixed(1)}%).`
-    );
-
-    addLog(
-      "Venda Realizada",
-      `Vendido por R$ ${saleData.finalPrice.toFixed(2)} para ${saleData.buyerName}. Lucro Líquido: R$ ${netProfit.toFixed(2)} (ROI ${roiPercentage.toFixed(1)}%).`,
-      "sale",
-      saleData.itemId
-    );
   };
 
   const registerSale = (itemId: string, saleData: any) => {
@@ -997,12 +1016,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const existing = sales.find((s) => s.id === id);
     if (!existing) return;
 
-    const targetItem = items.find((i) => i.id === (saleData.itemId || existing.itemId));
-    let realCost = targetItem?.realTotalCost || 0;
-    if (realCost === 0 && targetItem?.lotId) {
-      const parentLot = lots.find((l) => l.id === targetItem.lotId);
-      realCost = parentLot?.totalLotCost || 0;
-    }
+    // Respeitar o CMV congelado na venda (costBasisAtSale) se existir
+    const realCost = existing.costBasisAtSale !== undefined ? existing.costBasisAtSale : existing.netSaleValue - existing.netProfit;
 
     const updatedFinalPrice = saleData.finalPrice !== undefined ? saleData.finalPrice : existing.finalPrice;
     const updatedFreight = saleData.sellerFreight !== undefined ? saleData.sellerFreight : existing.sellerFreight;
@@ -1028,17 +1043,17 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addToast("Venda Atualizada", "As informações da venda foram salvas com sucesso.");
   };
 
-  const deleteSale = (id: string) => {
-    const existing = sales.find((s) => s.id === id);
-    if (existing) {
-      // Reverter status do item para disponível
-      updateItem(existing.itemId, {
-        status: "disponivel",
-        isSold: false,
-      });
+  const deleteSale = async (id: string) => {
+    const existingSale = sales.find((s) => s.id === id);
+    if (!existingSale) return;
+
+    try {
+      await SalesService.reverseSale(existingSale, userRole);
+      addToast("Venda Excluída", "O registro de venda foi removido e o item retornou ao status anterior.");
+    } catch (err: any) {
+      console.error("Erro ao excluir venda:", err);
+      addToast("Erro", err.message || "Falha ao remover venda.", "error");
     }
-    deleteDoc(doc(db, "sales", id)).catch(console.error);
-    addToast("Venda Excluída", "O registro de venda foi removido e o item retornou para disponível no estoque.");
   };
 
   // Contacts
@@ -1095,7 +1110,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const unsoldItems = items.filter((i) => !i.isSold && i.status !== "descartado" && i.status !== "uso_proprio");
   const capitalInInventoryCost = unsoldItems.reduce((acc, curr) => acc + (curr.realTotalCost || 0), 0);
   const capitalInInventoryEstimated = unsoldItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 0), 0);
-  const potentialProfit = Math.max(0, capitalInInventoryEstimated - capitalInInventoryCost);
+  // Jamais truncar prejuízo potencial (exibe valores negativos se custo > estimativa)
+  const potentialProfit = capitalInInventoryEstimated - capitalInInventoryCost;
   const potentialStockProfit = potentialProfit;
 
   // Itens retidos para uso próprio / patrimônio interno
@@ -1103,7 +1119,71 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const ownUseItemsCount = ownUseItems.length;
   const ownUseCostTotal = ownUseItems.reduce((acc, curr) => acc + (curr.realTotalCost || 0), 0);
   const ownUseEstimatedTotal = ownUseItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 0), 0);
-  const ownUseSavingsTotal = Math.max(0, ownUseEstimatedTotal - ownUseCostTotal);
+  const ownUseSavingsTotal = ownUseEstimatedTotal - ownUseCostTotal;
+
+  // Engine Dinâmica de Alertas Calculados
+  const alerts = React.useMemo<AlertItem[]>(() => {
+    const list: AlertItem[] = [];
+    const todayISO = new Date().toISOString().split("T")[0];
+
+    lots.forEach((lot) => {
+      // Retirada vencida
+      if (lot.pickupStatus !== "retirado" && lot.pickupDeadline && lot.pickupDeadline < todayISO) {
+        list.push({
+          id: `alt-pickup-${lot.id}`,
+          title: `Retirada Vencida - Lote ${lot.lotNumber}`,
+          description: `Prazo expirado em ${lot.pickupDeadline}. Status atual: ${lot.pickupStatus}.`,
+          severity: "high",
+          dueDate: lot.pickupDeadline,
+          relatedType: "lot",
+          relatedId: lot.id,
+        });
+      }
+
+      // Pagamento vencido/atrasado
+      if (lot.paymentStatus === "atrasado" || (lot.paymentStatus === "pendente" && lot.paymentDeadline && lot.paymentDeadline < todayISO)) {
+        list.push({
+          id: `alt-pay-${lot.id}`,
+          title: `Pagamento Atrasado - Lote ${lot.lotNumber}`,
+          description: `Vencimento do lote foi em ${lot.paymentDeadline}.`,
+          severity: "high",
+          dueDate: lot.paymentDeadline,
+          relatedType: "lot",
+          relatedId: lot.id,
+        });
+      }
+
+      // Rateio pendente ou desatualizado
+      if (lot.allocationStatus === "desatualizado" || lot.allocationStatus === "pendente") {
+        list.push({
+          id: `alt-alloc-${lot.id}`,
+          title: `Rateio Desatualizado - Lote ${lot.lotNumber}`,
+          description: `Custos do lote foram alterados e o rateio precisa ser recalculado para os itens em estoque.`,
+          severity: "medium",
+          relatedType: "lot",
+          relatedId: lot.id,
+        });
+      }
+    });
+
+    items.forEach((item) => {
+      // Itens não avaliados há mais de 30 dias no estoque
+      if (!item.isSold && item.status !== "descartado" && item.status !== "uso_proprio") {
+        if (!item.estimatedMarketAvg || item.estimatedMarketAvg === 0) {
+          list.push({
+            id: `alt-eval-${item.id}`,
+            title: `Item Sem Avaliação`,
+            description: `O item "${item.name}" (${item.code}) está cadastrado sem preço de mercado estimado.`,
+            severity: "info",
+            relatedType: "item",
+            relatedId: item.id,
+          });
+        }
+      }
+    });
+
+    return list;
+  }, [lots, items]);
 
   const metrics = {
     totalInvested,
@@ -1158,6 +1238,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         closeAiModal,
         isImportModalOpen,
         setIsImportModalOpen,
+        isBackupModalOpen,
+        setIsBackupModalOpen,
         isFirebaseConnected,
         clearAllDatabaseData,
         auctions,

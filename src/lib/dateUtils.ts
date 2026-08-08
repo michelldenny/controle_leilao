@@ -47,3 +47,10 @@ export const getYearMonthKey = (dateStr?: string): string => {
   }
   return "";
 };
+
+/**
+ * Formata um valor numérico em moeda brasileira (R$).
+ */
+export const formatCurrency = (val: number): string => {
+  return (val || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+};

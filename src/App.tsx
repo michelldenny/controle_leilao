@@ -18,6 +18,13 @@ import { ContactsView } from "./components/ContactsView";
 import { DocumentsView } from "./components/DocumentsView";
 import { ReportsView } from "./components/ReportsView";
 import { PublicMarketplaceView } from "./components/PublicMarketplaceView";
+import { StockLedgerView } from "./components/StockLedgerView";
+import { AgingAndTurnoverView } from "./components/AgingAndTurnoverView";
+import { FinancialAccountsView } from "./components/FinancialAccountsView";
+import { DimensionalProfitabilityView } from "./components/DimensionalProfitabilityView";
+import { PhysicalInventoryView } from "./components/PhysicalInventoryView";
+import { AssetManagementView } from "./components/AssetManagementView";
+import { GoalsAndTargetsView } from "./components/GoalsAndTargetsView";
 
 import { ItemWizardModal } from "./components/ItemWizardModal";
 import { BulkItemModal } from "./components/BulkItemModal";
@@ -25,6 +32,7 @@ import { ApportionmentModal } from "./components/ApportionmentModal";
 import { QrCodeModal } from "./components/QrCodeModal";
 import { AiAssistantModal } from "./components/AiAssistantModal";
 import { ImportCsvModal } from "./components/ImportCsvModal";
+import { BackupRestoreModal } from "./components/BackupRestoreModal";
 import { AuctionItem } from "./types";
 
 const MainAppLayout: React.FC = () => {
@@ -34,6 +42,8 @@ const MainAppLayout: React.FC = () => {
     setSelectedItemId,
     apportionmentModalLot,
     closeApportionmentModal,
+    isBackupModalOpen,
+    setIsBackupModalOpen,
     darkMode,
   } = useAuction();
 
@@ -58,10 +68,16 @@ const MainAppLayout: React.FC = () => {
           {activeTab === "inventory" && (
             <InventoryView onSelectQrCode={(item) => setQrCodeItem(item)} />
           )}
+          {activeTab === "assets" && <AssetManagementView />}
+          {activeTab === "goals" && <GoalsAndTargetsView />}
           {activeTab === "advertisements" && <AdvertisementsView />}
           {activeTab === "sales" && <SalesView />}
           {activeTab === "marketplace" && <PublicMarketplaceView />}
           {activeTab === "financial" && <FinancialView />}
+          {activeTab === "accounts" && <FinancialAccountsView />}
+          {activeTab === "ledger" && <StockLedgerView />}
+          {activeTab === "aging" && <AgingAndTurnoverView />}
+          {activeTab === "profitability" && <DimensionalProfitabilityView />}
           {activeTab === "bi" && <BusinessIntelligenceView />}
           {activeTab === "opportunities" && <OpportunitiesView />}
           {activeTab === "contacts" && <ContactsView />}
@@ -94,6 +110,7 @@ const MainAppLayout: React.FC = () => {
       <BulkItemModal />
       <AiAssistantModal />
       <ImportCsvModal />
+      <BackupRestoreModal isOpen={isBackupModalOpen} onClose={() => setIsBackupModalOpen(false)} />
 
       {apportionmentModalLot && (
         <ApportionmentModal

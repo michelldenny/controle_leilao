@@ -3,13 +3,25 @@ import path from "path";
 import dotenv from "dotenv";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
+import rateLimit from "express-rate-limit";
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
 
-app.use(express.json({ limit: "15mb" }));
+app.use(express.json({ limit: "5mb" }));
+
+// Rate limiter para proteger as rotas de IA contra abuso de consumo
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 50, // máximo 50 requisições por IP
+  message: { error: "Muitas requisições enviadas à IA. Por favor, aguarde alguns minutos antes de tentar novamente." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use("/api/ai/", aiLimiter);
 
 // Initialize Google GenAI client lazily or when key is present
 const getGenAI = () => {

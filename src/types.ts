@@ -64,6 +64,7 @@ export type UserRole = "admin" | "operador" | "financeiro" | "consulta";
 
 export interface Auction {
   id: string;
+  organizationId?: string;
   name: string;
   auctioneer: string;
   platform: string;
@@ -83,6 +84,7 @@ export interface Auction {
 
 export interface Lot {
   id: string;
+  organizationId?: string;
   auctionId: string;
   lotNumber: string;
   description: string;
@@ -102,10 +104,16 @@ export interface Lot {
   paymentStatus: LotPaymentStatus;
   pickupStatus: LotPickupStatus;
   notes?: string;
+  allocationStatus?: "pendente" | "concluido" | "desatualizado";
+  allocationVersion?: number;
+  allocatedTotal?: number;
+  unallocatedAmount?: number;
+  apportionmentMethod?: ApportionmentMethod;
 }
 
 export interface AuctionItem {
   id: string;
+  organizationId?: string;
   code: string; // e.g. L2026-001
   qrCodeUrl?: string;
   lotId: string;
@@ -119,6 +127,10 @@ export interface AuctionItem {
   serialNumber?: string;
   formerAssetTag?: string; // patrimônio anterior
   quantity: number;
+  quantityAcquired?: number;
+  quantityAvailable?: number;
+  quantitySold?: number;
+  unitCost?: number;
   condition: ItemCondition;
   operationalState: OperationalState;
   location: {
@@ -138,6 +150,7 @@ export interface AuctionItem {
   apportionedCost: number; // cost assigned from lot
   additionalCosts: number; // expenses accumulated
   realTotalCost: number; // apportionedCost + additionalCosts
+  costAllocationStatus?: "pendente" | "concluido";
   newProductMarketValue?: number; // Valor de Mercado (Produto Novo)
   discountPercentage?: number; // Desconto Comercial (%)
   estimatedMarketMin: number;
@@ -155,10 +168,12 @@ export interface AuctionItem {
   daysInStock?: number;
   seal?: "prime" | "premium" | "excelente" | "muito_bom" | "bom" | "oportunidade";
   archived?: boolean;
+  deletedAt?: string;
 }
 
 export interface AdditionalExpense {
   id: string;
+  organizationId?: string;
   itemId: string;
   category: string;
   description: string;
@@ -167,10 +182,12 @@ export interface AdditionalExpense {
   supplier?: string;
   receiptUrl?: string;
   notes?: string;
+  createdAt?: string;
 }
 
 export interface MaintenanceRecord {
   id: string;
+  organizationId?: string;
   itemId: string;
   serviceType: string;
   description: string;
@@ -182,11 +199,13 @@ export interface MaintenanceRecord {
   beforePhotos?: string[];
   afterPhotos?: string[];
   status: MaintenanceStatus;
+  expenseId?: string;
   notes?: string;
 }
 
 export interface MarketEvaluation {
   id: string;
+  organizationId?: string;
   itemId: string;
   minVal: number;
   avgVal: number;
@@ -199,6 +218,7 @@ export interface MarketEvaluation {
 
 export interface Advertisement {
   id: string;
+  organizationId?: string;
   itemId: string;
   platform: AdPlatform;
   url?: string;
@@ -211,6 +231,7 @@ export interface Advertisement {
 
 export interface SaleRecord {
   id: string;
+  organizationId?: string;
   itemId: string;
   buyerName: string;
   buyerDoc?: string;
@@ -227,16 +248,22 @@ export interface SaleRecord {
   taxes: number;
   otherExpenses: number;
   netSaleValue: number; // finalPrice - sellerFreight - platformCommission - taxes - otherExpenses
-  netProfit: number; // netSaleValue - realTotalCost
-  roiPercentage: number; // (netProfit / realTotalCost) * 100
+  costBasisAtSale: number; // CMV congelado na venda
+  netProfit: number; // netSaleValue - costBasisAtSale
+  roiPercentage: number; // (netProfit / costBasisAtSale) * 100
   marginPercentage: number; // (netProfit / netSaleValue) * 100
   paymentMethod: string; // PIX, Cartão, Boleto, Dinheiro
   paymentStatus: "pago" | "pendente" | "parcelado";
+  previousItemStatus?: ItemStatus;
+  saleVersion?: number;
+  createdAt?: string;
+  createdBy?: string;
   notes?: string;
 }
 
 export interface Contact {
   id: string;
+  organizationId?: string;
   name: string;
   company?: string;
   companyName?: string;
@@ -255,6 +282,7 @@ export interface Contact {
 
 export interface AppDocument {
   id: string;
+  organizationId?: string;
   title: string;
   docType: DocType;
   entityType: "auction" | "lot" | "item" | "sale";
@@ -271,6 +299,7 @@ export interface AppDocument {
 
 export interface ActivityLog {
   id: string;
+  organizationId?: string;
   itemId?: string;
   title: string;
   description: string;

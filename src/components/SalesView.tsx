@@ -593,7 +593,7 @@ export const SalesView: React.FC = () => {
                 <div>
                   <span className="text-[10px] text-slate-400 block font-medium">ROI Obtido</span>
                   <strong className="text-amber-600 dark:text-amber-400 font-extrabold text-sm">
-                    {viewingSale.roiPercentage?.toFixed(1)}%
+                    {(viewingSale.roiPercentage || 0).toFixed(1)}%
                   </strong>
                 </div>
               </div>
