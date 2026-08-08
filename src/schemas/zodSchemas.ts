@@ -111,6 +111,7 @@ export const saleRecordSchema = z.object({
   id: z.string().optional(),
   itemId: z.string().min(1, "Item é obrigatório"),
   buyerName: z.string().min(2, "Nome do comprador é obrigatório"),
+<<<<<<< HEAD
   buyerDoc: z.string().optional().or(z.literal("")).refine(validateCpfCnpj, "CPF ou CNPJ inválido"),
   buyerPhone: z.string().optional().or(z.literal("")),
   buyerEmail: z.string().email("E-mail inválido").optional().or(z.literal("")),
@@ -127,6 +128,24 @@ export const saleRecordSchema = z.object({
   paymentMethod: z.string().optional().default("Pix"),
   paymentStatus: z.enum(["pago", "pendente", "parcelado"]).optional().default("pago"),
   notes: z.string().optional().or(z.literal("")),
+=======
+  buyerDoc: z.string().optional().refine(validateCpfCnpj, "CPF ou CNPJ inválido"),
+  buyerPhone: z.string().optional(),
+  buyerEmail: z.string().email("E-mail inválido").optional().or(z.literal("")),
+  platform: z.string().min(1, "Plataforma de venda é obrigatória"),
+  saleDate: z.string().min(1, "Data de venda é obrigatória"),
+  listedPrice: z.number().min(0),
+  negotiatedPrice: z.number().min(0),
+  finalPrice: z.number().min(0, "Preço final deve ser maior ou igual a zero"),
+  discount: z.number().min(0),
+  sellerFreight: z.number().min(0),
+  platformCommission: z.number().min(0),
+  taxes: z.number().min(0),
+  otherExpenses: z.number().min(0),
+  paymentMethod: z.string().min(1, "Forma de pagamento é obrigatória"),
+  paymentStatus: z.enum(["pago", "pendente", "parcelado"]),
+  notes: z.string().optional(),
+>>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
 });
 
 // Schema de Despesa Adicional

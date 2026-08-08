@@ -17,9 +17,13 @@ export const SalesService = {
   async executeSale(params: RecordSaleParams, userRole: string = "admin"): Promise<{ sale: SaleRecord; netProfit: number; roi: number }> {
     const parseRes = saleRecordSchema.safeParse(params);
     if (!parseRes.success) {
+<<<<<<< HEAD
       const issues = (parseRes as any).error?.issues || [];
       const msg = issues[0]?.message || "Dados de venda inválidos";
       throw new Error(msg);
+=======
+      throw new Error(parseRes.error.issues[0].message);
+>>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
     }
 
     const saleId = "sale-" + crypto.randomUUID();
@@ -49,6 +53,7 @@ export const SalesService = {
       }
 
       const costBasis = item.realTotalCost || 0;
+<<<<<<< HEAD
       const sellerFreight = params.sellerFreight ?? 0;
       const platformCommission = params.platformCommission ?? 0;
       const taxes = params.taxes ?? 0;
@@ -60,6 +65,14 @@ export const SalesService = {
         platformCommission,
         taxes,
         otherExpenses,
+=======
+      const netSaleValue = calculateNetSaleValue({
+        finalPrice: params.finalPrice,
+        sellerFreight: params.sellerFreight,
+        platformCommission: params.platformCommission,
+        taxes: params.taxes,
+        otherExpenses: params.otherExpenses,
+>>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
       });
 
       const netProfit = calculateNetProfit(netSaleValue, costBasis);
@@ -69,6 +82,7 @@ export const SalesService = {
       resultNetProfit = netProfit;
       resultRoi = roiPercentage;
 
+<<<<<<< HEAD
       const listedPrice = params.listedPrice ?? item.listedPrice ?? item.estimatedMarketAvg ?? params.finalPrice ?? 0;
       const negotiatedPrice = params.negotiatedPrice ?? params.finalPrice ?? 0;
       const discount = params.discount ?? ((item.listedPrice || 0) > params.finalPrice ? (item.listedPrice || 0) - params.finalPrice : 0);
@@ -94,12 +108,27 @@ export const SalesService = {
         paymentMethod: params.paymentMethod || "Pix",
         paymentStatus: params.paymentStatus || "pago",
         notes: params.notes || "",
+=======
+      const newSale: SaleRecord = {
+        ...params,
+        id: saleId,
+        organizationId: item.organizationId || "org-default",
+        listedPrice: item.listedPrice || item.estimatedMarketAvg || params.finalPrice,
+        negotiatedPrice: params.finalPrice,
+        discount: (item.listedPrice || 0) > params.finalPrice ? (item.listedPrice || 0) - params.finalPrice : 0,
+        paymentMethod: params.paymentMethod || "Pix",
+        paymentStatus: params.paymentStatus || "pago",
+>>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
         netSaleValue,
         costBasisAtSale: costBasis, // CMV congelado
         netProfit,
         roiPercentage,
         marginPercentage,
+<<<<<<< HEAD
         previousItemStatus: item.status || "disponivel",
+=======
+        previousItemStatus: item.status,
+>>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
         createdAt: new Date().toISOString(),
       };
 
@@ -111,12 +140,21 @@ export const SalesService = {
 
       // Gravação no Ledger Imutável
       recordLedgerEntry(transaction, {
+<<<<<<< HEAD
         organizationId: item.organizationId || "org-default",
         itemId: item.id,
         lotId: item.lotId || "",
         auctionId: item.auctionId || "",
         eventType: "SALE",
         description: `Venda concluída por R$ ${params.finalPrice.toFixed(2)} (${newSale.buyerName}). Lucro: R$ ${netProfit.toFixed(2)}.`,
+=======
+        organizationId: item.organizationId,
+        itemId: item.id,
+        lotId: item.lotId,
+        auctionId: item.auctionId,
+        eventType: "SALE",
+        description: `Venda concluída por R$ ${params.finalPrice.toFixed(2)} (${params.buyerName}). Lucro: R$ ${netProfit.toFixed(2)}.`,
+>>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
         amountChange: netSaleValue,
         costBasis,
         marketEstimate: item.estimatedMarketAvg || 0,

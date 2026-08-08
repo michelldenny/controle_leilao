@@ -28,8 +28,13 @@ export const recordLedgerEntry = (
     id: ledgerId,
     organizationId: params.organizationId || "org-default",
     itemId: params.itemId,
+<<<<<<< HEAD
     lotId: params.lotId || "",
     auctionId: params.auctionId || "",
+=======
+    lotId: params.lotId,
+    auctionId: params.auctionId,
+>>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
     eventType: params.eventType,
     description: params.description,
     amountChange: params.amountChange,
@@ -37,7 +42,11 @@ export const recordLedgerEntry = (
     marketEstimate: params.marketEstimate,
     user: params.user || "Sistema",
     timestamp: new Date().toISOString(),
+<<<<<<< HEAD
     metadata: params.metadata || {},
+=======
+    metadata: params.metadata,
+>>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
   };
 
   transaction.set(ledgerRef, entry);

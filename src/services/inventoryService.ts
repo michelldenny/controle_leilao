@@ -12,9 +12,13 @@ export const InventoryService = {
   async addExpense(expenseData: Omit<AdditionalExpense, "id">, userRole: string = "admin"): Promise<AdditionalExpense> {
     const parseRes = additionalExpenseSchema.safeParse(expenseData);
     if (!parseRes.success) {
+<<<<<<< HEAD
       const issues = (parseRes as any).error?.issues || [];
       const msg = issues[0]?.message || "Dados de despesa inválidos";
       throw new Error(msg);
+=======
+      throw new Error(parseRes.error.issues[0].message);
+>>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
     }
 
     const expId = "exp-" + crypto.randomUUID();

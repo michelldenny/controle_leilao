@@ -500,8 +500,12 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addAuction = (auctionData: Omit<Auction, "id">): Auction => {
     const parseRes = auctionSchema.safeParse(auctionData);
     if (!parseRes.success) {
+<<<<<<< HEAD
       const msg = (parseRes as any).error?.issues?.[0]?.message || "Dados do leilão inválidos";
       addToast("Erro de Validação", msg, "error");
+=======
+      addToast("Erro de Validação", parseRes.error.issues[0].message, "error");
+>>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
     }
     const id = "auc-" + crypto.randomUUID();
     const newAuction: Auction = { ...auctionData, id };
@@ -555,8 +559,12 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addLot = (lotData: Omit<Lot, "id" | "totalLotCost">): Lot => {
     const parseRes = lotSchema.safeParse(lotData);
     if (!parseRes.success) {
+<<<<<<< HEAD
       const msg = (parseRes as any).error?.issues?.[0]?.message || "Dados do lote inválidos";
       addToast("Erro de Validação", msg, "error");
+=======
+      addToast("Erro de Validação", parseRes.error.issues[0].message, "error");
+>>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
     }
     const id = "lot-" + crypto.randomUUID();
     const totalLotCost = calculateTotalLotCost(lotData);
@@ -625,8 +633,12 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   ): AuctionItem => {
     const parseRes = auctionItemSchema.safeParse(itemData);
     if (!parseRes.success) {
+<<<<<<< HEAD
       const msg = (parseRes as any).error?.issues?.[0]?.message || "Dados do item inválidos";
       addToast("Erro de Validação", msg, "error");
+=======
+      addToast("Erro de Validação", parseRes.error.issues[0].message, "error");
+>>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
     }
 
     const targetLot = lots.find((l) => l.id === itemData.lotId);
