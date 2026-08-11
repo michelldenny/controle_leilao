@@ -83,15 +83,39 @@ export const DashboardView: React.FC = () => {
     }));
   }, [items, sales]);
 
-  // Distribution by Status
-  const statusCounts = [
-    { name: "Disponível", value: metrics.availableItemsCount, color: "#10B981" },
-    { name: "Anunciado", value: metrics.advertisedCount, color: "#3B82F6" },
-    { name: "Vendido", value: metrics.soldItemsCount, color: "#8B5CF6" },
-    { name: "Em Manutenção", value: metrics.inMaintenanceCount, color: "#F59E0B" },
-    { name: "Aguard. Retirada", value: metrics.awaitingPickupCount, color: "#EC4899" },
-    { name: "Outros / Armazenado", value: Math.max(0, metrics.totalItemsCount - (metrics.availableItemsCount + metrics.advertisedCount + metrics.soldItemsCount + metrics.inMaintenanceCount + metrics.awaitingPickupCount)), color: "#64748B" },
-  ];
+  // Distribution by Status (Disponível, Vendido, Em Manutenção, Descartado, Uso Próprio)
+  const statusCounts = React.useMemo(() => {
+    const counts = {
+      disponivel: 0,
+      vendido: 0,
+      em_manutencao: 0,
+      descartado: 0,
+      uso_proprio: 0,
+    };
+
+    items.forEach((item) => {
+      if (item.isSold || item.status === "vendido") {
+        counts.vendido++;
+      } else if (item.status === "descartado") {
+        counts.descartado++;
+      } else if (item.status === "uso_proprio") {
+        counts.uso_proprio++;
+      } else if (item.status === "em_manutencao") {
+        counts.em_manutencao++;
+      } else {
+        // Todos os outros itens em estoque/anunciados/disponíveis entram como Disponível
+        counts.disponivel++;
+      }
+    });
+
+    return [
+      { name: "Disponível", value: counts.disponivel, color: "#10B981" },
+      { name: "Vendido", value: counts.vendido, color: "#8B5CF6" },
+      { name: "Em Manutenção", value: counts.em_manutencao, color: "#F59E0B" },
+      { name: "Descartado", value: counts.descartado, color: "#EF4444" },
+      { name: "Uso Próprio", value: counts.uso_proprio, color: "#3B82F6" },
+    ];
+  }, [items]);
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">

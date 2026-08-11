@@ -44,15 +44,21 @@ export const SalesView: React.FC = () => {
     return parentLot?.totalLotCost || 0;
   };
 
-  // Associar o histórico de vendas gravado na coleção sales com o item correspondente
-  const salesHistory = sales.map((sale) => {
-    const item = items.find((i) => i.id === sale.itemId);
-    return {
-      sale,
-      item,
-      itemCost: getItemRealCost(item),
-    };
-  });
+  // Associar o histórico de vendas gravado na coleção sales com o item correspondente e ordenar alfabeticamente pelo nome do item
+  const salesHistory = sales
+    .map((sale) => {
+      const item = items.find((i) => i.id === sale.itemId);
+      return {
+        sale,
+        item,
+        itemCost: getItemRealCost(item),
+      };
+    })
+    .sort((a, b) => {
+      const nameA = a.item?.name || "";
+      const nameB = b.item?.name || "";
+      return nameA.localeCompare(nameB, "pt-BR", { sensitivity: "base" });
+    });
 
   const selectedItem = items.find((i) => i.id === selectedItemId);
 

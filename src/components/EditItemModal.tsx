@@ -3,6 +3,7 @@ import { useAuction } from "../context/AuctionContext";
 import { PRODUCT_CATEGORIES } from "../constants/categories";
 import { AuctionItem, ItemCondition, OperationalState, ItemStatus } from "../types";
 import { X, Save, Package, DollarSign, MapPin, Tag } from "lucide-react";
+import { FormattedNumberInput } from "./FormattedNumberInput";
 
 interface EditItemModalProps {
   item: AuctionItem | null;
@@ -309,12 +310,11 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                 <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1 text-[11px]">
                   1. Valor Mercado (Produto Novo) (R$)
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
+                <FormattedNumberInput
                   value={newProductMarketValue}
-                  onChange={(e) => handleNewMarketValueChange(Number(e.target.value))}
-                  placeholder="Ex: 3500"
+                  onChange={(val) => handleNewMarketValueChange(val)}
+                  placeholder="0,00"
+                  prefix="R$"
                   className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
                 />
               </div>
@@ -323,30 +323,25 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                 <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1 text-[11px]">
                   2. Desconto Comercial (%)
                 </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={discountPercentage}
-                    onChange={(e) => handleDiscountChange(Number(e.target.value))}
-                    className="w-full p-2 pr-7 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 font-extrabold"
-                  />
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                    %
-                  </span>
-                </div>
+                <FormattedNumberInput
+                  value={discountPercentage}
+                  onChange={(val) => handleDiscountChange(val)}
+                  placeholder="0,00"
+                  suffix="%"
+                  decimals={2}
+                  className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 font-extrabold"
+                />
               </div>
 
               <div className="flex flex-col">
                 <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1 text-[11px]">
                   3. Valor de Venda (Estimado) (R$)
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
+                <FormattedNumberInput
                   value={estimatedMarketAvg}
-                  onChange={(e) => handleEstimatedAvgChange(Number(e.target.value))}
+                  onChange={(val) => handleEstimatedAvgChange(val)}
+                  placeholder="0,00"
+                  prefix="R$"
                   className="w-full p-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs"
                 />
               </div>
@@ -357,11 +352,11 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Custo Rateado (R$)
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
+                <FormattedNumberInput
                   value={apportionedCost}
-                  onChange={(e) => setApportionedCost(Number(e.target.value))}
+                  onChange={(val) => setApportionedCost(val)}
+                  placeholder="0,00"
+                  prefix="R$"
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                 />
               </div>
@@ -370,11 +365,11 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Custos Extras (R$)
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
+                <FormattedNumberInput
                   value={additionalCosts}
-                  onChange={(e) => setAdditionalCosts(Number(e.target.value))}
+                  onChange={(val) => setAdditionalCosts(val)}
+                  placeholder="0,00"
+                  prefix="R$"
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                 />
               </div>

@@ -20,7 +20,8 @@ export const DimensionalProfitabilityView: React.FC = () => {
         const itemCostSum = aucItems.reduce((acc, i) => acc + (i.realTotalCost || 0), 0);
 
         const auctionTotalCost = totalLotsCost > 0 ? totalLotsCost : itemCostSum;
-        const estValuation = aucItems.reduce((acc, i) => acc + (i.estimatedMarketAvg || 0), 0);
+        const sellableAucItems = aucItems.filter((i) => !i.isSold && i.status !== "descartado" && i.status !== "uso_proprio");
+        const estValuation = sellableAucItems.reduce((acc, i) => acc + (i.estimatedMarketAvg || 0), 0);
 
         stats[auc.id] = { name: auc.name, cost: auctionTotalCost, est: estValuation, grossSales: 0, sales: 0, netProfit: 0 };
       });
@@ -50,7 +51,9 @@ export const DimensionalProfitabilityView: React.FC = () => {
           stats[cat] = { name: cat, cost: 0, est: 0, grossSales: 0, sales: 0, netProfit: 0 };
         }
         stats[cat].cost += item.realTotalCost || 0;
-        stats[cat].est += item.estimatedMarketAvg || 0;
+        if (!item.isSold && item.status !== "descartado" && item.status !== "uso_proprio") {
+          stats[cat].est += item.estimatedMarketAvg || 0;
+        }
       });
 
       sales.forEach((sale) => {

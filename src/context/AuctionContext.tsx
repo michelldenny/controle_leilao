@@ -1100,9 +1100,11 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Global Financial Metrics Calculation
-  const totalInvested = items.reduce((acc, curr) => acc + (curr.realTotalCost || 0), 0);
-  const totalEstimatedMarket = items.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 0), 0);
-  
+  const totalLotsCost = lots.reduce((acc, curr) => acc + (curr.totalLotCost || 0), 0);
+  const itemsAdditionalCosts = items.reduce((acc, curr) => acc + (curr.additionalCosts || 0), 0);
+  const totalItemsRealCost = items.reduce((acc, curr) => acc + (curr.realTotalCost || 0), 0);
+  const totalInvested = lots.length > 0 ? (totalLotsCost + itemsAdditionalCosts) : totalItemsRealCost;
+
   // Apenas vendas efetivamente pagas contam como entradas de caixa e lucro realizado
   const paidSales = sales.filter((s) => s.paymentStatus === "pago" || !s.paymentStatus);
   const totalSoldAmount = paidSales.reduce((acc, curr) => acc + (curr.finalPrice || 0), 0);
@@ -1110,8 +1112,9 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Itens em estoque à venda (exclui os vendidos, descartados e os retidos para uso próprio)
   const unsoldItems = items.filter((i) => !i.isSold && i.status !== "descartado" && i.status !== "uso_proprio");
+  const totalEstimatedMarket = unsoldItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 0), 0);
   const capitalInInventoryCost = unsoldItems.reduce((acc, curr) => acc + (curr.realTotalCost || 0), 0);
-  const capitalInInventoryEstimated = unsoldItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 0), 0);
+  const capitalInInventoryEstimated = totalEstimatedMarket;
   // Jamais truncar prejuízo potencial (exibe valores negativos se custo > estimativa)
   const potentialProfit = capitalInInventoryEstimated - capitalInInventoryCost;
   const potentialStockProfit = potentialProfit;

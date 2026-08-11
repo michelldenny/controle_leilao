@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuction } from "../context/AuctionContext";
 import { PRODUCT_CATEGORIES } from "../constants/categories";
+import { FormattedNumberInput } from "./FormattedNumberInput";
 import {
   Zap,
   X,
@@ -482,11 +483,11 @@ export const ItemWizardModal: React.FC = () => {
                   <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1.5 text-[11px]">
                     1. Valor de Mercado (Produto Novo) (R$)
                   </label>
-                  <input
-                    type="number"
+                  <FormattedNumberInput
                     value={newProductMarketValue}
-                    onChange={(e) => handleNewMarketValueChange(Number(e.target.value))}
-                    placeholder="Ex: 3500"
+                    onChange={(val) => handleNewMarketValueChange(val)}
+                    placeholder="0,00"
+                    prefix="R$"
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                   />
                 </div>
@@ -496,19 +497,14 @@ export const ItemWizardModal: React.FC = () => {
                   <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1.5 text-[11px]">
                     2. Desconto Comercial (%)
                   </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={discountPercentage}
-                      onChange={(e) => handleDiscountChange(Number(e.target.value))}
-                      className="w-full p-2.5 pr-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-amber-600 dark:text-amber-400 font-extrabold"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                      %
-                    </span>
-                  </div>
+                  <FormattedNumberInput
+                    value={discountPercentage}
+                    onChange={(val) => handleDiscountChange(val)}
+                    placeholder="0,00"
+                    suffix="%"
+                    decimals={2}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-amber-600 dark:text-amber-400 font-extrabold"
+                  />
                 </div>
 
                 {/* 3 - Valor de Venda (Estimado após Desconto) */}
@@ -516,10 +512,11 @@ export const ItemWizardModal: React.FC = () => {
                   <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1.5 text-[11px]">
                     3. Valor de Venda Estimado (R$)
                   </label>
-                  <input
-                    type="number"
+                  <FormattedNumberInput
                     value={estimatedValue}
-                    onChange={(e) => handleSalePriceChange(Number(e.target.value))}
+                    onChange={(val) => handleSalePriceChange(val)}
+                    placeholder="0,00"
+                    prefix="R$"
                     className="w-full p-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold text-sm"
                   />
                 </div>
