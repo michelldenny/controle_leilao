@@ -293,6 +293,51 @@ export const SalesView: React.FC = () => {
                 );
               })}
             </tbody>
+            {salesHistory.length > 0 && (() => {
+              const totalFinalPrice = salesHistory.reduce((acc, h) => acc + (h.sale.finalPrice || 0), 0);
+              const totalCost = salesHistory.reduce((acc, h) => acc + (h.itemCost || 0), 0);
+              const totalNetProfit = salesHistory.reduce((acc, h) => acc + (h.sale.netProfit || 0), 0);
+              const overallRoi = totalCost > 0 ? (totalNetProfit / totalCost) * 100 : 0;
+
+              let totalDays = 0;
+              salesHistory.forEach(({ sale, item }) => {
+                const itemAuction = item ? auctions.find((a) => a.id === item.auctionId) : undefined;
+                const startDateStr = itemAuction?.auctionDate || item?.purchaseDate || item?.dateAdded;
+                if (startDateStr && sale.saleDate) {
+                  const sDate = new Date(startDateStr);
+                  const saleD = new Date(sale.saleDate);
+                  const diffTime = saleD.getTime() - sDate.getTime();
+                  totalDays += Math.max(0, Math.floor(diffTime / (1000 * 3600 * 24)));
+                }
+              });
+              const avgDays = Math.round(totalDays / salesHistory.length);
+
+              return (
+                <tfoot className="bg-slate-100 dark:bg-slate-800/90 font-bold border-t-2 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white">
+                  <tr>
+                    <td className="p-3 text-left" colSpan={3}>
+                      TOTAL DE VENDAS ({salesHistory.length} itens)
+                    </td>
+                    <td className="p-3 text-right font-extrabold text-slate-900 dark:text-white">
+                      {formatCurrency(totalFinalPrice)}
+                    </td>
+                    <td className="p-3 text-right text-slate-600 dark:text-slate-300">
+                      {formatCurrency(totalCost)}
+                    </td>
+                    <td className={`p-3 text-right font-extrabold ${totalNetProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                      {totalNetProfit >= 0 ? "+" : ""}{formatCurrency(totalNetProfit)}
+                    </td>
+                    <td className={`p-3 text-right font-extrabold ${overallRoi >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                      {overallRoi >= 0 ? "+" : ""}{overallRoi.toFixed(1)}%
+                    </td>
+                    <td className="p-3 text-center text-slate-600 dark:text-slate-300">
+                      ~{avgDays} dias
+                    </td>
+                    <td className="p-3 text-center">-</td>
+                  </tr>
+                </tfoot>
+              );
+            })()}
           </table>
         </div>
       </div>

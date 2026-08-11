@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuction } from "../context/AuctionContext";
 import { Lot, ApportionmentMethod } from "../types";
+import { apportionLotCostExact } from "../services/financialMath";
 import { Calculator, X, AlertCircle, Check, Percent, DollarSign, Scale, Plus, PackagePlus } from "lucide-react";
 
 interface ApportionmentModalProps {
@@ -20,14 +21,21 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
   useEffect(() => {
     // Initialize default values
     const initialMap: { [itemId: string]: number } = {};
+    const activeLotItems = lotItems.filter((i) => i.status !== "descartado");
+    const activeCount = Math.max(activeLotItems.length, 1);
+
     if (lotItems.length > 0) {
       lotItems.forEach((it) => {
-        initialMap[it.id] =
-          method === "percentual"
-            ? it.assignedPercent || Number((100 / lotItems.length).toFixed(2))
-            : method === "manual"
-            ? it.apportionedCost || Number((lot.totalLotCost / lotItems.length).toFixed(2))
-            : 0;
+        if (it.status === "descartado") {
+          initialMap[it.id] = 0;
+        } else {
+          initialMap[it.id] =
+            method === "percentual"
+              ? it.assignedPercent || Number((100 / activeCount).toFixed(2))
+              : method === "manual"
+              ? it.apportionedCost || Number((lot.totalLotCost / activeCount).toFixed(2))
+              : 0;
+        }
       });
     }
     setCustomValues(initialMap);
@@ -37,12 +45,19 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
     setCustomValues((prev) => ({ ...prev, [itemId]: val }));
   };
 
-  const handleApply = () => {
-    const payload = Object.keys(customValues).map((itemId) => ({
+  const payload = useMemo(() => {
+    return Object.keys(customValues).map((itemId) => ({
       itemId,
       value: customValues[itemId] || 0,
     }));
+  }, [customValues]);
 
+  // Prévia exata utilizando o mesmo serviço de cálculo
+  const previewResults = useMemo(() => {
+    return apportionLotCostExact(lot.totalLotCost || 0, lotItems, method, payload);
+  }, [lot.totalLotCost, lotItems, method, payload]);
+
+  const handleApply = () => {
     apportionLotCost(lot.id, method, payload);
     onClose();
   };
@@ -224,40 +239,23 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {lotItems.map((item) => {
-                    let previewApportioned = 0;
-                    let previewPercent = 0;
-
                     const isDiscarded = item.status === "descartado";
-                    const activeLotItems = lotItems.filter((i) => i.status !== "descartado");
-                    const activeCount = Math.max(activeLotItems.length, 1);
+                    const foundRes = previewResults.find((r) => r.itemId === item.id);
 
-                    if (isDiscarded) {
-                      previewApportioned = 0;
-                      previewPercent = 0;
-                    } else if (method === "igualitario") {
-                      previewApportioned = lot.totalLotCost / activeCount;
-                      previewPercent = 100 / activeCount;
-                    } else if (method === "valor_estimado") {
-                      const sumEst = activeLotItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 1), 0);
-                      const itemEst = item.estimatedMarketAvg || 1;
-                      previewPercent = sumEst > 0 ? (itemEst / sumEst) * 100 : 100 / activeCount;
-                      previewApportioned = (lot.totalLotCost * previewPercent) / 100;
-                    } else if (method === "percentual") {
-                      previewPercent = customValues[item.id] || 0;
-                      previewApportioned = (lot.totalLotCost * previewPercent) / 100;
-                    } else if (method === "manual") {
-                      previewApportioned = customValues[item.id] || 0;
-                      previewPercent = lot.totalLotCost > 0 ? (previewApportioned / lot.totalLotCost) * 100 : 0;
-                    }
+                    const previewApportioned = isDiscarded ? 0 : foundRes?.apportionedCost || 0;
+                    const previewPercent = isDiscarded ? 0 : foundRes?.assignedPercent || 0;
+                    const previewRealTotal = isDiscarded ? 0 : foundRes?.realTotalCost || (item.additionalCosts || 0);
 
                     const isSold = item.status === "vendido" || item.isSold;
+                    const isOwnUse = item.status === "uso_proprio";
                     const salePrice = item.listedPrice || item.estimatedMarketAvg || 0;
-                    const previewRealTotal = previewApportioned + (item.additionalCosts || 0);
                     const profit = salePrice - previewRealTotal;
                     const margin = salePrice > 0 ? (profit / salePrice) * 100 : 0;
 
                     const rowBgClass = isSold
                       ? "bg-emerald-100/70 dark:bg-emerald-900/35 border-l-4 border-l-emerald-500 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+                      : isOwnUse
+                      ? "bg-purple-100/70 dark:bg-purple-900/35 border-l-4 border-l-purple-500 hover:bg-purple-100 dark:hover:bg-purple-900/50"
                       : isDiscarded
                       ? "opacity-60 bg-slate-100/50 dark:bg-slate-900/40"
                       : "hover:bg-slate-50/50 dark:hover:bg-slate-800/50";
@@ -270,6 +268,11 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
                             {isSold && (
                               <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-emerald-600 text-white dark:bg-emerald-500 border border-emerald-600 whitespace-nowrap">
                                 Vendido
+                              </span>
+                            )}
+                            {isOwnUse && (
+                              <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-purple-600 text-white dark:bg-purple-500 border border-purple-600 whitespace-nowrap">
+                                Uso Próprio
                               </span>
                             )}
                             {isDiscarded && (
@@ -332,6 +335,48 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
                     );
                   })}
                 </tbody>
+                {lotItems.length > 0 && (() => {
+                  let totalPercent = 0;
+                  let totalApportioned = 0;
+                  let totalSale = 0;
+                  let totalProfit = 0;
+
+                  lotItems.forEach((item) => {
+                    const isDiscarded = item.status === "descartado";
+                    const foundRes = previewResults.find((r) => r.itemId === item.id);
+
+                    const previewApportioned = isDiscarded ? 0 : foundRes?.apportionedCost || 0;
+                    const previewPercent = isDiscarded ? 0 : foundRes?.assignedPercent || 0;
+                    const previewRealTotal = isDiscarded ? 0 : foundRes?.realTotalCost || (item.additionalCosts || 0);
+
+                    const salePrice = item.listedPrice || item.estimatedMarketAvg || 0;
+                    const profit = salePrice - previewRealTotal;
+
+                    totalPercent += previewPercent;
+                    totalApportioned += previewApportioned;
+                    totalSale += salePrice;
+                    totalProfit += profit;
+                  });
+
+                  const overallMargin = totalSale > 0 ? (totalProfit / totalSale) * 100 : 0;
+
+                  return (
+                    <tfoot className="bg-slate-100 dark:bg-slate-800/90 font-bold border-t-2 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white">
+                      <tr>
+                        <td className="p-3 text-left">TOTAL DO LOTE</td>
+                        <td className="p-3 text-center">{totalPercent.toFixed(1)}%</td>
+                        <td className="p-3 text-center text-amber-600 dark:text-amber-400">{formatCurrency(totalApportioned)}</td>
+                        <td className="p-3 text-center">{formatCurrency(totalSale)}</td>
+                        <td className={`p-3 text-center ${totalProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                          {formatCurrency(totalProfit)}
+                        </td>
+                        <td className={`p-3 text-center ${overallMargin >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                          {overallMargin.toFixed(1)}%
+                        </td>
+                      </tr>
+                    </tfoot>
+                  );
+                })()}
               </table>
             )}
           </div>

@@ -12,6 +12,7 @@ import {
   PackagePlus,
   Calendar,
   DollarSign,
+  Coins,
   Truck,
   CheckCircle2,
   Clock,
@@ -25,7 +26,7 @@ import {
 } from "lucide-react";
 
 export const LotsView: React.FC = () => {
-  const { lots, auctions, addLot, updateLot, deleteLot, items, openApportionmentModal, setIsBulkModalOpen, setActiveTab } = useAuction();
+  const { lots, auctions, addLot, updateLot, deleteLot, items, sales, openApportionmentModal, setIsBulkModalOpen, setActiveTab } = useAuction();
 
   const [search, setSearch] = useState("");
   const [sortFilter, setSortFilter] = useState<
@@ -369,6 +370,97 @@ export const LotsView: React.FC = () => {
                     </strong>
                   </div>
                 </div>
+
+                {/* 2 Barras de Progresso: 1. Itens Concluídos/Vendidos | 2. Cobertura de Custo do Lote */}
+                {(() => {
+                  const lotItemIds = new Set(lotItems.map((i) => i.id));
+                  const lotSales = sales.filter((s) => lotItemIds.has(s.itemId));
+
+                  // Faturamento Líquido Realizado dos itens deste lote
+                  const netRevenue = lotSales.reduce((sum, s) => sum + (s.netSaleValue || s.finalPrice || 0), 0);
+                  const grossRevenue = lotSales.reduce((sum, s) => sum + (s.finalPrice || 0), 0);
+
+                  // Contagem por status de saída/conclusão
+                  const soldCount = lotItems.filter((i) => i.isSold || i.status === "vendido").length;
+                  const discardedCount = lotItems.filter((i) => i.status === "descartado").length;
+                  const ownUseCount = lotItems.filter((i) => i.status === "uso_proprio").length;
+
+                  const totalFinalized = soldCount + discardedCount + ownUseCount;
+                  const totalItemsCount = lotItems.length;
+                  const itemProgressPct = totalItemsCount > 0 ? Math.min(100, (totalFinalized / totalItemsCount) * 100) : 0;
+
+                  // Métricas da Segunda Barra: Cobertura de Custo do Lote
+                  const totalCost = lot.totalLotCost || 0;
+                  const costCoveredPct = totalCost > 0 ? (netRevenue / totalCost) * 100 : 0;
+                  const costRemainingAmount = Math.max(0, totalCost - netRevenue);
+                  const costRemainingPct = totalCost > 0 ? Math.max(0, 100 - costCoveredPct) : 0;
+
+                  return (
+                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-700/40 border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+                      {/* Barra 1: Progresso de Itens do Lote */}
+                      <div className="space-y-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <span className="font-semibold text-slate-700 dark:text-slate-200">
+                              Itens Concluídos: <strong className="text-slate-900 dark:text-white">{totalFinalized}</strong> / {totalItemsCount} ({itemProgressPct.toFixed(0)}%)
+                            </span>
+                            {(discardedCount > 0 || ownUseCount > 0) && (
+                              <span className="text-[10px] text-slate-400 dark:text-slate-400">
+                                ({soldCount} vend. | {ownUseCount} uso própr. | {discardedCount} desc.)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="w-full bg-slate-200 dark:bg-slate-600/60 rounded-full h-2 overflow-hidden p-0.5">
+                          <div
+                            className="bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-400 h-full rounded-full transition-all duration-500 ease-out shadow-sm"
+                            style={{ width: `${itemProgressPct}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Barra 2: Cobertura do Custo do Lote (Novo) */}
+                      <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-1.5">
+                            <Coins className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                            <span className="font-semibold text-slate-700 dark:text-slate-200">
+                              Cobertura de Custo: <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(netRevenue)}</strong> / {formatCurrency(totalCost)}
+                            </span>
+                          </div>
+                          <span className="font-bold text-slate-800 dark:text-slate-200 text-[11px]">
+                            {costCoveredPct >= 100 ? (
+                              <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">100% Coberto ✓</span>
+                            ) : (
+                              `${costCoveredPct.toFixed(1)}% Coberto`
+                            )}
+                          </span>
+                        </div>
+
+                        <div className="w-full bg-slate-200 dark:bg-slate-600/60 rounded-full h-2 overflow-hidden p-0.5">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ease-out shadow-sm ${
+                              costCoveredPct >= 100
+                                ? "bg-emerald-500"
+                                : "bg-gradient-to-r from-amber-500 via-emerald-500 to-emerald-400"
+                            }`}
+                            style={{ width: `${Math.min(100, Math.max(0, costCoveredPct))}%` }}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
+                          {costRemainingAmount > 0 ? (
+                            <span>Faltam <strong>{formatCurrency(costRemainingAmount)}</strong> ({costRemainingPct.toFixed(1)}%) para cobrir o lote</span>
+                          ) : (
+                            <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Custo do lote 100% coberto pelas vendas!</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Costs breakdown chips: Lance Vencedor | Custos Extras | Custo Rateado | Itens no Lote */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60 text-[11px]">

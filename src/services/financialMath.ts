@@ -113,8 +113,8 @@ export function apportionLotCostExact(
   method: "igualitario" | "manual" | "percentual" | "valor_estimado",
   customValues?: { itemId: string; value: number }[]
 ): ApportionmentResult[] {
-  // Filtra apenas itens elegíveis (não descartados e não vendidos)
-  const activeItems = items.filter((i) => i.status !== "descartado" && !i.isSold);
+  // Filtra apenas itens elegíveis (exclui apenas descartados)
+  const activeItems = items.filter((i) => i.status !== "descartado");
   if (activeItems.length === 0) return [];
 
   const count = activeItems.length;
