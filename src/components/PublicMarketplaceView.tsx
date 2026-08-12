@@ -12,23 +12,46 @@ import {
   Info,
   Store,
   Sparkles,
-  Edit3,
   Award,
   Filter,
+  Home,
+  Grid,
+  Layers,
+  ArrowRight,
+  TrendingUp,
+  ChevronRight,
+  UserCheck,
+  Smartphone,
+  Laptop,
+  Headphones,
+  Tv,
+  Wrench,
+  Car,
+  Armchair,
+  User,
+  Clock
 } from "lucide-react";
 
 import { PRODUCT_CATEGORIES } from "../constants/categories";
 import { ITEM_SEALS, ITEM_SEALS_LIST, ItemSealId } from "../constants/seals";
 
+import logoOutletWm from "../../assets/logo_outlet_wm.jpg";
+
+type MarketplaceTab = "home" | "categorias" | "como_funciona" | "quem_somos";
+
 export const PublicMarketplaceView: React.FC = () => {
-  const { items, updateItem } = useAuction();
+  const { items } = useAuction();
+
+  // Navigation State
+  const [activeTab, setActiveTab] = useState<MarketplaceTab>("home");
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todas");
   const [selectedSealFilter, setSelectedSealFilter] = useState<string>("todos");
+  const [selectedConditionFilter, setSelectedConditionFilter] = useState<string>("todas");
+  const [sortBy, setSortBy] = useState<string>("desconto");
   const [selectedItemForModal, setSelectedItemForModal] = useState<AuctionItem | null>(null);
   const [checkoutItem, setCheckoutItem] = useState<AuctionItem | null>(null);
-  const [editingSealItem, setEditingSealItem] = useState<AuctionItem | null>(null);
 
   // Form State do envio WhatsApp
   const [buyerName, setBuyerName] = useState("");
@@ -73,14 +96,6 @@ export const PublicMarketplaceView: React.FC = () => {
     setTimeout(() => setCopiedLink(false), 3000);
   };
 
-  const handleSelectSeal = (itemId: string, sealId: ItemSealId) => {
-    updateItem(itemId, { seal: sealId });
-    if (selectedItemForModal && selectedItemForModal.id === itemId) {
-      setSelectedItemForModal((prev) => (prev ? { ...prev, seal: sealId } : null));
-    }
-    setEditingSealItem(null);
-  };
-
   const handleSendWhatsAppOrder = (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkoutItem || !buyerName) return;
@@ -91,15 +106,14 @@ export const PublicMarketplaceView: React.FC = () => {
     const sealObj = checkoutItem.seal ? ITEM_SEALS[checkoutItem.seal] : null;
 
     const message =
-      `🛒 *NOVO PEDIDO VIA VITRINE VIRTUAL*\n\n` +
+      `🛒 *NOVO PEDIDO VIA VITRINE - OUTLET WM*\n\n` +
       `📦 *Produto:* ${checkoutItem.name}\n` +
       `🏷️ *Código:* ${checkoutItem.code}\n` +
-      (sealObj ? `🏷️ *Selo de Qualidade:* ${sealObj.emoji} ${sealObj.name} - ${sealObj.description}\n` : "") +
+      (sealObj ? `🏷️ *Selo de Qualidade:* ${sealObj.emoji} ${sealObj.name}\n` : "") +
       (marketNewValue > 0 ? `📊 *Valor Mercado (Novo):* ${formatCurrency(marketNewValue)}\n` : "") +
       `💰 *Valor de Venda:* ${formatCurrency(estimatedSalePrice)}\n` +
       (discountPct > 0 ? `🔥 *Desconto Aplicado:* ${discountPct}% OFF\n` : "") +
-      `📍 *Condição:* ${checkoutItem.condition.toUpperCase()}\n\n` +
-      `👤 *Dados do Cliente:*\n` +
+      `\n👤 *Dados do Cliente:*\n` +
       `- *Nome:* ${buyerName}\n` +
       (buyerPhone ? `- *Telefone/WhatsApp:* ${buyerPhone}\n` : "") +
       (buyerNotes ? `- *Observações:* ${buyerNotes}\n` : "") +
@@ -119,123 +133,199 @@ export const PublicMarketplaceView: React.FC = () => {
     setBuyerNotes("");
   };
 
+  const getCategoryIcon = (cat: string) => {
+    const c = cat.toLowerCase();
+    if (c.includes("informática") || c.includes("computador") || c.includes("notebook")) return <Laptop className="w-6 h-6 text-slate-700" />;
+    if (c.includes("smartphone") || c.includes("celular") || c.includes("telefonia")) return <Smartphone className="w-6 h-6 text-slate-700" />;
+    if (c.includes("áudio") || c.includes("som") || c.includes("fone")) return <Headphones className="w-6 h-6 text-slate-700" />;
+    if (c.includes("eletro") || c.includes("tv") || c.includes("vídeo")) return <Tv className="w-6 h-6 text-slate-700" />;
+    if (c.includes("ferramentas")) return <Wrench className="w-6 h-6 text-slate-700" />;
+    if (c.includes("automotivo")) return <Car className="w-6 h-6 text-slate-700" />;
+    return <Armchair className="w-6 h-6 text-slate-700" />;
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-amber-500 selection:text-slate-950">
-      {/* Top Banner Publico Light */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-3.5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-slate-950 font-bold shadow-md shadow-amber-500/20">
-              <Store className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="font-black text-base text-slate-900 tracking-tight flex items-center gap-2">
-                <span>Vitrine de Oportunidades</span>
-                <span className="px-2.5 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-                  Leilão & Arrematações
-                </span>
-              </h1>
-              <p className="text-xs text-slate-500 font-medium">Bens Arrematados com Descontos Exclusivos</p>
-            </div>
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-amber-500 selection:text-slate-950 pb-24 md:pb-12">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+          <div
+            onClick={() => setActiveTab("home")}
+            className="flex items-center gap-3 cursor-pointer group"
+          >
+            <img
+              src={logoOutletWm}
+              alt="Outlet WM Logo"
+              className="w-9 h-9 rounded-lg object-cover border border-slate-200 shadow-xs"
+            />
+            <span className="font-black text-xl text-slate-900 tracking-tight">Outlet WM</span>
           </div>
 
-          <button
-            onClick={handleShareMarketplace}
-            className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all shrink-0 cursor-pointer shadow-sm"
-          >
-            {copiedLink ? (
-              <>
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span className="text-emerald-700 font-extrabold">Link Copiado!</span>
-              </>
-            ) : (
-              <>
-                <Share2 className="w-4 h-4 text-slate-600" />
-                <span>Compartilhar Vitrine</span>
-              </>
-            )}
-          </button>
+          <nav className="hidden md:flex items-center gap-8 text-xs font-bold text-slate-600">
+            <button onClick={() => setActiveTab("home")} className={`hover:text-slate-900 transition-colors cursor-pointer py-1 ${activeTab === "home" ? "text-slate-900 font-extrabold border-b-2 border-slate-900" : ""}`}>Home</button>
+            <button onClick={() => setActiveTab("categorias")} className={`hover:text-slate-900 transition-colors cursor-pointer py-1 ${activeTab === "categorias" ? "text-slate-900 font-extrabold border-b-2 border-slate-900" : ""}`}>Categorias</button>
+            <button onClick={() => setActiveTab("como_funciona")} className={`hover:text-slate-900 transition-colors cursor-pointer py-1 ${activeTab === "como_funciona" ? "text-slate-900 font-extrabold border-b-2 border-slate-900" : ""}`}>Como Funciona</button>
+            <button onClick={() => setActiveTab("lances")} className={`hover:text-slate-900 transition-colors cursor-pointer py-1 ${activeTab === "lances" ? "text-slate-900 font-extrabold border-b-2 border-slate-900" : ""}`}>Meus Lotes</button>
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <button onClick={() => setActiveTab("categorias")} className="p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"><Search className="w-5 h-5" /></button>
+            <button onClick={handleShareMarketplace} className="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-slate-800 shadow-sm" title="Compartilhar">
+              {copiedLink ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <User className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
       </header>
+      {/* ==================== TELA 1: HOME (Fiel às Imagens 1, 2, 3 e 4) ==================== */}
+      {activeTab === "home" && (
+        <div className="space-y-8">
+          {/* Hero Banner Estilo Stitch (Escuro/Navy com Badges e CTA Marrom Ouro) */}
+          <section className="max-w-7xl mx-auto px-4 pt-6">
+            <div className="p-8 sm:p-12 rounded-3xl bg-[#0A192F] text-white space-y-6 relative overflow-hidden shadow-xl text-left">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#B45309]/30 text-amber-300 text-xs font-extrabold border border-amber-500/40">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                Leilões Ativos
+              </span>
 
-      {/* Hero Section Light */}
-      <section className="bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-slate-50 py-10 px-4 border-b border-slate-200/60">
-        <div className="max-w-7xl mx-auto text-center space-y-4">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-extrabold rounded-full bg-amber-100 text-amber-900 border border-amber-300/80 shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            Oportunidades Únicas de Leilão
-          </span>
-          <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            Encontre Produtos de Leilão por Preços de Ocasião
-          </h2>
-          <p className="text-sm text-slate-600 max-w-2xl mx-auto font-medium">
-            Todos os itens passam por avaliação rigorosa, possuem classificação por selos de garantia estético-funcionais e valores abaixo da tabela de mercado.
-          </p>
+              <div className="max-w-xl space-y-3">
+                <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+                  Logística Reversa. <br />
+                  Oportunidades Inteligentes.
+                </h1>
+                <p className="text-sm sm:text-base text-slate-300 font-medium leading-relaxed">
+                  Encontre lotes de alto valor com descontos exclusivos direto da fonte.
+                </p>
+              </div>
 
-          {/* Search & Filter Bar */}
-          <div className="max-w-4xl mx-auto pt-4 flex flex-col sm:flex-row items-center gap-3">
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Pesquisar por produto, código, marca, modelo..."
-                className="w-full pl-11 pr-4 py-3 text-xs rounded-2xl border border-slate-300 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 shadow-sm font-medium"
-              />
-              {search && (
+              <div className="flex flex-wrap gap-3 pt-2">
                 <button
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  onClick={() => setActiveTab("categorias")}
+                  className="px-6 py-3 rounded-xl bg-[#854D0E] hover:bg-[#A16207] text-white font-extrabold text-xs tracking-wider uppercase transition-all shadow-md cursor-pointer"
                 >
-                  <X className="w-4 h-4" />
+                  Ver Ofertas Agora
                 </button>
-              )}
+                <button
+                  onClick={() => setActiveTab("como_funciona")}
+                  className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-extrabold text-xs tracking-wider uppercase transition-all cursor-pointer border border-white/20"
+                >
+                  Como Funciona
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Carrossel de Categorias com Círculos Suaves (Fiel à Imagem 1) */}
+          <section className="max-w-7xl mx-auto px-4 text-left space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Categorias</h3>
+            <div className="flex items-center gap-4 overflow-x-auto pb-2 scrollbar-none">
+              {PRODUCT_CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    setSelectedCategory(cat);
+                    setActiveTab("categorias");
+                  }}
+                  className="flex flex-col items-center gap-2 shrink-0 group cursor-pointer"
+                >
+                  <div className="w-16 h-16 rounded-full bg-slate-200/70 group-hover:bg-amber-100 flex items-center justify-center transition-colors">
+                    {getCategoryIcon(cat)}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-700 group-hover:text-slate-900">
+                    {cat}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* Destaques da Semana - Cards com Tag Vermelha -45% OFF e Botão Marrom (Fiel às Imagens) */}
+          <section className="max-w-7xl mx-auto px-4 text-left space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-black text-slate-900">Destaques da Semana</h3>
+              <button
+                onClick={() => setActiveTab("categorias")}
+                className="text-xs font-bold uppercase tracking-wider text-[#854D0E] hover:underline cursor-pointer"
+              >
+                Ver Todos
+              </button>
             </div>
 
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full sm:w-52 py-3 px-4 text-xs rounded-2xl border border-slate-300 bg-white text-slate-800 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 font-bold shadow-sm"
-            >
-              <option value="todas">Todas Categorias ({availableItems.length})</option>
-              {PRODUCT_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredItems.slice(0, 8).map((item) => {
+                const marketNewValue = item.newProductMarketValue || (item.estimatedMarketAvg > 0 ? Number((item.estimatedMarketAvg / 0.7).toFixed(2)) : item.estimatedMarketAvg);
+                const estimatedSalePrice = item.estimatedMarketAvg || item.listedPrice || 0;
+                const discountPct = item.discountPercentage || (marketNewValue > estimatedSalePrice ? Math.round(((marketNewValue - estimatedSalePrice) / marketNewValue) * 100) : 0);
 
-            <select
-              value={selectedSealFilter}
-              onChange={(e) => setSelectedSealFilter(e.target.value)}
-              className="w-full sm:w-52 py-3 px-4 text-xs rounded-2xl border border-slate-300 bg-white text-slate-800 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 font-bold shadow-sm"
-            >
-              <option value="todos">Todos os Selos</option>
-              {ITEM_SEALS_LIST.map((seal) => (
-                <option key={seal.id} value={seal.id}>
-                  {seal.emoji} {seal.name}
-                </option>
-              ))}
-            </select>
-          </div>
+                return (
+                  <div
+                    key={item.id}
+                    className="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg transition-all flex flex-col justify-between"
+                  >
+                    {/* Imagem com Tag de Desconto Retangular Vermelho Vivido */}
+                    <div className="relative h-56 w-full bg-slate-100 overflow-hidden cursor-pointer" onClick={() => setSelectedItemForModal(item)}>
+                      <img
+                        src={item.primaryPhoto}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                      />
 
-          {/* Guia Legenda dos Selos (Accordion ou badges explicativos) */}
-          <div className="pt-4 max-w-4xl mx-auto flex flex-wrap justify-center gap-2">
-            {ITEM_SEALS_LIST.map((seal) => (
-              <span
-                key={seal.id}
-                title={seal.description}
-                onClick={() => setSelectedSealFilter(selectedSealFilter === seal.id ? "todos" : seal.id)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-xl border transition-all cursor-pointer shadow-xs ${seal.badgeBgClass} ${seal.badgeTextClass} ${seal.badgeBorderClass} ${selectedSealFilter === seal.id ? "ring-2 ring-amber-500" : "opacity-90 hover:opacity-100"}`}
-              >
-                <span>{seal.emoji}</span>
-                <span>{seal.name}</span>
-              </span>
-            ))}
-          </div>
+                      {discountPct > 0 && (
+                        <span className="absolute top-3 left-3 px-3 py-1 text-xs font-black rounded-lg bg-[#DC2626] text-white shadow-md">
+                          -{discountPct}% OFF
+                        </span>
+                      )}
+
+                      <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md text-[10px] font-bold text-slate-700 flex items-center gap-1 shadow-xs">
+                        <Clock className="w-3 h-3 text-slate-500" />
+                        <span>02h 14m</span>
+                      </div>
+                    </div>
+
+                    {/* Conteúdo do Card */}
+                    <div className="p-5 space-y-3 flex-1 flex flex-col justify-between text-left">
+                      <div className="space-y-1">
+                        <h4
+                          onClick={() => setSelectedItemForModal(item)}
+                          className="font-bold text-sm text-slate-900 hover:text-[#854D0E] transition-colors line-clamp-2 cursor-pointer leading-snug"
+                        >
+                          Lote {item.code}: {item.name}
+                        </h4>
+
+                        {marketNewValue > 0 && (
+                          <div className="text-xs text-slate-400 line-through pt-1">
+                            Mercado: {formatCurrency(marketNewValue)}
+                          </div>
+                        )}
+
+                        <div className="text-base font-black text-slate-900">
+                          {formatCurrency(estimatedSalePrice)}
+                        </div>
+                        <span className="text-[10px] text-slate-500 block font-medium">Preço de Venda / Lance Mínimo</span>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2">
+                        <button
+                          onClick={() => setSelectedItemForModal(item)}
+                          className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                          title="Ver Detalhes"
+                        >
+                          <Search className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => setCheckoutItem(item)}
+                          className="flex-1 py-3 px-4 rounded-xl bg-[#854D0E] hover:bg-[#A16207] text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+                        >
+                          Ver Detalhes / Comprar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         </div>
-      </section>
+      )}
 
       {/* Main Grid Section */}
       <main className="max-w-7xl mx-auto px-4 py-8">
@@ -272,72 +362,43 @@ export const PublicMarketplaceView: React.FC = () => {
                       </span>
                     )}
 
-                    {/* Selo Badge ou Botão Editar Selo */}
-                    <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
-                      {seal ? (
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingSealItem(item);
-                          }}
-                          title={`${seal.description} (Clique para alterar o selo)`}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-extrabold rounded-full border shadow-md cursor-pointer ${seal.badgeBgClass} ${seal.badgeTextClass} ${seal.badgeBorderClass} hover:scale-105 transition-transform`}
-                        >
-                          <span>{seal.emoji}</span>
-                          <span>{seal.name}</span>
-                          <Edit3 className="w-3 h-3 ml-0.5 opacity-70" />
-                        </div>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingSealItem(item);
-                          }}
-                          className="px-2 py-1 text-[10px] font-bold rounded-full bg-white/90 text-amber-800 border border-amber-300 shadow-md backdrop-blur-sm hover:bg-amber-100 transition-colors flex items-center gap-1 cursor-pointer"
-                        >
-                          <Award className="w-3 h-3 text-amber-600" />
-                          <span>+ Escolher Selo</span>
-                        </button>
-                      )}
-                    </div>
-
                     <span className="absolute bottom-3 left-3 px-2 py-0.5 text-[10px] font-mono font-bold rounded-lg bg-white/90 text-slate-700 backdrop-blur-md border border-slate-200 shadow-xs">
                       {item.code}
                     </span>
-                  </div>
+                </div>
 
-                  {/* Body Content */}
-                  <div className="p-4 flex-1 flex flex-col justify-between">
-                    <div className="space-y-1 text-left">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-extrabold uppercase text-amber-700 tracking-wider">
-                          {item.category}
-                        </span>
-                        <span className="text-[10px] font-bold uppercase text-slate-500">
-                          {item.condition}
+                {/* Body Content */}
+                <div className="p-4 flex-1 flex flex-col justify-between">
+                  <div className="space-y-1 text-left">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-extrabold uppercase text-amber-700 tracking-wider">
+                        {item.category}
+                      </span>
+                    </div>
+
+                    <h3
+                      onClick={() => setSelectedItemForModal(item)}
+                      className="font-bold text-sm text-slate-900 hover:text-amber-600 transition-colors line-clamp-2 cursor-pointer leading-snug min-h-[2.5rem]"
+                    >
+                      {item.name}
+                    </h3>
+
+                    {(item.brand || item.model) && (
+                      <p className="text-xs text-slate-500 truncate font-medium">
+                        {item.brand} {item.model}
+                      </p>
+                    )}
+
+                    {/* Seal badge display */}
+                    {seal && (
+                      <div className="mt-2">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-extrabold rounded-full border ${seal.badgeBgClass} ${seal.badgeTextClass} ${seal.badgeBorderClass}`}>
+                          <span>{seal.emoji}</span>
+                          <span>{seal.name}</span>
                         </span>
                       </div>
-
-                      <h3
-                        onClick={() => setSelectedItemForModal(item)}
-                        className="font-bold text-sm text-slate-900 hover:text-amber-600 transition-colors line-clamp-2 cursor-pointer leading-snug min-h-[2.5rem]"
-                      >
-                        {item.name}
-                      </h3>
-
-                      {(item.brand || item.model) && (
-                        <p className="text-xs text-slate-500 truncate font-medium">
-                          {item.brand} {item.model}
-                        </p>
-                      )}
-
-                      {/* Seal info text snippet */}
-                      {seal && (
-                        <p className="text-[11px] text-slate-600 italic bg-slate-50 p-2 rounded-xl border border-slate-100 mt-2 font-medium line-clamp-2">
-                          <span className="font-bold not-italic">{seal.emoji} {seal.name}:</span> {seal.description}
-                        </p>
-                      )}
-                    </div>
+                    )}
+                  </div>
 
                     {/* Standardized Prices Breakdown */}
                     <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1 text-left mt-3">
@@ -384,65 +445,7 @@ export const PublicMarketplaceView: React.FC = () => {
         )}
       </main>
 
-      {/* Modal Seleção/Edição de Selos */}
-      {editingSealItem && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs cursor-pointer"
-          onClick={() => setEditingSealItem(null)}
-        >
-          <div
-            className="w-full max-w-lg bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl space-y-4 text-left cursor-default"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <div className="flex items-center gap-2">
-                <Award className="w-5 h-5 text-amber-600" />
-                <h3 className="font-extrabold text-base text-slate-900">Escolha o Selo do Produto</h3>
-              </div>
-              <button
-                onClick={() => setEditingSealItem(null)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-600 font-medium">
-              Selecione o selo de estado estético/funcional para <strong>{editingSealItem.name}</strong> ({editingSealItem.code}):
-            </p>
-
-            <div className="space-y-2">
-              {ITEM_SEALS_LIST.map((seal) => {
-                const isSelected = editingSealItem.seal === seal.id;
-                return (
-                  <div
-                    key={seal.id}
-                    onClick={() => handleSelectSeal(editingSealItem.id, seal.id)}
-                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${seal.badgeBgClass} ${seal.badgeBorderClass} hover:ring-2 hover:ring-amber-500 ${isSelected ? "ring-2 ring-amber-600 font-bold" : ""}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">{seal.emoji}</span>
-                      <div>
-                        <div className={`text-xs font-black ${seal.badgeTextClass}`}>
-                          {seal.name}
-                        </div>
-                        <div className="text-[11px] text-slate-600 font-medium leading-tight">
-                          {seal.description}
-                        </div>
-                      </div>
-                    </div>
-                    {isSelected && (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Detalhes do Produto */}
+      {/* Modal Checkout WhatsApp */}
       {selectedItemForModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs cursor-pointer"
@@ -485,17 +488,8 @@ export const PublicMarketplaceView: React.FC = () => {
                         <span className="text-xs font-black text-slate-900 block">
                           Selo {ITEM_SEALS[selectedItemForModal.seal].name}
                         </span>
-                        <span className="text-[11px] text-slate-600 font-medium">
-                          {ITEM_SEALS[selectedItemForModal.seal].description}
-                        </span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setEditingSealItem(selectedItemForModal)}
-                      className="px-2.5 py-1 text-[11px] font-bold rounded-xl bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition-colors"
-                    >
-                      Alterar Selo
-                    </button>
                   </div>
                 )}
               </div>
@@ -515,28 +509,22 @@ export const PublicMarketplaceView: React.FC = () => {
             </div>
 
             {/* Specs & Description */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-medium">
-              <div>
-                <span className="text-slate-500 block mb-0.5">Condição Física:</span>
-                <span className="font-bold text-slate-900 uppercase">{selectedItemForModal.condition}</span>
+            {(selectedItemForModal.brand || selectedItemForModal.model) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-medium">
+                {selectedItemForModal.brand && (
+                  <div>
+                    <span className="text-slate-500 block mb-0.5">Marca:</span>
+                    <span className="font-bold text-slate-900">{selectedItemForModal.brand}</span>
+                  </div>
+                )}
+                {selectedItemForModal.model && (
+                  <div>
+                    <span className="text-slate-500 block mb-0.5">Modelo:</span>
+                    <span className="font-bold text-slate-900">{selectedItemForModal.model}</span>
+                  </div>
+                )}
               </div>
-              <div>
-                <span className="text-slate-500 block mb-0.5">Estado Operacional:</span>
-                <span className="font-bold text-slate-900 uppercase">{selectedItemForModal.operationalState.replace("_", " ")}</span>
-              </div>
-              {selectedItemForModal.brand && (
-                <div>
-                  <span className="text-slate-500 block mb-0.5">Marca:</span>
-                  <span className="font-bold text-slate-900">{selectedItemForModal.brand}</span>
-                </div>
-              )}
-              {selectedItemForModal.model && (
-                <div>
-                  <span className="text-slate-500 block mb-0.5">Modelo:</span>
-                  <span className="font-bold text-slate-900">{selectedItemForModal.model}</span>
-                </div>
-              )}
-            </div>
+            )}
 
             {/* Price Box */}
             {(() => {
@@ -589,6 +577,93 @@ export const PublicMarketplaceView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* FOOTER PREMIUM COMPLETO (Design Inspirado no Mockup) */}
+      <footer className="bg-white border-t border-slate-200 pt-12 pb-24 md:pb-12 text-left mt-12">
+        <div className="max-w-7xl mx-auto px-4 space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-8 border-b border-slate-100">
+            <div className="md:col-span-6 space-y-3">
+              <div className="flex items-center gap-3">
+                <img src={logoOutletWm} alt="Outlet WM" className="w-10 h-10 rounded-xl object-cover border border-amber-500/40" />
+                <span className="font-black text-xl text-slate-900 tracking-tight">OUTLET WM</span>
+              </div>
+              <p className="text-xs text-slate-500 font-medium max-w-sm">
+                Sua plataforma oficial de oportunidades de leilão e logística reversa. Produtos de qualidade por preços de oportunidade.
+              </p>
+            </div>
+
+            <div className="md:col-span-3 space-y-2 text-xs">
+              <span className="font-bold text-slate-900 uppercase tracking-wider block">Navegação</span>
+              <ul className="space-y-1.5 text-slate-600 font-medium">
+                <li><button onClick={() => setActiveTab("home")} className="hover:text-amber-700">Home</button></li>
+                <li><button onClick={() => setActiveTab("categorias")} className="hover:text-amber-700">Categorias</button></li>
+                <li><button onClick={() => setActiveTab("como_funciona")} className="hover:text-amber-700">Como Funciona</button></li>
+                <li><button onClick={() => setActiveTab("quem_somos")} className="hover:text-amber-700">Quem Somos</button></li>
+              </ul>
+            </div>
+
+            <div className="md:col-span-3 space-y-2 text-xs">
+              <span className="font-bold text-slate-900 uppercase tracking-wider block">Atendimento & Suporte</span>
+              <ul className="space-y-1.5 text-slate-600 font-medium">
+                <li>WhatsApp Comercial: (13) 98809-1839</li>
+                <li>Atendimento: Seg a Sex, 09h às 18h</li>
+                <li>Garantia & Procedência Auditada</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 font-medium gap-4">
+            <div>© {new Date().getFullYear()} Outlet WM. Todos os direitos reservados.</div>
+            <div className="flex items-center gap-4">
+              <span>Termos de Uso</span>
+              <span>Privacidade</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* BOTTOM NAVIGATION BAR PARA SMARTPHONES (Design Inspirado nos Protótipos Mobile) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2 flex items-center justify-around shadow-lg">
+        <button
+          onClick={() => setActiveTab("home")}
+          className={`flex flex-col items-center gap-1 text-[10px] font-extrabold transition-colors ${
+            activeTab === "home" ? "text-amber-600" : "text-slate-500"
+          }`}
+        >
+          <Home className="w-5 h-5" />
+          <span>Home</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("categorias")}
+          className={`flex flex-col items-center gap-1 text-[10px] font-extrabold transition-colors ${
+            activeTab === "categorias" ? "text-amber-600" : "text-slate-500"
+          }`}
+        >
+          <Grid className="w-5 h-5" />
+          <span>Categorias</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("como_funciona")}
+          className={`flex flex-col items-center gap-1 text-[10px] font-extrabold transition-colors ${
+            activeTab === "como_funciona" ? "text-amber-600" : "text-slate-500"
+          }`}
+        >
+          <Layers className="w-5 h-5" />
+          <span>Como Funciona</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("quem_somos")}
+          className={`flex flex-col items-center gap-1 text-[10px] font-extrabold transition-colors ${
+            activeTab === "quem_somos" ? "text-amber-600" : "text-slate-500"
+          }`}
+        >
+          <UserCheck className="w-5 h-5" />
+          <span>Quem Somos</span>
+        </button>
+      </div>
 
       {/* Modal Checkout WhatsApp */}
       {checkoutItem && (

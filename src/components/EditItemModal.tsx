@@ -3,6 +3,7 @@ import { useAuction } from "../context/AuctionContext";
 import { PRODUCT_CATEGORIES } from "../constants/categories";
 import { AuctionItem, ItemCondition, OperationalState, ItemStatus } from "../types";
 import { X, Save, Package, DollarSign, MapPin, Tag } from "lucide-react";
+import { ITEM_SEALS_LIST, ItemSealId } from "../constants/seals";
 import { FormattedNumberInput } from "./FormattedNumberInput";
 
 interface EditItemModalProps {
@@ -37,6 +38,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
   const [listedPrice, setListedPrice] = useState(0);
   const [description, setDescription] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
+  const [seal, setSeal] = useState<ItemSealId | undefined>(undefined);
 
   const handleNewMarketValueChange = (val: number) => {
     setNewProductMarketValue(val);
@@ -105,6 +107,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
       setListedPrice(item.listedPrice || estAvg);
       setDescription(item.description || "");
       setPurchaseDate(item.purchaseDate || item.dateAdded || new Date().toISOString().split("T")[0]);
+      setSeal(item.seal);
     }
   }, [item]);
 
@@ -120,6 +123,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
       condition,
       operationalState,
       status,
+      seal,
       purchaseDate,
       location: {
         ...item.location,
@@ -244,6 +248,24 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                   <option value="avariado">Avariado / Para Peças</option>
                   <option value="sucata">Sucata</option>
                   <option value="nao_testado">Não Testado</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Selo do Produto (Vitrine)
+                </label>
+                <select
+                  value={seal || ""}
+                  onChange={(e) => setSeal((e.target.value as ItemSealId) || undefined)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
+                >
+                  <option value="">Sem Selo Definido</option>
+                  {ITEM_SEALS_LIST.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.emoji} {s.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
