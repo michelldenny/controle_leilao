@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef } from "react";
 import { ArrowRight, Armchair, Boxes, Car, CheckSquare, CircleUserRound, Clock3, Dumbbell, Gavel, Home, Laptop, Menu, MessageCircle, Package, Search, ShieldCheck, Shirt, ShoppingBag, Smartphone, Sparkles, Tag, Truck, Tv, Wrench, X } from "lucide-react";
 import { useAuction } from "../context/AuctionContext";
 import { AuctionItem } from "../types";
+import { ITEM_SEALS, ItemSealId } from "../constants/seals";
 
 import stepCuration from "../../assets/step_curation.png";
 import stepEvaluation from "../../assets/step_evaluation.png";
@@ -45,7 +46,16 @@ function getCategoryIcon(cat: string) {
 
 function getSealBadge(item: AuctionItem) {
   const s = item.seal || (item.condition === "novo" ? "prime" : item.condition === "seminovo" ? "excelente" : "bom");
-  const labels: Record<string, string> = {
+  const sealObj = ITEM_SEALS[s as ItemSealId];
+  const emojiMap: Record<string, string> = {
+    prime: "🟣",
+    premium: "🟢",
+    excelente: "🔵",
+    muito_bom: "🟡",
+    bom: "🟠",
+    oportunidade: "🔴"
+  };
+  const labelMap: Record<string, string> = {
     prime: "Prime",
     premium: "Premium",
     excelente: "Excelente",
@@ -53,8 +63,9 @@ function getSealBadge(item: AuctionItem) {
     bom: "Bom",
     oportunidade: "Oportunidade"
   };
-  const label = labels[s] || "WM";
-  return <span className={`ow-seal-badge ow-seal-${s}`}>{label}</span>;
+  const emoji = sealObj?.emoji || emojiMap[s] || "🏷️";
+  const label = sealObj?.name || labelMap[s] || "WM";
+  return <span className={`ow-seal-badge ow-seal-${s}`}>{emoji} {label}</span>;
 }
 
 function Logo() {
@@ -189,7 +200,7 @@ export const PublicMarketplaceView: React.FC = () => {
     return products.filter(i => Boolean(i.isFeatured));
   }, [products]);
 
-  const categories = useMemo(() => Array.from(new Set(products.map(i => i.category).filter(Boolean))).sort((a, b) => a.localeCompare(b, "pt-BR")), [products]);
+  const categories = useMemo(() => Array.from(new Set(products.map(i => i.category).filter(Boolean))).sort((a: string, b: string) => a.localeCompare(b, "pt-BR")), [products]);
 
   const toggleCategory = (cat: string) => {
     if (cat === "Todos") {
@@ -214,7 +225,7 @@ export const PublicMarketplaceView: React.FC = () => {
   const whatsapp = (i?: AuctionItem) => window.open(`https://wa.me/5513988091839?text=${encodeURIComponent(i ? `Olá! Tenho interesse no produto ${i.name} (${i.code}), por ${money(price(i))}.` : "Olá! Quero conhecer os produtos disponíveis da Outlet WM.")}`, "_blank", "noopener,noreferrer");
 
   return <div className="ow-site">
-    <header className="ow-header"><div className="ow-container ow-header-inner"><button onClick={() => go("home")} aria-label="Início"><Logo /></button><nav className={menu ? "ow-nav open" : "ow-nav"}><button className={page === "home" ? "active" : ""} onClick={() => go("home")}>Home</button><button className={page === "categories" ? "active" : ""} onClick={() => go("categories")}>Vitrine</button><button className={page === "how" ? "active" : ""} onClick={() => go("how")}>Como Funciona</button><button onClick={() => whatsapp()}>Meus Lances</button></nav><div className="ow-actions"><Search /><CircleUserRound /><button className="ow-menu" onClick={() => setMenu(v => !v)} aria-label="Abrir menu">{menu ? <X /> : <Menu />}</button></div></div></header>
+    <header className="ow-header"><div className="ow-container ow-header-inner"><button onClick={() => go("home")} aria-label="Início"><Logo /></button><nav className={menu ? "ow-nav open" : "ow-nav"}><button className={page === "home" ? "active" : ""} onClick={() => go("home")}>Home</button><button className={page === "categories" ? "active" : ""} onClick={() => go("categories")}>Vitrine</button><button className={page === "how" ? "active" : ""} onClick={() => go("how")}>Como Funciona</button><button onClick={() => whatsapp()}>Meus Lances</button></nav><div className="ow-actions"><CircleUserRound /><button className="ow-menu" onClick={() => setMenu(v => !v)} aria-label="Abrir menu">{menu ? <X /> : <Menu />}</button></div></div></header>
 
     {/* HOME */}
     {page === "home" && <main><section className="ow-hero"><div className="ow-container ow-hero-grid"><div className="ow-hero-copy"><span className="ow-kicker"><i /> Produtos disponíveis</span><h1><em>Outlet WM.</em><br />Oportunidades Inteligentes.</h1><p>Descubra itens de alto valor por uma fração do preço. Produtos selecionados, informações transparentes e oportunidades reais para comprar melhor.</p><div className="ow-cta-row"><button className="ow-primary" onClick={() => go("categories")}>Ver Vitrine Agora <ArrowRight /></button><button className="ow-secondary" onClick={() => go("how")}>Como Funciona</button></div></div><div className="ow-metric"><div><b>Inventário disponível</b><strong>Atualizado</strong></div><div className="ow-chart"><i /><i /><i /><i /><i /><i /></div><hr /><small>Produtos ativos</small><h2>{products.length.toLocaleString("pt-BR")}</h2><span>↻</span></div></div></section>
@@ -243,13 +254,11 @@ export const PublicMarketplaceView: React.FC = () => {
         </div>
 
         {featuredProducts.length ? (
-          <div className="ow-featured-marquee-container">
-            <div className="ow-featured-marquee">
-              {[...featuredProducts, ...featuredProducts].map((i, idx) => (
-                <Card key={`${i.id}-${idx}`} item={i} details={() => setSelected(i)} contact={() => whatsapp(i)} />
-              ))}
-            </div>
-          </div>
+          <FeaturedMarquee
+            items={featuredProducts}
+            onSelect={(i) => setSelected(i)}
+            onContact={(i) => whatsapp(i)}
+          />
         ) : <Empty />}
       </section>
     </main>}
@@ -345,38 +354,121 @@ export const PublicMarketplaceView: React.FC = () => {
         <MessageCircle />Contato
       </button>
     </nav>
-    {selected && <div className="ow-modal" onClick={() => setSelected(null)}><div onClick={e => e.stopPropagation()}><button className="ow-modal-close" onClick={() => setSelected(null)} aria-label="Fechar"><X /></button><img src={selected.primaryPhoto} alt={selected.name} />{discount(selected) > 0 && <span style={{ background: "#16a34a", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800 }}>-{discount(selected)}% OFF</span>}<div style={{ marginTop: "12px", marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>{getSealBadge(selected)}<small style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: "11px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.03em" }}>{selected.category}</small></div><h2>{selected.name}</h2><p>{selected.description || "Produto revisado e disponível para venda."}</p>{market(selected) > price(selected) && <del>Mercado: {money(market(selected))}</del>}<strong>{money(price(selected))}</strong><div className="ow-trust"><ShieldCheck /> {selected.condition.replaceAll("_", " ")} <Truck /> {selected.location.customText || "Consulte a entrega"}</div>
+    {selected && <div className="ow-modal" onClick={() => setSelected(null)}><div onClick={e => e.stopPropagation()}><button className="ow-modal-close" onClick={() => setSelected(null)} aria-label="Fechar"><X /></button><img src={selected.primaryPhoto} alt={selected.name} />{discount(selected) > 0 && <span style={{ background: "#16a34a", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800 }}>-{discount(selected)}% OFF</span>}<div style={{ marginTop: "8px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>{getSealBadge(selected)}<small style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: "11px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.03em" }}>{selected.category}</small></div><h2>{selected.name}</h2><p>{selected.description || "Produto revisado e disponível para venda."}</p>{market(selected) > price(selected) && <del>Mercado: {money(market(selected))}</del>}<strong>{money(price(selected))}</strong><div className="ow-trust"><ShieldCheck /> {selected.condition.replaceAll("_", " ")} <Truck /> {selected.location.customText || "Consulte a entrega"}</div>
 
-      <div style={{ marginTop: "16px", padding: "14px", background: "#f8fafc", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "13px", color: "#334155", textAlign: "left" }}>
-        <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
+      <div style={{ marginTop: "10px", padding: "10px 12px", background: "#f8fafc", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "12px", color: "#334155", textAlign: "left" }}>
+        <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
           <span>⚠️</span> Regras & Garantia
         </div>
-        <ul style={{ margin: 0, paddingLeft: "18px", lineHeight: "1.4" }}>
-          <li>Vendas por ordem de pagamento (sem reserva sem pgto).</li>
-          <li><strong>7 dias de garantia</strong> contra defeitos de funcionamento não informados.</li>
-          <li>Garantia não cobre mau uso, quedas ou danos pós-entrega.</li>
+        <ul style={{ margin: 0, paddingLeft: "16px", lineHeight: "1.35" }}>
+          <li>Vendas por ordem de pagamento.</li>
+          <li><strong>7 dias de garantia</strong> contra defeitos não informados.</li>
         </ul>
       </div>
 
-      <button className="ow-primary" style={{ marginTop: "16px" }} onClick={() => whatsapp(selected)}><MessageCircle /> Enviar interesse via WhatsApp</button></div></div>}
+      <button className="ow-primary" style={{ marginTop: "12px", height: "42px" }} onClick={() => whatsapp(selected)}><MessageCircle /> Enviar interesse via WhatsApp</button></div></div>}
   </div>;
 };
 
-function Card({ item, details, contact }: { item: AuctionItem; details: () => void; contact: () => void }) {
+function FeaturedMarquee({ items, onSelect, onContact }: { items: AuctionItem[]; onSelect: (i: AuctionItem) => void; onContact: (i: AuctionItem) => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isDown = useRef(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
+  const isDragging = useRef(false);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!containerRef.current) return;
+    isDown.current = true;
+    isDragging.current = false;
+    startX.current = e.pageX - containerRef.current.offsetLeft;
+    scrollLeft.current = containerRef.current.scrollLeft;
+  };
+
+  const handleMouseLeave = () => {
+    isDown.current = false;
+  };
+
+  const handleMouseUp = () => {
+    isDown.current = false;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDown.current || !containerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - containerRef.current.offsetLeft;
+    const walk = (x - startX.current) * 1.5;
+    if (Math.abs(walk) > 5) {
+      isDragging.current = true;
+    }
+    containerRef.current.scrollLeft = scrollLeft.current - walk;
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!containerRef.current) return;
+    isDown.current = true;
+    isDragging.current = false;
+    startX.current = e.touches[0].pageX - containerRef.current.offsetLeft;
+    scrollLeft.current = containerRef.current.scrollLeft;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDown.current || !containerRef.current) return;
+    const x = e.touches[0].pageX - containerRef.current.offsetLeft;
+    const walk = (x - startX.current);
+    if (Math.abs(walk) > 8) {
+      isDragging.current = true;
+    }
+    containerRef.current.scrollLeft = scrollLeft.current - walk;
+  };
+
+  const handleTouchEnd = () => {
+    isDown.current = false;
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="ow-featured-marquee-container"
+      onMouseDown={handleMouseDown}
+      onMouseLeave={handleMouseLeave}
+      onMouseUp={handleMouseUp}
+      onMouseMove={handleMouseMove}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div className="ow-featured-marquee">
+        {[...items, ...items].map((i, idx) => (
+          <Card
+            key={`${i.id}-${idx}`}
+            item={i}
+            details={() => {
+              if (!isDragging.current) onSelect(i);
+            }}
+            contact={() => onContact(i)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Card({ item, details, contact }: { item: AuctionItem; details: () => void; contact: () => void; key?: React.Key }) {
   const d = discount(item);
   const m = market(item);
   const p = price(item);
 
   return (
-    <article className="ow-card">
+    <article className="ow-card" onClick={details} style={{ cursor: "pointer" }}>
       <div className="ow-card-image">
         <img src={item.primaryPhoto} alt={item.name} />
         {d > 0 && <b style={{ background: "#16a34a", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800 }}>-{d}% OFF</b>}
       </div>
       <div className="ow-card-body">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "8px", marginBottom: "8px" }}>
           {getSealBadge(item)}
-          <small style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: "11px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+          <small style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: "11px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.03em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {item.category}
           </small>
         </div>
@@ -384,8 +476,8 @@ function Card({ item, details, contact }: { item: AuctionItem; details: () => vo
         {m > p && <del>Mercado: {money(m)}</del>}
         <strong>{money(p)}</strong>
         <div>
-          <button onClick={details}>Ver Detalhes</button>
-          <button aria-label="Comprar pelo WhatsApp" onClick={contact}><MessageCircle /></button>
+          <button onClick={(e) => { e.stopPropagation(); details(); }}>Ver Detalhes</button>
+          <button aria-label="Comprar pelo WhatsApp" onClick={(e) => { e.stopPropagation(); contact(); }}><MessageCircle /></button>
         </div>
       </div>
     </article>
