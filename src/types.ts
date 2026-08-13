@@ -167,6 +167,7 @@ export interface AuctionItem {
   purchaseDate?: string;
   daysInStock?: number;
   seal?: "prime" | "premium" | "excelente" | "muito_bom" | "bom" | "oportunidade";
+  isFeatured?: boolean;
   archived?: boolean;
   deletedAt?: string;
 }

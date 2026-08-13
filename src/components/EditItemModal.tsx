@@ -39,6 +39,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
   const [description, setDescription] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
   const [seal, setSeal] = useState<ItemSealId | undefined>(undefined);
+  const [isFeatured, setIsFeatured] = useState(false);
 
   const handleNewMarketValueChange = (val: number) => {
     setNewProductMarketValue(val);
@@ -108,6 +109,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
       setDescription(item.description || "");
       setPurchaseDate(item.purchaseDate || item.dateAdded || new Date().toISOString().split("T")[0]);
       setSeal(item.seal);
+      setIsFeatured(Boolean(item.isFeatured));
     }
   }, [item]);
 
@@ -124,6 +126,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
       operationalState,
       status,
       seal,
+      isFeatured,
       purchaseDate,
       location: {
         ...item.location,
@@ -267,6 +270,20 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="flex items-center gap-2 pt-6">
+                <label className="relative flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={isFeatured}
+                    onChange={(e) => setIsFeatured(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                  />
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    ⭐ Destacar na Home (Carrossel)
+                  </span>
+                </label>
               </div>
 
               <div>
