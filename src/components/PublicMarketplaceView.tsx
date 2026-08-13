@@ -75,6 +75,107 @@ function Logo() {
   );
 }
 
+function RulesAndWarrantySection() {
+  return (
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+      gap: "24px",
+      background: "#ffffff",
+      padding: "32px",
+      borderRadius: "20px",
+      border: "1px solid #e2e8f0",
+      boxShadow: "0 10px 30px -5px rgba(0,0,0,0.05)"
+    }}>
+      {/* CARD REGRAS */}
+      <div style={{ background: "#fffbeb", border: "1px solid #fef3c7", padding: "24px", borderRadius: "16px", display: "flex", flexDirection: "column" }}>
+        <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#92400e", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+          ⚠️ Regras
+        </h3>
+        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "12px", color: "#78350f", fontSize: "14px", lineHeight: "1.5" }}>
+          <li style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+            <span style={{ color: "#d97706", fontWeight: "bold" }}>•</span>
+            Produtos são vendidos por ordem de pagamento.
+          </li>
+          <li style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+            <span style={{ color: "#d97706", fontWeight: "bold" }}>•</span>
+            Não realizamos reservas sem pagamento.
+          </li>
+          <li style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+            <span style={{ color: "#d97706", fontWeight: "bold" }}>•</span>
+            As fotos e vídeos publicados são sempre do produto real.
+          </li>
+          <li style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+            <span style={{ color: "#d97706", fontWeight: "bold" }}>•</span>
+            Todos os detalhes estéticos e funcionais são informados no anúncio.
+          </li>
+          <li style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+            <span style={{ color: "#d97706", fontWeight: "bold" }}>•</span>
+            Caso tenha qualquer dúvida, fale conosco antes de finalizar a compra.
+          </li>
+        </ul>
+      </div>
+
+      {/* CARD GARANTIA */}
+      <div style={{ background: "#f0fdf4", border: "1px solid #dcfce7", padding: "24px", borderRadius: "16px", display: "flex", flexDirection: "column" }}>
+        <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#166534", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+          🛡️ Garantia
+        </h3>
+        <p style={{ color: "#15803d", fontWeight: 600, fontSize: "14px", lineHeight: "1.5", marginBottom: "16px" }}>
+          Todos os produtos possuem 7 dias de garantia contra defeitos de funcionamento não informados no anúncio.
+        </p>
+        <div style={{ fontSize: "13px", fontWeight: 700, color: "#166534", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          A garantia não cobre:
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" }}>
+          <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: "8px", border: "1px solid #bbf7d0", fontSize: "13px", color: "#166534", fontWeight: 600 }}>
+            ❌ Mau uso
+          </div>
+          <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: "8px", border: "1px solid #bbf7d0", fontSize: "13px", color: "#166534", fontWeight: 600 }}>
+            ❌ Quedas
+          </div>
+          <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: "8px", border: "1px solid #bbf7d0", fontSize: "13px", color: "#166534", fontWeight: 600 }}>
+            ❌ Danos após entrega
+          </div>
+          <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: "8px", border: "1px solid #bbf7d0", fontSize: "13px", color: "#166534", fontWeight: 600 }}>
+            ❌ Arrependimento
+          </div>
+        </div>
+        <div style={{ padding: "10px 14px", background: "#dcfce7", borderRadius: "10px", color: "#14532d", fontWeight: 700, fontSize: "13px", textAlign: "center", marginTop: "auto" }}>
+          Nosso compromisso é sempre vender exatamente aquilo que foi anunciado.
+        </div>
+      </div>
+
+      {/* CARD FACILIDADES NO PAGAMENTO */}
+      <div style={{ background: "#eff6ff", border: "1px solid #dbeafe", padding: "24px", borderRadius: "16px", display: "flex", flexDirection: "column" }}>
+        <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#1e40af", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+          💳 Facilidades no pagamento
+        </h3>
+        <p style={{ color: "#1e3a8a", fontWeight: 700, fontSize: "14px", marginBottom: "8px" }}>
+          Gostou? Não precisa pagar tudo de uma vez.
+        </p>
+        <p style={{ color: "#1d4ed8", fontSize: "13.5px", lineHeight: "1.45", marginBottom: "16px" }}>
+          No Outlet WM, você pode parcelar suas compras no cartão de crédito e escolher a condição que melhor se encaixa no seu orçamento.
+        </p>
+        <ul style={{ listStyle: "none", padding: 0, margin: "0 0 16px 0", display: "flex", flexDirection: "column", gap: "8px", color: "#1e40af", fontSize: "13.5px", fontWeight: 600 }}>
+          <li style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            💳 Pagamento parcelado no cartão
+          </li>
+          <li style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            ⚡ PIX para pagamento à vista
+          </li>
+          <li style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            📲 Consulte as condições de parcelamento
+          </li>
+        </ul>
+        <div style={{ padding: "10px 14px", background: "#dbeafe", borderRadius: "10px", color: "#1e3a8a", fontWeight: 700, fontSize: "12.5px", textAlign: "center", marginTop: "auto" }}>
+          Mais facilidade para você aproveitar nossas oportunidades sem abrir mão do seu orçamento.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export const PublicMarketplaceView: React.FC = () => {
   const { items } = useAuction();
   const [page, setPage] = useState<Page>("home");
@@ -85,8 +186,7 @@ export const PublicMarketplaceView: React.FC = () => {
 
   const products = useMemo(() => items.filter(i => i.status === "disponivel" && !i.archived), [items]);
   const featuredProducts = useMemo(() => {
-    const feat = products.filter(i => i.isFeatured);
-    return feat.length > 0 ? feat : products;
+    return products.filter(i => Boolean(i.isFeatured));
   }, [products]);
 
   const categories = useMemo(() => Array.from(new Set(products.map(i => i.category).filter(Boolean))).sort((a, b) => a.localeCompare(b, "pt-BR")), [products]);
@@ -117,8 +217,8 @@ export const PublicMarketplaceView: React.FC = () => {
     <header className="ow-header"><div className="ow-container ow-header-inner"><button onClick={() => go("home")} aria-label="Início"><Logo /></button><nav className={menu ? "ow-nav open" : "ow-nav"}><button className={page === "home" ? "active" : ""} onClick={() => go("home")}>Home</button><button className={page === "categories" ? "active" : ""} onClick={() => go("categories")}>Vitrine</button><button className={page === "how" ? "active" : ""} onClick={() => go("how")}>Como Funciona</button><button onClick={() => whatsapp()}>Meus Lances</button></nav><div className="ow-actions"><Search /><CircleUserRound /><button className="ow-menu" onClick={() => setMenu(v => !v)} aria-label="Abrir menu">{menu ? <X /> : <Menu />}</button></div></div></header>
 
     {/* HOME */}
-    {page === "home" && <main><section className="ow-hero"><div className="ow-container ow-hero-grid"><div className="ow-hero-copy"><span className="ow-kicker"><i /> Produtos disponíveis</span><h1><em>Logística Reversa.</em><br />Oportunidades Inteligentes.</h1><p>Descubra itens de alto valor por uma fração do preço. Produtos selecionados, informações transparentes e oportunidades reais para comprar melhor.</p><div className="ow-cta-row"><button className="ow-primary" onClick={() => go("categories")}>Ver Vitrine Agora <ArrowRight /></button><button className="ow-secondary" onClick={() => go("how")}>Como Funciona</button></div></div><div className="ow-metric"><div><b>Inventário disponível</b><strong>Atualizado</strong></div><div className="ow-chart"><i /><i /><i /><i /><i /><i /></div><hr /><small>Produtos ativos</small><h2>{products.length.toLocaleString("pt-BR")}</h2><span>↻</span></div></div></section>
-      
+    {page === "home" && <main><section className="ow-hero"><div className="ow-container ow-hero-grid"><div className="ow-hero-copy"><span className="ow-kicker"><i /> Produtos disponíveis</span><h1><em>Outlet WM.</em><br />Oportunidades Inteligentes.</h1><p>Descubra itens de alto valor por uma fração do preço. Produtos selecionados, informações transparentes e oportunidades reais para comprar melhor.</p><div className="ow-cta-row"><button className="ow-primary" onClick={() => go("categories")}>Ver Vitrine Agora <ArrowRight /></button><button className="ow-secondary" onClick={() => go("how")}>Como Funciona</button></div></div><div className="ow-metric"><div><b>Inventário disponível</b><strong>Atualizado</strong></div><div className="ow-chart"><i /><i /><i /><i /><i /><i /></div><hr /><small>Produtos ativos</small><h2>{products.length.toLocaleString("pt-BR")}</h2><span>↻</span></div></div></section>
+
       {/* FAIXA DINÂMICA DE CATEGORIAS COM ÍCONES ESPECÍFICOS */}
       {categories.length > 0 && (
         <div className="ow-category-strip">
@@ -214,7 +314,21 @@ export const PublicMarketplaceView: React.FC = () => {
     </main>}
 
     {/* COMO FUNCIONA */}
-    {page === "how" && <main><section className="ow-container ow-how"><div className="ow-how-intro"><h1>Logística Reversa,<br /><span>Descomplicada.</span></h1><p>Transformamos retornos, excessos de estoque e devoluções em oportunidades de alto valor. Nosso processo garante transparência, qualidade e agilidade.</p></div><div className="ow-steps">{[[Package, "Curadoria", "Selecionamos produtos de logística reversa de grandes varejistas e marcas. Cada lote passa por uma curadoria cuidadosa, buscando produtos com bom potencial de uso e excelente custo-benefício.", stepCuration], [CheckSquare, "Avaliação", "Cada produto é inspecionado e avaliado pelo padrão Outlet WM em quatro critérios: funcionamento, aparência, acessórios e embalagem. Ao final, recebe um selo que representa sua condição.", stepEvaluation], [Gavel, "Oferta", "Após avaliação e higienização, os produtos são catalogados e oferecidos por valores abaixo do mercado, com descontos que podem variar de 30% a 90%, conforme sua condição e selo de qualidade.", stepOffer], [Truck, "Entrega", "Após a confirmação da compra, combinamos a opção mais conveniente para ambas as partes. O produto pode ser entregue no endereço do comprador, retirado no local ou de outra forma combinada.", stepDelivery]].map(([Icon, title, text, image]: any, n) => <article key={title} style={{ display: "flex", flexDirection: "column", height: "100%" }}><div className={n === 2 ? "accent" : ""}><Icon /></div><h2>{title}</h2><p style={{ flexGrow: 1, marginBottom: "32px" }}>{text}</p><img src={image} alt={title} className="ow-step-image" style={{ width: "100%", height: "160px", objectFit: "cover", borderRadius: "14px", marginTop: "auto", border: "1px solid #e2e8f0", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }} /></article>)}</div></section><section className="ow-final-cta"><h2>Pronto para encontrar sua<br />próxima grande oportunidade?</h2><p>Explore agora os produtos disponíveis no inventário Outlet WM.</p><button className="ow-primary" onClick={() => go("categories")}>Explorar Ofertas <ArrowRight /></button></section></main>}
+    {page === "how" && <main><section className="ow-container ow-how"><div className="ow-how-intro"><h1>Logística Reversa,<br /><span>Descomplicada.</span></h1><p>Transformamos retornos, excessos de estoque e devoluções em oportunidades de alto valor. Nosso processo garante transparência, qualidade e agilidade.</p></div><div className="ow-steps">{[[Package, "Curadoria", "Selecionamos produtos de logística reversa de grandes varejistas e marcas. Cada lote passa por uma curadoria cuidadosa, buscando produtos com bom potencial de uso e excelente custo-benefício.", stepCuration], [CheckSquare, "Avaliação", "Cada produto é inspecionado e avaliado pelo padrão Outlet WM em quatro critérios: funcionamento, aparência, acessórios e embalagem. Ao final, recebe um selo que representa sua condição.", stepEvaluation], [Gavel, "Oferta", "Após avaliação e higienização, os produtos são catalogados e oferecidos por valores abaixo do mercado, com descontos que podem variar de 30% a 90%, conforme sua condição e selo de qualidade.", stepOffer], [Truck, "Entrega", "Após a confirmação da compra, combinamos a opção mais conveniente para ambas as partes. O produto pode ser entregue no endereço do comprador, retirado no local ou de outra forma combinada.", stepDelivery]].map(([Icon, title, text, image]: any, n) => <article key={title} style={{ display: "flex", flexDirection: "column", height: "100%" }}><div className={n === 2 ? "accent" : ""}><Icon /></div><h2>{title}</h2><p style={{ flexGrow: 1, marginBottom: "20px" }}>{text}</p><div style={{ width: "100%", height: "260px", background: "#f8fafc", borderRadius: "14px", overflow: "hidden", border: "1px solid #e2e8f0", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "center" }}><img src={image} alt={title} className="ow-step-image" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div></article>)}</div></section>
+
+      {/* REGRAS E GARANTIA (COMO FUNCIONA) */}
+      <section className="ow-container" style={{ margin: "40px auto 60px" }}>
+        <RulesAndWarrantySection />
+      </section>
+
+      <section className="ow-final-cta"><h2>Pronto para encontrar sua<br />próxima grande oportunidade?</h2><p>Explore agora os produtos disponíveis no inventário Outlet WM.</p><button className="ow-primary" onClick={() => go("categories")}>Explorar Ofertas <ArrowRight /></button></section></main>}
+
+    {/* SEÇÃO GLOBAL DE REGRAS E GARANTIA (HOME & VITRINE) */}
+    {page !== "how" && (
+      <section className="ow-container" style={{ margin: "60px auto 40px" }}>
+        <RulesAndWarrantySection />
+      </section>
+    )}
 
     <Footer go={go} />
     <nav className="ow-bottom">
@@ -231,7 +345,20 @@ export const PublicMarketplaceView: React.FC = () => {
         <MessageCircle />Contato
       </button>
     </nav>
-    {selected && <div className="ow-modal" onClick={() => setSelected(null)}><div onClick={e => e.stopPropagation()}><button className="ow-modal-close" onClick={() => setSelected(null)} aria-label="Fechar"><X /></button><img src={selected.primaryPhoto} alt={selected.name} />{discount(selected) > 0 && <span style={{ background: "#16a34a", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800 }}>-{discount(selected)}% OFF</span>}<div style={{ marginTop: "12px", marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>{getSealBadge(selected)}<small>{selected.category}</small></div><h2>{selected.name}</h2><p>{selected.description || "Produto revisado e disponível para venda."}</p>{market(selected) > price(selected) && <del>Mercado: {money(market(selected))}</del>}<strong>{money(price(selected))}</strong><div className="ow-trust"><ShieldCheck /> {selected.condition.replaceAll("_", " ")} <Truck /> {selected.location.customText || "Consulte a entrega"}</div><button className="ow-primary" onClick={() => whatsapp(selected)}><MessageCircle /> Enviar interesse via WhatsApp</button></div></div>}
+    {selected && <div className="ow-modal" onClick={() => setSelected(null)}><div onClick={e => e.stopPropagation()}><button className="ow-modal-close" onClick={() => setSelected(null)} aria-label="Fechar"><X /></button><img src={selected.primaryPhoto} alt={selected.name} />{discount(selected) > 0 && <span style={{ background: "#16a34a", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800 }}>-{discount(selected)}% OFF</span>}<div style={{ marginTop: "12px", marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>{getSealBadge(selected)}<small style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: "11px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.03em" }}>{selected.category}</small></div><h2>{selected.name}</h2><p>{selected.description || "Produto revisado e disponível para venda."}</p>{market(selected) > price(selected) && <del>Mercado: {money(market(selected))}</del>}<strong>{money(price(selected))}</strong><div className="ow-trust"><ShieldCheck /> {selected.condition.replaceAll("_", " ")} <Truck /> {selected.location.customText || "Consulte a entrega"}</div>
+
+      <div style={{ marginTop: "16px", padding: "14px", background: "#f8fafc", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "13px", color: "#334155", textAlign: "left" }}>
+        <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
+          <span>⚠️</span> Regras & Garantia
+        </div>
+        <ul style={{ margin: 0, paddingLeft: "18px", lineHeight: "1.4" }}>
+          <li>Vendas por ordem de pagamento (sem reserva sem pgto).</li>
+          <li><strong>7 dias de garantia</strong> contra defeitos de funcionamento não informados.</li>
+          <li>Garantia não cobre mau uso, quedas ou danos pós-entrega.</li>
+        </ul>
+      </div>
+
+      <button className="ow-primary" style={{ marginTop: "16px" }} onClick={() => whatsapp(selected)}><MessageCircle /> Enviar interesse via WhatsApp</button></div></div>}
   </div>;
 };
 
