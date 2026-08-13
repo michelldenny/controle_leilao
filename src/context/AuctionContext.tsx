@@ -408,13 +408,15 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const id = "log-" + Date.now();
     const newLog: ActivityLog = {
       id,
-      itemId,
       title,
       description,
       timestamp: new Date().toISOString().replace("T", " ").substring(0, 16),
       user: userRole === "admin" ? "Administrador" : userRole,
       type,
     };
+    if (itemId) {
+      newLog.itemId = itemId;
+    }
     setDoc(doc(db, "activityLogs", id), newLog).catch(console.error);
   };
 
@@ -500,12 +502,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addAuction = (auctionData: Omit<Auction, "id">): Auction => {
     const parseRes = auctionSchema.safeParse(auctionData);
     if (!parseRes.success) {
-<<<<<<< HEAD
       const msg = (parseRes as any).error?.issues?.[0]?.message || "Dados do leilão inválidos";
       addToast("Erro de Validação", msg, "error");
-=======
-      addToast("Erro de Validação", parseRes.error.issues[0].message, "error");
->>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
     }
     const id = "auc-" + crypto.randomUUID();
     const newAuction: Auction = { ...auctionData, id };
@@ -559,12 +557,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addLot = (lotData: Omit<Lot, "id" | "totalLotCost">): Lot => {
     const parseRes = lotSchema.safeParse(lotData);
     if (!parseRes.success) {
-<<<<<<< HEAD
       const msg = (parseRes as any).error?.issues?.[0]?.message || "Dados do lote inválidos";
       addToast("Erro de Validação", msg, "error");
-=======
-      addToast("Erro de Validação", parseRes.error.issues[0].message, "error");
->>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
     }
     const id = "lot-" + crypto.randomUUID();
     const totalLotCost = calculateTotalLotCost(lotData);
@@ -633,12 +627,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   ): AuctionItem => {
     const parseRes = auctionItemSchema.safeParse(itemData);
     if (!parseRes.success) {
-<<<<<<< HEAD
       const msg = (parseRes as any).error?.issues?.[0]?.message || "Dados do item inválidos";
       addToast("Erro de Validação", msg, "error");
-=======
-      addToast("Erro de Validação", parseRes.error.issues[0].message, "error");
->>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
     }
 
     const targetLot = lots.find((l) => l.id === itemData.lotId);
@@ -1110,9 +1100,11 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Global Financial Metrics Calculation
-  const totalInvested = items.reduce((acc, curr) => acc + (curr.realTotalCost || 0), 0);
-  const totalEstimatedMarket = items.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 0), 0);
-  
+  const totalLotsCost = lots.reduce((acc, curr) => acc + (curr.totalLotCost || 0), 0);
+  const itemsAdditionalCosts = items.reduce((acc, curr) => acc + (curr.additionalCosts || 0), 0);
+  const totalItemsRealCost = items.reduce((acc, curr) => acc + (curr.realTotalCost || 0), 0);
+  const totalInvested = lots.length > 0 ? (totalLotsCost + itemsAdditionalCosts) : totalItemsRealCost;
+
   // Apenas vendas efetivamente pagas contam como entradas de caixa e lucro realizado
   const paidSales = sales.filter((s) => s.paymentStatus === "pago" || !s.paymentStatus);
   const totalSoldAmount = paidSales.reduce((acc, curr) => acc + (curr.finalPrice || 0), 0);
@@ -1120,8 +1112,9 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Itens em estoque à venda (exclui os vendidos, descartados e os retidos para uso próprio)
   const unsoldItems = items.filter((i) => !i.isSold && i.status !== "descartado" && i.status !== "uso_proprio");
+  const totalEstimatedMarket = unsoldItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 0), 0);
   const capitalInInventoryCost = unsoldItems.reduce((acc, curr) => acc + (curr.realTotalCost || 0), 0);
-  const capitalInInventoryEstimated = unsoldItems.reduce((acc, curr) => acc + (curr.estimatedMarketAvg || 0), 0);
+  const capitalInInventoryEstimated = totalEstimatedMarket;
   // Jamais truncar prejuízo potencial (exibe valores negativos se custo > estimativa)
   const potentialProfit = capitalInInventoryEstimated - capitalInInventoryCost;
   const potentialStockProfit = potentialProfit;

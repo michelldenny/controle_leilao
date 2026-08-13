@@ -4,6 +4,1399 @@
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-:root, body {
+:root,
+body {
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Outlet WM public experience */
+.ow-site {
+  --navy: #000000;
+  --orange: #895100;
+  --bright: #fd9d1a;
+  --ink: #0f172a;
+  --muted: #475569;
+  min-height: 100vh;
+  background: #f8fafc;
+  color: var(--ink);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif
+}
+
+.ow-site * {
+  box-sizing: border-box
+}
+
+.ow-site button,
+.ow-site input,
+.ow-site select {
+  font: inherit
+}
+
+.ow-site button {
+  cursor: pointer
+}
+
+.ow-container {
+  width: min(1520px, calc(100% - 32px));
+  margin: auto
+}
+
+.ow-header {
+  height: 78px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(255, 255, 255, .95);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid #e2e8f0
+}
+
+.ow-header-inner {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between
+}
+
+.ow-header button {
+  border: 0;
+  background: none
+}
+
+.ow-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--navy)
+}
+
+.ow-logo i {
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--navy);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 800;
+  background: white
+}
+
+.ow-logo strong {
+  font-size: 21px
+}
+
+.ow-nav {
+  display: flex;
+  align-items: center;
+  gap: 32px
+}
+
+.ow-nav button {
+  height: 78px;
+  padding: 0 2px;
+  color: #43474f;
+  border-bottom: 2px solid transparent
+}
+
+.ow-nav button.active {
+  font-weight: 700;
+  color: var(--navy);
+  border-color: #fd9d1a
+}
+
+.ow-actions {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  color: var(--navy)
+}
+
+.ow-actions svg {
+  width: 21px
+}
+
+.ow-menu {
+  display: none
+}
+
+.ow-hero {
+  background: radial-gradient(circle at 65% 50%, #ffdcbc 0, transparent 40%), linear-gradient(105deg, #f9f9fc, #fff8f0);
+  padding: 88px 0 70px
+}
+
+.ow-hero-grid {
+  display: grid;
+  grid-template-columns: 1.15fr .8fr;
+  gap: 100px;
+  align-items: center
+}
+
+.ow-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 99px;
+  background: #ffdcbc;
+  color: #2c1700;
+  text-transform: uppercase;
+  font: 700 11px 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: .05em
+}
+
+.ow-kicker i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fd9d1a
+}
+
+.ow-hero h1 {
+  font-size: 48px;
+  line-height: 1.08;
+  letter-spacing: -.04em;
+  margin: 24px 0 20px;
+  color: var(--navy);
+  font-weight: 800
+}
+
+.ow-hero h1 em {
+  color: #fd9d1a;
+  font-style: normal
+}
+
+.ow-hero-copy>p {
+  font-size: 19px;
+  line-height: 1.45;
+  max-width: 650px;
+  color: #43474f
+}
+
+.ow-cta-row {
+  display: flex;
+  gap: 14px;
+  margin-top: 30px
+}
+
+.ow-primary,
+.ow-secondary {
+  height: 52px;
+  padding: 0 26px;
+  border-radius: 10px;
+  border: 1px solid var(--navy);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 700
+}
+
+.ow-primary {
+  background: #fd9d1a;
+  color: #001736;
+  border-color: #fd9d1a;
+  box-shadow: 0 5px 14px rgba(253, 157, 26, 0.35)
+}
+
+.ow-primary:hover {
+  background: #e58b0f;
+  border-color: #e58b0f;
+  transform: translateY(-1px)
+}
+
+.ow-primary svg,
+.ow-secondary svg {
+  width: 18px
+}
+
+.ow-secondary {
+  background: transparent;
+  color: var(--navy)
+}
+
+.ow-metric {
+  position: relative;
+  background: white;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px #00173618;
+  transform: rotate(-2deg)
+}
+
+.ow-metric>div:first-child {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px
+}
+
+.ow-metric>div strong {
+  color: var(--bright)
+}
+
+.ow-chart {
+  height: 100px;
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  padding-top: 20px;
+  border-bottom: 14px solid #eadfce
+}
+
+.ow-chart i {
+  display: block;
+  flex: 1;
+  border-top: 5px solid #ad824b;
+  border-radius: 100% 100% 0 0;
+  height: 20%
+}
+
+.ow-chart i:nth-child(3) {
+  height: 50%
+}
+
+.ow-chart i:nth-child(4) {
+  height: 55%
+}
+
+.ow-chart i:nth-child(5) {
+  height: 72%
+}
+
+.ow-chart i:nth-child(6) {
+  height: 95%
+}
+
+.ow-metric hr {
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+  margin: 18px 0
+}
+
+.ow-metric small {
+  font-family: 'JetBrains Mono';
+  color: #687080
+}
+
+.ow-metric h2 {
+  font-size: 24px;
+  margin: 2px 0
+}
+
+.ow-metric>span {
+  position: absolute;
+  right: 28px;
+  bottom: 25px;
+  background: var(--bright);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center
+}
+
+.ow-category-strip {
+  background: var(--navy);
+  color: white;
+  overflow: hidden;
+  position: relative;
+  white-space: nowrap;
+  padding: 16px 0;
+}
+
+.ow-category-marquee {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  width: max-content;
+  animation: marquee 60s linear infinite;
+}
+
+.ow-category-marquee:hover {
+  animation-play-state: paused;
+}
+
+.ow-category-marquee button {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  background: none;
+  color: white;
+  text-transform: uppercase;
+  font-weight: 700;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.ow-category-marquee svg {
+  width: 20px;
+  color: var(--bright);
+  flex-shrink: 0;
+}
+
+.ow-featured-marquee-container {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  padding: 10px 0;
+}
+
+.ow-featured-marquee {
+  display: flex;
+  gap: 24px;
+  width: max-content;
+  animation: marquee 80s linear infinite;
+}
+
+.ow-featured-marquee:hover {
+  animation-play-state: paused;
+}
+
+.ow-featured-marquee .ow-card {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.ow-featured {
+  padding: 82px 0 160px
+}
+
+.ow-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  margin-bottom: 42px
+}
+
+.ow-section-head h2 {
+  font-size: 26px;
+  margin: 0 0 8px
+}
+
+.ow-section-head p {
+  color: var(--muted);
+  margin: 0
+}
+
+.ow-section-head>button {
+  border: 0;
+  background: none;
+  color: #8b4100;
+  font-weight: 700;
+  display: flex;
+  gap: 9px
+}
+
+.ow-section-head svg {
+  width: 18px
+}
+
+.ow-products {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px
+}
+
+.ow-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px #002b5b0a;
+  transition: .2s
+}
+
+.ow-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 35px #00173616
+}
+
+.ow-card-image {
+  height: 265px;
+  position: relative;
+  overflow: hidden;
+  background: #eee
+}
+
+.ow-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: .4s
+}
+
+.ow-card:hover img {
+  transform: scale(1.03)
+}
+
+.ow-card-image b,
+.ow-card-image span {
+  position: absolute;
+  top: 15px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font: 600 11px 'JetBrains Mono';
+  color: white
+}
+
+.ow-card-image b {
+  left: 15px;
+  background: #16a34a;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.3);
+}
+
+.ow-card-image span {
+  right: 15px;
+  background: #fff;
+  color: #252934;
+  display: flex;
+  align-items: center;
+  gap: 5px
+}
+
+.ow-card-image span svg {
+  width: 13px
+}
+
+.ow-card-body {
+  padding: 22px
+}
+
+.ow-card-body small {
+  font: 500 11px 'JetBrains Mono';
+  color: #6d727c;
+  text-transform: uppercase
+}
+
+.ow-card-body h3 {
+  font-size: 17px;
+  line-height: 1.4;
+  min-height: 48px;
+  margin: 12px 0
+}
+
+.ow-card-body del {
+  font-size: 13px;
+  color: #626873;
+  display: block
+}
+
+.ow-card-body>strong {
+  font-size: 26px;
+  color: var(--navy);
+  display: block;
+  margin: 4px 0 18px
+}
+
+.ow-card-body>div {
+  display: grid;
+  grid-template-columns: 1fr 48px;
+  gap: 8px
+}
+
+.ow-card-body button {
+  height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: #fd9d1a;
+  color: #001736;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(253, 157, 26, 0.25);
+  transition: all 0.2s;
+}
+
+.ow-card-body button:hover {
+  background: #e58b0f;
+  transform: translateY(-1px);
+}
+
+.ow-card-body button:last-child {
+  background: #001736;
+  color: white;
+  display: grid;
+  place-items: center;
+  box-shadow: none;
+}
+
+.ow-card-body button svg {
+  width: 20px
+}
+
+.ow-categories-page {
+  padding: 64px 0 150px
+}
+
+.ow-title-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 42px
+}
+
+.ow-title-row h1 {
+  font-size: 50px;
+  letter-spacing: -.04em;
+  color: var(--navy);
+  margin: 0 0 10px
+}
+
+.ow-title-row p {
+  font-size: 18px;
+  max-width: 780px;
+  color: #474d57
+}
+
+.ow-title-row select {
+  padding: 12px 18px;
+  border: 0;
+  background: #f0f0f3;
+  border-radius: 8px
+}
+
+.ow-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 12px 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ow-search:focus-within {
+  border-color: #001736;
+  box-shadow: 0 0 0 3px rgba(0, 23, 54, 0.1);
+}
+
+.ow-search input {
+  flex: 1;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  color: #0f172a;
+}
+
+.ow-seal-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font: 700 11px 'Plus Jakarta Sans', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ow-seal-prime {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.ow-seal-premium {
+  background: #e0e7ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+}
+
+.ow-seal-excelente {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.ow-seal-muito_bom {
+  background: #e0f2fe;
+  color: #075985;
+  border: 1px solid #bae6fd;
+}
+
+.ow-seal-bom {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.ow-seal-oportunidade {
+  background: #ffedd5;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+
+.ow-pills {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 24px;
+  margin-left: 300px
+}
+
+.ow-pills button {
+  border: 0;
+  padding: 9px 16px;
+  border-radius: 99px
+}
+
+.ow-pills .active {
+  background: var(--navy);
+  color: white
+}
+
+.ow-catalog {
+  display: grid;
+  grid-template-columns: 270px 1fr;
+  gap: 34px
+}
+
+.ow-catalog aside>h2 {
+  font-size: 28px;
+  margin: 0 0 18px
+}
+
+.ow-catalog aside>button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  border: 0;
+  background: none;
+  text-align: left;
+  padding: 10px 0;
+  font-size: 17px
+}
+
+.ow-catalog aside>button i {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #bfc4cc;
+  border-radius: 4px
+}
+
+.ow-catalog aside>button i.checked {
+  background: var(--navy);
+  border-color: var(--navy)
+}
+
+.ow-catalog aside>button span {
+  font-size: 12px;
+  background: #f0f0f3;
+  border-radius: 99px;
+  padding: 4px 8px
+}
+
+.ow-b2b {
+  background: #002b5b;
+  color: white;
+  margin-top: 34px;
+  border-radius: 14px;
+  padding: 28px 24px
+}
+
+.ow-b2b small {
+  background: #9b5700;
+  padding: 7px 11px;
+  border-radius: 99px;
+  text-transform: uppercase
+}
+
+.ow-b2b h3 {
+  font-size: 25px;
+  line-height: 1.25;
+  margin: 20px 0 40px
+}
+
+.ow-b2b b {
+  display: flex;
+  align-items: center;
+  gap: 12px
+}
+
+.ow-b2b svg {
+  width: 18px
+}
+
+.ow-how {
+  padding: 95px 0 150px
+}
+
+.ow-how-intro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 70px;
+  align-items: center;
+  margin-bottom: 95px
+}
+
+.ow-how-intro h1 {
+  font-size: 48px;
+  line-height: 1.1;
+  letter-spacing: -.04em
+}
+
+.ow-how-intro h1 span {
+  color: var(--navy)
+}
+
+.ow-how-intro p {
+  font-size: 17px;
+  line-height: 1.6;
+  color: #474d57
+}
+
+.ow-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 34px
+}
+
+.ow-steps article {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  height: 100%;
+}
+
+.ow-steps article p {
+  flex-grow: 1;
+}
+
+.ow-steps small {
+  font: 500 10px 'JetBrains Mono';
+  color: #9297a0
+}
+
+.ow-steps article>div {
+  width: 58px;
+  height: 58px;
+  border-radius: 12px;
+  background: #000000;
+  color: #fd9d1a;
+  display: grid;
+  place-items: center;
+  margin: 20px 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.ow-steps article>div.accent {
+  background: #000000;
+  color: #fd9d1a;
+  box-shadow: 0 4px 14px rgba(253, 157, 26, 0.25);
+}
+
+.ow-steps h2 {
+  font-size: 22px
+}
+
+.ow-steps p {
+  line-height: 1.55;
+  color: #434852
+}
+
+.ow-final-cta {
+  text-align: center;
+  background: radial-gradient(circle at 75% 50%, #eee6df, transparent 35%), #f1f1f4;
+  padding: 75px 20px
+}
+
+.ow-final-cta h2 {
+  font-size: 28px
+}
+
+.ow-final-cta p {
+  color: #555b64
+}
+
+.ow-final-cta button {
+  margin-top: 20px
+}
+
+.ow-footer {
+  background: #f0f0f3;
+  padding: 65px 0 26px
+}
+
+.ow-footer>.ow-container {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 80px;
+  padding-bottom: 55px;
+  border-bottom: 1px solid #c7cad0
+}
+
+.ow-footer .ow-logo strong {
+  display: none
+}
+
+.ow-footer .ow-container>div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px
+}
+
+.ow-footer .ow-container p {
+  max-width: 310px;
+  color: #525862;
+  line-height: 1.5
+}
+
+.ow-footer button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: #414750
+}
+
+.ow-footer>p {
+  text-align: center;
+  font: 500 11px 'JetBrains Mono';
+  margin-top: 25px
+}
+
+.ow-bottom {
+  display: none
+}
+
+.ow-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: #001736b8;
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  padding: 20px
+}
+
+.ow-modal>div {
+  position: relative;
+  width: min(600px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  background: white;
+  border-radius: 18px;
+  padding: 24px
+}
+
+.ow-modal img {
+  width: 100%;
+  height: 270px;
+  object-fit: cover;
+  border-radius: 12px
+}
+
+.ow-modal>div>span {
+  display: inline-block;
+  margin-top: 16px;
+  background: #85000d;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 99px;
+  font-weight: 700
+}
+
+.ow-modal small {
+  display: block;
+  margin: 16px 0 5px;
+  font-family: 'JetBrains Mono'
+}
+
+.ow-modal h2 {
+  font-size: 28px;
+  margin: 5px 0
+}
+
+.ow-modal p {
+  color: #555
+}
+
+.ow-modal del {
+  display: block
+}
+
+.ow-modal>div>strong {
+  font-size: 28px;
+  display: block;
+  color: var(--navy);
+  margin: 6px 0 16px
+}
+
+.ow-modal .ow-primary {
+  width: 100%;
+  margin-top: 18px
+}
+
+.ow-modal-close {
+  position: absolute;
+  right: 34px;
+  top: 34px;
+  width: 36px;
+  height: 36px;
+  background: white;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center
+}
+
+.ow-trust {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px
+}
+
+.ow-trust svg {
+  width: 18px;
+  margin-left: 12px
+}
+
+.ow-trust svg:first-child {
+  margin-left: 0
+}
+
+@media(max-width:760px) {
+  body {
+    padding-bottom: 70px
+  }
+
+  .ow-container {
+    width: calc(100% - 24px)
+  }
+
+  .ow-header {
+    height: 60px
+  }
+
+  .ow-logo strong {
+    display: none
+  }
+
+  .ow-logo i {
+    width: 32px;
+    height: 32px
+  }
+
+  .ow-actions {
+    gap: 16px
+  }
+
+  .ow-actions>svg:nth-child(2) {
+    width: 28px;
+    height: 28px;
+    fill: var(--navy);
+    color: white
+  }
+
+  .ow-menu {
+    display: block !important
+  }
+
+  .ow-nav {
+    display: none;
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: 60px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 15px 30px #0017362c;
+    padding: 10px;
+    flex-direction: column;
+    gap: 0
+  }
+
+  .ow-nav.open {
+    display: flex
+  }
+
+  .ow-nav button {
+    height: 45px;
+    width: 100%
+  }
+
+  .ow-hero {
+    padding: 24px 0
+  }
+
+  .ow-hero-grid {
+    display: block
+  }
+
+  .ow-hero-copy {
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    margin-top: 0;
+    color: var(--ink);
+    position: static
+  }
+
+  .ow-hero-copy:after {
+    display: none
+  }
+
+  .ow-kicker {
+    background: #ffdcbc;
+    color: #2c1700;
+    font-size: 11px
+  }
+
+  .ow-kicker i {
+    background: #fd9d1a
+  }
+
+  .ow-hero h1 {
+    font-size: 32px;
+    line-height: 1.15;
+    margin: 16px 0 12px;
+    color: var(--navy);
+    letter-spacing: -.03em
+  }
+
+  .ow-hero h1 em {
+    color: #fd9d1a
+  }
+
+  .ow-hero-copy>p {
+    font-size: 15px;
+    max-width: 100%;
+    line-height: 1.5;
+    color: #475569
+  }
+
+  .ow-cta-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px
+  }
+
+  .ow-cta-row button {
+    width: 100%
+  }
+
+  .ow-metric {
+    display: none
+  }
+
+  .ow-category-strip {
+    background: var(--navy);
+    color: white;
+    padding: 14px 0
+  }
+
+  .ow-category-strip button {
+    color: white;
+    font-size: 13px;
+    gap: 8px
+  }
+
+  .ow-category-strip button:nth-child(n+5) {
+    display: inline-flex
+  }
+
+  .ow-category-strip svg {
+    width: 18px;
+    height: 18px;
+    background: transparent;
+    color: var(--bright);
+    padding: 0;
+    border-radius: 0
+  }
+
+  .ow-featured {
+    padding: 24px 0 40px
+  }
+
+  .ow-section-head {
+    margin-bottom: 20px
+  }
+
+  .ow-section-head h2 {
+    font-size: 20px;
+    font-weight: 700
+  }
+
+  .ow-section-head p {
+    display: block;
+    font-size: 13px
+  }
+
+  .ow-products {
+    grid-template-columns: 1fr;
+    gap: 20px
+  }
+
+  .ow-card {
+    border-radius: 12px
+  }
+
+  .ow-card-image {
+    height: 220px
+  }
+
+  .ow-card-image b {
+    background: #16a34a;
+    border-radius: 6px
+  }
+
+  .ow-card-body {
+    padding: 18px
+  }
+
+  .ow-card-body h3 {
+    font-size: 16px;
+    min-height: auto;
+    margin: 10px 0
+  }
+
+  .ow-card-body del {
+    font-size: 13px
+  }
+
+  .ow-card-body>strong {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 6px 0 16px;
+    color: var(--navy)
+  }
+
+  .ow-card-body>strong:after {
+    display: none;
+    content: ""
+  }
+
+  .ow-card-body>div {
+    display: grid !important;
+    grid-template-columns: 1fr 48px;
+    gap: 8px
+  }
+
+  .ow-card-body>div button:first-child {
+    grid-column: 1;
+    background: #fd9d1a;
+    color: #001736;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: none
+  }
+
+  .ow-card-body>div button:last-child {
+    grid-column: 2;
+    background: #001736;
+    color: white
+  }
+
+  .ow-categories-page {
+    padding: 28px 0 40px
+  }
+
+  .ow-title-row {
+    display: block;
+    margin-bottom: 25px
+  }
+
+  .ow-title-row h1 {
+    font-size: 25px;
+    font-weight: 500;
+    letter-spacing: 0
+  }
+
+  .ow-title-row p,
+  .ow-title-row select {
+    display: none
+  }
+
+  .ow-search {
+    display: flex;
+    background: #f0f0f3;
+    border-radius: 99px;
+    padding: 15px 18px;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px
+  }
+
+  .ow-search svg {
+    color: #737985
+  }
+
+  .ow-search input {
+    border: 0;
+    background: transparent;
+    outline: 0;
+    width: 100%;
+    font-size: 16px
+  }
+
+  .ow-pills {
+    margin: 0 -12px 36px;
+    overflow: auto;
+    padding: 0 12px
+  }
+
+  .ow-pills button {
+    white-space: nowrap;
+    font-size: 16px;
+    padding: 12px 18px
+  }
+
+  .ow-catalog {
+    display: block
+  }
+
+  .ow-catalog aside {
+    display: none
+  }
+
+  .ow-catalog .ow-products {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px
+  }
+
+  .ow-catalog .ow-card-image {
+    height: 180px
+  }
+
+  .ow-catalog .ow-card-body {
+    padding: 12px
+  }
+
+  .ow-catalog .ow-card-body h3 {
+    font-size: 16px;
+    min-height: 66px
+  }
+
+  .ow-catalog .ow-card-body>strong {
+    font-size: 20px
+  }
+
+  .ow-catalog .ow-card-body>div {
+    display: none
+  }
+
+  .ow-how {
+    padding: 45px 0 70px
+  }
+
+  .ow-how-intro {
+    display: block;
+    margin-bottom: 45px
+  }
+
+  .ow-how-intro h1 {
+    font-size: 34px
+  }
+
+  .ow-how-intro p {
+    font-size: 14px
+  }
+
+  .ow-steps {
+    grid-template-columns: 1fr;
+    gap: 30px
+  }
+
+  .ow-steps article:nth-child(n) {
+    transform: none
+  }
+
+  .ow-steps article {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    column-gap: 14px
+  }
+
+  .ow-steps small {
+    grid-column: 1/-1
+  }
+
+  .ow-steps article>div {
+    grid-row: 2/4
+  }
+
+  .ow-steps h2 {
+    margin: 20px 0 5px
+  }
+
+  .ow-steps p {
+    margin: 0
+  }
+
+  .ow-final-cta {
+    padding: 55px 20px
+  }
+
+  .ow-final-cta h2 {
+    font-size: 23px
+  }
+
+  .ow-footer {
+    display: none
+  }
+
+  .ow-bottom {
+    display: flex;
+    position: fixed;
+    z-index: 45;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 68px;
+    background: #fff;
+    border-top: 1px solid #ececf0;
+    justify-content: space-around
+  }
+
+  .ow-bottom button {
+    border: 0;
+    background: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 10px
+  }
+
+  .ow-bottom svg {
+    width: 18px
+  }
+
+  .ow-bottom .active {
+    color: #9b5700
+  }
+
+  .ow-modal>div {
+    padding: 16px
+  }
+
+  .ow-modal img {
+    height: 220px
+  }
+
+  .ow-modal h2 {
+    font-size: 21px
+  }
+
+  .ow-modal-close {
+    right: 25px;
+    top: 25px
+  }
 }

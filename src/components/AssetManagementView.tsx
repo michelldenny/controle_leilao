@@ -166,6 +166,38 @@ export const AssetManagementView: React.FC = () => {
                 })
               )}
             </tbody>
+            {ownUseItems.length > 0 && (() => {
+              let totalAcq = 0;
+              let totalDep = 0;
+              let totalBook = 0;
+
+              ownUseItems.forEach((item) => {
+                const dep = calculateLinearDepreciation(item.realTotalCost || 0, 60, 12, 0);
+                totalAcq += item.realTotalCost || 0;
+                totalDep += dep.accumulatedDepreciation;
+                totalBook += dep.bookValue;
+              });
+
+              return (
+                <tfoot className="bg-slate-100 dark:bg-slate-800/90 font-bold border-t-2 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white">
+                  <tr>
+                    <td className="p-4 text-left" colSpan={2}>
+                      TOTAL DO PATRIMÔNIO IMOBILIZADO ({ownUseItems.length} bens)
+                    </td>
+                    <td className="p-4 text-right font-extrabold text-slate-900 dark:text-white">
+                      {formatCurrency(totalAcq)}
+                    </td>
+                    <td className="p-4 text-right font-bold text-rose-600 dark:text-rose-400">
+                      -{formatCurrency(totalDep)}
+                    </td>
+                    <td className="p-4 text-right font-extrabold text-teal-600 dark:text-teal-400">
+                      {formatCurrency(totalBook)}
+                    </td>
+                    <td className="p-4 text-center">-</td>
+                  </tr>
+                </tfoot>
+              );
+            })()}
           </table>
         ) : (
           <table className="w-full text-left">
@@ -204,6 +236,22 @@ export const AssetManagementView: React.FC = () => {
                 ))
               )}
             </tbody>
+            {discardedItems.length > 0 && (() => {
+              const totalLostCost = discardedItems.reduce((acc, i) => acc + (i.realTotalCost || 0), 0);
+              return (
+                <tfoot className="bg-slate-100 dark:bg-slate-800/90 font-bold border-t-2 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white">
+                  <tr>
+                    <td className="p-4 text-left" colSpan={2}>
+                      TOTAL DE BAIXAS / PERDA ACUMULADA ({discardedItems.length} bens)
+                    </td>
+                    <td className="p-4 text-right font-extrabold text-rose-600">
+                      {formatCurrency(totalLostCost)}
+                    </td>
+                    <td className="p-4 text-center">-</td>
+                  </tr>
+                </tfoot>
+              );
+            })()}
           </table>
         )}
       </div>

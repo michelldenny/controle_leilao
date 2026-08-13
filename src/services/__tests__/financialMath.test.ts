@@ -75,17 +75,19 @@ describe("financialMath Service", () => {
     expect(roundToCents(sum)).toBe(100.0);
   });
 
-  it("deve ignorar itens vendidos e descartados no rateio", () => {
+  it("deve ignorar apenas itens descartados no rateio e manter itens vendidos no cálculo proporcional", () => {
     const items = [
       { id: "item-1", status: "disponivel" },
       { id: "item-2", status: "descartado" },
-      { id: "item-3", isSold: true },
+      { id: "item-3", status: "vendido", isSold: true },
     ];
 
     const results = apportionLotCostExact(100.0, items, "igualitario");
-    expect(results).toHaveLength(1);
+    expect(results).toHaveLength(2);
     expect(results[0].itemId).toBe("item-1");
-    expect(results[0].apportionedCost).toBe(100.0);
+    expect(results[0].apportionedCost).toBe(50.0);
+    expect(results[1].itemId).toBe("item-3");
+    expect(results[1].apportionedCost).toBe(50.0);
   });
 
   it("deve calcular lucro potencial do estoque sem truncar prejuízos", () => {

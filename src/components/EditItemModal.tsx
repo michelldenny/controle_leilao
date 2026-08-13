@@ -3,6 +3,8 @@ import { useAuction } from "../context/AuctionContext";
 import { PRODUCT_CATEGORIES } from "../constants/categories";
 import { AuctionItem, ItemCondition, OperationalState, ItemStatus } from "../types";
 import { X, Save, Package, DollarSign, MapPin, Tag } from "lucide-react";
+import { ITEM_SEALS_LIST, ItemSealId } from "../constants/seals";
+import { FormattedNumberInput } from "./FormattedNumberInput";
 
 interface EditItemModalProps {
   item: AuctionItem | null;
@@ -36,6 +38,8 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
   const [listedPrice, setListedPrice] = useState(0);
   const [description, setDescription] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
+  const [seal, setSeal] = useState<ItemSealId | undefined>(undefined);
+  const [isFeatured, setIsFeatured] = useState(false);
 
   const handleNewMarketValueChange = (val: number) => {
     setNewProductMarketValue(val);
@@ -104,6 +108,8 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
       setListedPrice(item.listedPrice || estAvg);
       setDescription(item.description || "");
       setPurchaseDate(item.purchaseDate || item.dateAdded || new Date().toISOString().split("T")[0]);
+      setSeal(item.seal);
+      setIsFeatured(Boolean(item.isFeatured));
     }
   }, [item]);
 
@@ -119,6 +125,8 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
       condition,
       operationalState,
       status,
+      seal,
+      isFeatured,
       purchaseDate,
       location: {
         ...item.location,
@@ -248,6 +256,38 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
 
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Selo do Produto (Vitrine)
+                </label>
+                <select
+                  value={seal || ""}
+                  onChange={(e) => setSeal((e.target.value as ItemSealId) || undefined)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
+                >
+                  <option value="">Sem Selo Definido</option>
+                  {ITEM_SEALS_LIST.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.emoji} {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2 pt-6">
+                <label className="relative flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={isFeatured}
+                    onChange={(e) => setIsFeatured(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                  />
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    ⭐ Destacar na Home (Carrossel)
+                  </span>
+                </label>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Data da Compra
                 </label>
                 <input
@@ -309,12 +349,11 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                 <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1 text-[11px]">
                   1. Valor Mercado (Produto Novo) (R$)
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
+                <FormattedNumberInput
                   value={newProductMarketValue}
-                  onChange={(e) => handleNewMarketValueChange(Number(e.target.value))}
-                  placeholder="Ex: 3500"
+                  onChange={(val) => handleNewMarketValueChange(val)}
+                  placeholder="0,00"
+                  prefix="R$"
                   className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
                 />
               </div>
@@ -323,30 +362,25 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                 <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1 text-[11px]">
                   2. Desconto Comercial (%)
                 </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={discountPercentage}
-                    onChange={(e) => handleDiscountChange(Number(e.target.value))}
-                    className="w-full p-2 pr-7 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 font-extrabold"
-                  />
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                    %
-                  </span>
-                </div>
+                <FormattedNumberInput
+                  value={discountPercentage}
+                  onChange={(val) => handleDiscountChange(val)}
+                  placeholder="0,00"
+                  suffix="%"
+                  decimals={2}
+                  className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 font-extrabold"
+                />
               </div>
 
               <div className="flex flex-col">
                 <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1 text-[11px]">
                   3. Valor de Venda (Estimado) (R$)
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
+                <FormattedNumberInput
                   value={estimatedMarketAvg}
-                  onChange={(e) => handleEstimatedAvgChange(Number(e.target.value))}
+                  onChange={(val) => handleEstimatedAvgChange(val)}
+                  placeholder="0,00"
+                  prefix="R$"
                   className="w-full p-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs"
                 />
               </div>
@@ -357,11 +391,11 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Custo Rateado (R$)
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
+                <FormattedNumberInput
                   value={apportionedCost}
-                  onChange={(e) => setApportionedCost(Number(e.target.value))}
+                  onChange={(val) => setApportionedCost(val)}
+                  placeholder="0,00"
+                  prefix="R$"
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                 />
               </div>
@@ -370,11 +404,11 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({ item, isOpen, onCl
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Custos Extras (R$)
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
+                <FormattedNumberInput
                   value={additionalCosts}
-                  onChange={(e) => setAdditionalCosts(Number(e.target.value))}
+                  onChange={(val) => setAdditionalCosts(val)}
+                  placeholder="0,00"
+                  prefix="R$"
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                 />
               </div>

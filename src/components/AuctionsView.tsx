@@ -244,6 +244,10 @@ export const AuctionsView: React.FC = () => {
           const totalInvestment =
             totalLotsCost > 0 ? totalLotsCost : aucItems.reduce((acc, i) => acc + (i.realTotalCost || 0), 0);
           const netSalesTotal = aucSales.reduce((acc, s) => acc + (s.netSaleValue || 0), 0);
+          const coveredPct = totalInvestment > 0 ? (netSalesTotal / totalInvestment) * 100 : 0;
+          const remainingAmount = Math.max(0, totalInvestment - netSalesTotal);
+          const remainingPct = totalInvestment > 0 ? Math.max(0, 100 - coveredPct) : 0;
+
           const unsoldItems = aucItems.filter((i) => !i.isSold && i.status !== "descartado" && i.status !== "uso_proprio");
           const unsoldEstimatedTotal = unsoldItems.reduce((acc, i) => acc + (i.estimatedMarketAvg || 0), 0);
           const ownUseEstimatedTotal = aucItems
@@ -314,8 +318,55 @@ export const AuctionsView: React.FC = () => {
                   )}
                 </div>
 
+                {/* Card de Valor Total de Aquisição & Barra de Progresso de Cobertura */}
+                <div className="p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <span className="text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                      <Coins className="w-4 h-4 text-amber-500 shrink-0" />
+                      Total Aquisição:
+                    </span>
+                    <span className="font-extrabold text-amber-600 dark:text-amber-400 font-mono text-xs">
+                      {formatCurrency(totalInvestment)}
+                    </span>
+                  </div>
+
+                  {/* Barra de Progresso */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-600 dark:text-slate-400 font-medium">
+                        Vendido: <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(netSalesTotal)}</strong>
+                      </span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">
+                        {coveredPct >= 100 ? (
+                          <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">100% Coberto ✓</span>
+                        ) : (
+                          `${coveredPct.toFixed(1)}% Coberto`
+                        )}
+                      </span>
+                    </div>
+
+                    {/* Progress Bar Track */}
+                    <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden relative">
+                      <div
+                        className={`h-full transition-all duration-500 rounded-full ${
+                          coveredPct >= 100 ? "bg-emerald-500" : "bg-gradient-to-r from-amber-500 to-emerald-500"
+                        }`}
+                        style={{ width: `${Math.min(100, Math.max(0, coveredPct))}%` }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
+                      {remainingAmount > 0 ? (
+                        <span>Faltam <strong>{formatCurrency(remainingAmount)}</strong> ({remainingPct.toFixed(1)}%) para cobrir os custos</span>
+                      ) : (
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Custo 100% pago pelas vendas!</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Grid das 4 Métricas do Leilão */}
-                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
+                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-700/60">
                   {/* 1. Custo por Item */}
                   <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
                     <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">

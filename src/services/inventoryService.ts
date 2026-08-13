@@ -12,13 +12,9 @@ export const InventoryService = {
   async addExpense(expenseData: Omit<AdditionalExpense, "id">, userRole: string = "admin"): Promise<AdditionalExpense> {
     const parseRes = additionalExpenseSchema.safeParse(expenseData);
     if (!parseRes.success) {
-<<<<<<< HEAD
       const issues = (parseRes as any).error?.issues || [];
       const msg = issues[0]?.message || "Dados de despesa inválidos";
       throw new Error(msg);
-=======
-      throw new Error(parseRes.error.issues[0].message);
->>>>>>> d38035fb886e823fc7f90d89aff1dc6962dfdffd
     }
 
     const expId = "exp-" + crypto.randomUUID();
@@ -51,7 +47,7 @@ export const InventoryService = {
 
       // Registrar Evento de Despesa Adicional no Ledger Imutável
       recordLedgerEntry(transaction, {
-        organizationId: item.organizationId,
+        organizationId: item.organizationId || "org-default",
         itemId: item.id,
         lotId: item.lotId,
         auctionId: item.auctionId,
@@ -124,7 +120,7 @@ export const InventoryService = {
 
       // Gravação no Ledger
       recordLedgerEntry(transaction, {
-        organizationId: item.organizationId,
+        organizationId: item.organizationId || "org-default",
         itemId: item.id,
         lotId: item.lotId,
         auctionId: item.auctionId,

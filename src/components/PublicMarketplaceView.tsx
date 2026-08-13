@@ -1,688 +1,396 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import { ArrowRight, Armchair, Boxes, Car, CheckSquare, CircleUserRound, Clock3, Dumbbell, Gavel, Home, Laptop, Menu, MessageCircle, Package, Search, ShieldCheck, Shirt, ShoppingBag, Smartphone, Sparkles, Tag, Truck, Tv, Wrench, X } from "lucide-react";
 import { useAuction } from "../context/AuctionContext";
 import { AuctionItem } from "../types";
-import {
-  ShoppingBag,
-  Search,
-  Tag,
-  MessageCircle,
-  X,
-  CheckCircle2,
-  Share2,
-  Info,
-  Store,
-  Sparkles,
-  Edit3,
-  Award,
-  Filter,
-} from "lucide-react";
 
-import { PRODUCT_CATEGORIES } from "../constants/categories";
-import { ITEM_SEALS, ITEM_SEALS_LIST, ItemSealId } from "../constants/seals";
+import stepCuration from "../../assets/step_curation.png";
+import stepEvaluation from "../../assets/step_evaluation.png";
+import stepOffer from "../../assets/step_offer.png";
+import stepDelivery from "../../assets/step_delivery.png";
+import logoOutletWm from "../../assets/logo_outlet_wm.jpg";
+
+type Page = "home" | "categories" | "how";
+const money = (n: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n || 0);
+const price = (i: AuctionItem) => i.estimatedMarketAvg || i.listedPrice || 0;
+const market = (i: AuctionItem) => {
+  if (i.newProductMarketValue && i.newProductMarketValue > 0) return i.newProductMarketValue;
+  const p = price(i);
+  if (p > 0) return Number((p / 0.7).toFixed(2));
+  return 0;
+};
+const discount = (i: AuctionItem) => {
+  if (i.discountPercentage && i.discountPercentage > 0) return i.discountPercentage;
+  const m = market(i);
+  const p = price(i);
+  if (m > p && m > 0) return Math.round(((m - p) / m) * 100);
+  return 30;
+};
+
+function getCategoryIcon(cat: string) {
+  const c = (cat || "").toLowerCase();
+  if (c.includes("eletrôn") || c.includes("tv") || c.includes("áudio") || c.includes("video")) return <Tv />;
+  if (c.includes("celular") || c.includes("telef") || c.includes("smartphone")) return <Smartphone />;
+  if (c.includes("informá") || c.includes("comput") || c.includes("notebook") || c.includes("laptop")) return <Laptop />;
+  if (c.includes("móve") || c.includes("casa") || c.includes("decora") || c.includes("sofá")) return <Armchair />;
+  if (c.includes("moda") || c.includes("roupa") || c.includes("vestu")) return <Shirt />;
+  if (c.includes("esport") || c.includes("fitness") || c.includes("lazer")) return <Dumbbell />;
+  if (c.includes("auto") || c.includes("veíc") || c.includes("carro")) return <Car />;
+  if (c.includes("ferramen") || c.includes("maquin") || c.includes("obra")) return <Wrench />;
+  if (c.includes("eletrodom") || c.includes("cozinha")) return <Sparkles />;
+  if (c.includes("brinquedo") || c.includes("infantil") || c.includes("bebê")) return <ShoppingBag />;
+  if (c.includes("beleza") || c.includes("saúde") || c.includes("cosmét")) return <Tag />;
+  if (c.includes("livro") || c.includes("papelaria") || c.includes("escritór")) return <Package />;
+  return <Boxes />;
+}
+
+function getSealBadge(item: AuctionItem) {
+  const s = item.seal || (item.condition === "novo" ? "prime" : item.condition === "seminovo" ? "excelente" : "bom");
+  const labels: Record<string, string> = {
+    prime: "Prime",
+    premium: "Premium",
+    excelente: "Excelente",
+    muito_bom: "Muito Bom",
+    bom: "Bom",
+    oportunidade: "Oportunidade"
+  };
+  const label = labels[s] || "WM";
+  return <span className={`ow-seal-badge ow-seal-${s}`}>{label}</span>;
+}
+
+function Logo() {
+  return (
+    <span className="ow-logo" style={{ display: "inline-flex", alignItems: "center", gap: "12px" }}>
+      <img
+        src={logoOutletWm}
+        alt="Outlet WM Logo"
+        style={{ width: "42px", height: "42px", borderRadius: "10px", objectFit: "cover", border: "2px solid #fd9d1a" }}
+      />
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        <strong style={{ fontSize: "20px", color: "#001736", fontWeight: 800, lineHeight: 1.1 }}>Outlet WM</strong>
+        <span style={{ fontSize: "11px", color: "#43474f", fontWeight: 500, letterSpacing: "-0.01em" }}>
+          produtos de qualidade por preços de oportunidade
+        </span>
+      </div>
+    </span>
+  );
+}
+
+function RulesAndWarrantySection() {
+  return (
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+      gap: "24px",
+      background: "#ffffff",
+      padding: "32px",
+      borderRadius: "20px",
+      border: "1px solid #e2e8f0",
+      boxShadow: "0 10px 30px -5px rgba(0,0,0,0.05)"
+    }}>
+      {/* CARD REGRAS */}
+      <div style={{ background: "#fffbeb", border: "1px solid #fef3c7", padding: "24px", borderRadius: "16px", display: "flex", flexDirection: "column" }}>
+        <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#92400e", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+          ⚠️ Regras
+        </h3>
+        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "12px", color: "#78350f", fontSize: "14px", lineHeight: "1.5" }}>
+          <li style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+            <span style={{ color: "#d97706", fontWeight: "bold" }}>•</span>
+            Produtos são vendidos por ordem de pagamento.
+          </li>
+          <li style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+            <span style={{ color: "#d97706", fontWeight: "bold" }}>•</span>
+            Não realizamos reservas sem pagamento.
+          </li>
+          <li style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+            <span style={{ color: "#d97706", fontWeight: "bold" }}>•</span>
+            As fotos e vídeos publicados são sempre do produto real.
+          </li>
+          <li style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+            <span style={{ color: "#d97706", fontWeight: "bold" }}>•</span>
+            Todos os detalhes estéticos e funcionais são informados no anúncio.
+          </li>
+          <li style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+            <span style={{ color: "#d97706", fontWeight: "bold" }}>•</span>
+            Caso tenha qualquer dúvida, fale conosco antes de finalizar a compra.
+          </li>
+        </ul>
+      </div>
+
+      {/* CARD GARANTIA */}
+      <div style={{ background: "#f0fdf4", border: "1px solid #dcfce7", padding: "24px", borderRadius: "16px", display: "flex", flexDirection: "column" }}>
+        <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#166534", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+          🛡️ Garantia
+        </h3>
+        <p style={{ color: "#15803d", fontWeight: 600, fontSize: "14px", lineHeight: "1.5", marginBottom: "16px" }}>
+          Todos os produtos possuem 7 dias de garantia contra defeitos de funcionamento não informados no anúncio.
+        </p>
+        <div style={{ fontSize: "13px", fontWeight: 700, color: "#166534", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          A garantia não cobre:
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" }}>
+          <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: "8px", border: "1px solid #bbf7d0", fontSize: "13px", color: "#166534", fontWeight: 600 }}>
+            ❌ Mau uso
+          </div>
+          <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: "8px", border: "1px solid #bbf7d0", fontSize: "13px", color: "#166534", fontWeight: 600 }}>
+            ❌ Quedas
+          </div>
+          <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: "8px", border: "1px solid #bbf7d0", fontSize: "13px", color: "#166534", fontWeight: 600 }}>
+            ❌ Danos após entrega
+          </div>
+          <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: "8px", border: "1px solid #bbf7d0", fontSize: "13px", color: "#166534", fontWeight: 600 }}>
+            ❌ Arrependimento
+          </div>
+        </div>
+        <div style={{ padding: "10px 14px", background: "#dcfce7", borderRadius: "10px", color: "#14532d", fontWeight: 700, fontSize: "13px", textAlign: "center", marginTop: "auto" }}>
+          Nosso compromisso é sempre vender exatamente aquilo que foi anunciado.
+        </div>
+      </div>
+
+      {/* CARD FACILIDADES NO PAGAMENTO */}
+      <div style={{ background: "#eff6ff", border: "1px solid #dbeafe", padding: "24px", borderRadius: "16px", display: "flex", flexDirection: "column" }}>
+        <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#1e40af", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+          💳 Facilidades no pagamento
+        </h3>
+        <p style={{ color: "#1e3a8a", fontWeight: 700, fontSize: "14px", marginBottom: "8px" }}>
+          Gostou? Não precisa pagar tudo de uma vez.
+        </p>
+        <p style={{ color: "#1d4ed8", fontSize: "13.5px", lineHeight: "1.45", marginBottom: "16px" }}>
+          No Outlet WM, você pode parcelar suas compras no cartão de crédito e escolher a condição que melhor se encaixa no seu orçamento.
+        </p>
+        <ul style={{ listStyle: "none", padding: 0, margin: "0 0 16px 0", display: "flex", flexDirection: "column", gap: "8px", color: "#1e40af", fontSize: "13.5px", fontWeight: 600 }}>
+          <li style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            💳 Pagamento parcelado no cartão
+          </li>
+          <li style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            ⚡ PIX para pagamento à vista
+          </li>
+          <li style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            📲 Consulte as condições de parcelamento
+          </li>
+        </ul>
+        <div style={{ padding: "10px 14px", background: "#dbeafe", borderRadius: "10px", color: "#1e3a8a", fontWeight: 700, fontSize: "12.5px", textAlign: "center", marginTop: "auto" }}>
+          Mais facilidade para você aproveitar nossas oportunidades sem abrir mão do seu orçamento.
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export const PublicMarketplaceView: React.FC = () => {
-  const { items, updateItem } = useAuction();
+  const { items } = useAuction();
+  const [page, setPage] = useState<Page>("home");
+  const [menu, setMenu] = useState(false);
+  const [query, setQuery] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selected, setSelected] = useState<AuctionItem | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("todas");
-  const [selectedSealFilter, setSelectedSealFilter] = useState<string>("todos");
-  const [selectedItemForModal, setSelectedItemForModal] = useState<AuctionItem | null>(null);
-  const [checkoutItem, setCheckoutItem] = useState<AuctionItem | null>(null);
-  const [editingSealItem, setEditingSealItem] = useState<AuctionItem | null>(null);
+  const products = useMemo(() => items.filter(i => i.status === "disponivel" && !i.archived), [items]);
+  const featuredProducts = useMemo(() => {
+    return products.filter(i => Boolean(i.isFeatured));
+  }, [products]);
 
-  // Form State do envio WhatsApp
-  const [buyerName, setBuyerName] = useState("");
-  const [buyerPhone, setBuyerPhone] = useState("");
-  const [buyerNotes, setBuyerNotes] = useState("");
-  const [copiedLink, setCopiedLink] = useState(false);
+  const categories = useMemo(() => Array.from(new Set(products.map(i => i.category).filter(Boolean))).sort((a, b) => a.localeCompare(b, "pt-BR")), [products]);
 
-  // Apenas itens "disponiveis" ou "anunciados" que estejam ativos e não descartados/uso próprio
-  const availableItems = useMemo(() => {
-    return items.filter(
-      (i) => (i.status === "disponivel" || i.status === "anunciado") && !i.archived
-    );
-  }, [items]);
-
-  // Filtros
-  const filteredItems = useMemo(() => {
-    return availableItems.filter((item) => {
-      const matchesSearch =
-        item.name.toLowerCase().includes(search.toLowerCase()) ||
-        item.code.toLowerCase().includes(search.toLowerCase()) ||
-        (item.brand || "").toLowerCase().includes(search.toLowerCase()) ||
-        (item.model || "").toLowerCase().includes(search.toLowerCase()) ||
-        (item.description || "").toLowerCase().includes(search.toLowerCase());
-
-      const matchesCategory =
-        selectedCategory === "todas" || item.category === selectedCategory;
-
-      const matchesSeal =
-        selectedSealFilter === "todos" || item.seal === selectedSealFilter;
-
-      return matchesSearch && matchesCategory && matchesSeal;
-    });
-  }, [availableItems, search, selectedCategory, selectedSealFilter]);
-
-  const formatCurrency = (val: number) =>
-    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
-
-  const handleShareMarketplace = () => {
-    const publicUrl = `${window.location.origin}${window.location.pathname}?mode=vitrine`;
-    navigator.clipboard.writeText(publicUrl);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 3000);
-  };
-
-  const handleSelectSeal = (itemId: string, sealId: ItemSealId) => {
-    updateItem(itemId, { seal: sealId });
-    if (selectedItemForModal && selectedItemForModal.id === itemId) {
-      setSelectedItemForModal((prev) => (prev ? { ...prev, seal: sealId } : null));
+  const toggleCategory = (cat: string) => {
+    if (cat === "Todos") {
+      setSelectedCategories([]);
+      return;
     }
-    setEditingSealItem(null);
+    setSelectedCategories(prev =>
+      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+    );
   };
 
-  const handleSendWhatsAppOrder = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!checkoutItem || !buyerName) return;
+  const shown = useMemo(() => products.filter(i => {
+    const term = query.trim().toLocaleLowerCase("pt-BR");
+    const text = [i.name, i.code, i.category, i.subcategory, i.brand, i.model, i.description].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
+    const matchesCat = selectedCategories.length === 0 || selectedCategories.includes(i.category);
+    const matchesSearch = !term || text.includes(term);
+    return matchesCat && matchesSearch;
+  }), [products, selectedCategories, query]);
 
-    const estimatedSalePrice = checkoutItem.estimatedMarketAvg || checkoutItem.listedPrice || 0;
-    const marketNewValue = checkoutItem.newProductMarketValue || (estimatedSalePrice > 0 ? Number((estimatedSalePrice / 0.7).toFixed(2)) : 0);
-    const discountPct = checkoutItem.discountPercentage || (marketNewValue > estimatedSalePrice && marketNewValue > 0 ? Math.round(((marketNewValue - estimatedSalePrice) / marketNewValue) * 100) : 0);
-    const sealObj = checkoutItem.seal ? ITEM_SEALS[checkoutItem.seal] : null;
+  const go = (p: Page) => { setPage(p); setMenu(false); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const goCategory = (c: string) => { setSelectedCategories([c]); go("categories"); };
+  const whatsapp = (i?: AuctionItem) => window.open(`https://wa.me/5513988091839?text=${encodeURIComponent(i ? `Olá! Tenho interesse no produto ${i.name} (${i.code}), por ${money(price(i))}.` : "Olá! Quero conhecer os produtos disponíveis da Outlet WM.")}`, "_blank", "noopener,noreferrer");
 
-    const message =
-      `🛒 *NOVO PEDIDO VIA VITRINE VIRTUAL*\n\n` +
-      `📦 *Produto:* ${checkoutItem.name}\n` +
-      `🏷️ *Código:* ${checkoutItem.code}\n` +
-      (sealObj ? `🏷️ *Selo de Qualidade:* ${sealObj.emoji} ${sealObj.name} - ${sealObj.description}\n` : "") +
-      (marketNewValue > 0 ? `📊 *Valor Mercado (Novo):* ${formatCurrency(marketNewValue)}\n` : "") +
-      `💰 *Valor de Venda:* ${formatCurrency(estimatedSalePrice)}\n` +
-      (discountPct > 0 ? `🔥 *Desconto Aplicado:* ${discountPct}% OFF\n` : "") +
-      `📍 *Condição:* ${checkoutItem.condition.toUpperCase()}\n\n` +
-      `👤 *Dados do Cliente:*\n` +
-      `- *Nome:* ${buyerName}\n` +
-      (buyerPhone ? `- *Telefone/WhatsApp:* ${buyerPhone}\n` : "") +
-      (buyerNotes ? `- *Observações:* ${buyerNotes}\n` : "") +
-      `\nOlá, gostaria de confirmar a disponibilidade e os detalhes para concluir a compra deste bem!`;
+  return <div className="ow-site">
+    <header className="ow-header"><div className="ow-container ow-header-inner"><button onClick={() => go("home")} aria-label="Início"><Logo /></button><nav className={menu ? "ow-nav open" : "ow-nav"}><button className={page === "home" ? "active" : ""} onClick={() => go("home")}>Home</button><button className={page === "categories" ? "active" : ""} onClick={() => go("categories")}>Vitrine</button><button className={page === "how" ? "active" : ""} onClick={() => go("how")}>Como Funciona</button><button onClick={() => whatsapp()}>Meus Lances</button></nav><div className="ow-actions"><Search /><CircleUserRound /><button className="ow-menu" onClick={() => setMenu(v => !v)} aria-label="Abrir menu">{menu ? <X /> : <Menu />}</button></div></div></header>
 
-    const sellerWhatsApp = "5513988091839";
-    const cleanPhone = sellerWhatsApp.replace(/\D/g, "");
+    {/* HOME */}
+    {page === "home" && <main><section className="ow-hero"><div className="ow-container ow-hero-grid"><div className="ow-hero-copy"><span className="ow-kicker"><i /> Produtos disponíveis</span><h1><em>Outlet WM.</em><br />Oportunidades Inteligentes.</h1><p>Descubra itens de alto valor por uma fração do preço. Produtos selecionados, informações transparentes e oportunidades reais para comprar melhor.</p><div className="ow-cta-row"><button className="ow-primary" onClick={() => go("categories")}>Ver Vitrine Agora <ArrowRight /></button><button className="ow-secondary" onClick={() => go("how")}>Como Funciona</button></div></div><div className="ow-metric"><div><b>Inventário disponível</b><strong>Atualizado</strong></div><div className="ow-chart"><i /><i /><i /><i /><i /><i /></div><hr /><small>Produtos ativos</small><h2>{products.length.toLocaleString("pt-BR")}</h2><span>↻</span></div></div></section>
 
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
-
-    window.open(whatsappUrl, "_blank");
-
-    setCheckoutItem(null);
-    setBuyerName("");
-    setBuyerPhone("");
-    setBuyerNotes("");
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-amber-500 selection:text-slate-950">
-      {/* Top Banner Publico Light */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-3.5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-slate-950 font-bold shadow-md shadow-amber-500/20">
-              <Store className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="font-black text-base text-slate-900 tracking-tight flex items-center gap-2">
-                <span>Vitrine de Oportunidades</span>
-                <span className="px-2.5 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-                  Leilão & Arrematações
-                </span>
-              </h1>
-              <p className="text-xs text-slate-500 font-medium">Bens Arrematados com Descontos Exclusivos</p>
-            </div>
-          </div>
-
-          <button
-            onClick={handleShareMarketplace}
-            className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all shrink-0 cursor-pointer shadow-sm"
-          >
-            {copiedLink ? (
-              <>
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span className="text-emerald-700 font-extrabold">Link Copiado!</span>
-              </>
-            ) : (
-              <>
-                <Share2 className="w-4 h-4 text-slate-600" />
-                <span>Compartilhar Vitrine</span>
-              </>
-            )}
-          </button>
-        </div>
-      </header>
-
-      {/* Hero Section Light */}
-      <section className="bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-slate-50 py-10 px-4 border-b border-slate-200/60">
-        <div className="max-w-7xl mx-auto text-center space-y-4">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-extrabold rounded-full bg-amber-100 text-amber-900 border border-amber-300/80 shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            Oportunidades Únicas de Leilão
-          </span>
-          <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            Encontre Produtos de Leilão por Preços de Ocasião
-          </h2>
-          <p className="text-sm text-slate-600 max-w-2xl mx-auto font-medium">
-            Todos os itens passam por avaliação rigorosa, possuem classificação por selos de garantia estético-funcionais e valores abaixo da tabela de mercado.
-          </p>
-
-          {/* Search & Filter Bar */}
-          <div className="max-w-4xl mx-auto pt-4 flex flex-col sm:flex-row items-center gap-3">
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Pesquisar por produto, código, marca, modelo..."
-                className="w-full pl-11 pr-4 py-3 text-xs rounded-2xl border border-slate-300 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 shadow-sm font-medium"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full sm:w-52 py-3 px-4 text-xs rounded-2xl border border-slate-300 bg-white text-slate-800 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 font-bold shadow-sm"
-            >
-              <option value="todas">Todas Categorias ({availableItems.length})</option>
-              {PRODUCT_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedSealFilter}
-              onChange={(e) => setSelectedSealFilter(e.target.value)}
-              className="w-full sm:w-52 py-3 px-4 text-xs rounded-2xl border border-slate-300 bg-white text-slate-800 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 font-bold shadow-sm"
-            >
-              <option value="todos">Todos os Selos</option>
-              {ITEM_SEALS_LIST.map((seal) => (
-                <option key={seal.id} value={seal.id}>
-                  {seal.emoji} {seal.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Guia Legenda dos Selos (Accordion ou badges explicativos) */}
-          <div className="pt-4 max-w-4xl mx-auto flex flex-wrap justify-center gap-2">
-            {ITEM_SEALS_LIST.map((seal) => (
-              <span
-                key={seal.id}
-                title={seal.description}
-                onClick={() => setSelectedSealFilter(selectedSealFilter === seal.id ? "todos" : seal.id)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-xl border transition-all cursor-pointer shadow-xs ${seal.badgeBgClass} ${seal.badgeTextClass} ${seal.badgeBorderClass} ${selectedSealFilter === seal.id ? "ring-2 ring-amber-500" : "opacity-90 hover:opacity-100"}`}
-              >
-                <span>{seal.emoji}</span>
-                <span>{seal.name}</span>
-              </span>
+      {/* FAIXA DINÂMICA DE CATEGORIAS COM ÍCONES ESPECÍFICOS */}
+      {categories.length > 0 && (
+        <div className="ow-category-strip">
+          <div className="ow-category-marquee">
+            {[...categories, ...categories, ...categories].map((c, idx) => (
+              <button key={`${c}-${idx}`} onClick={() => goCategory(c)}>
+                {getCategoryIcon(c)}{c}
+              </button>
             ))}
           </div>
         </div>
-      </section>
-
-      {/* Main Grid Section */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {filteredItems.length === 0 ? (
-          <div className="p-16 text-center bg-white rounded-3xl border border-slate-200 shadow-sm space-y-3">
-            <ShoppingBag className="w-12 h-12 text-slate-400 mx-auto" />
-            <h3 className="text-base font-bold text-slate-700">Nenhum produto disponível encontrado</h3>
-            <p className="text-xs text-slate-500">Tente buscar por outro termo ou limpe os filtros de categoria/selo.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-            {filteredItems.map((item) => {
-              const marketNewValue = item.newProductMarketValue || (item.estimatedMarketAvg > 0 ? Number((item.estimatedMarketAvg / 0.7).toFixed(2)) : item.estimatedMarketAvg);
-              const estimatedSalePrice = item.estimatedMarketAvg || item.listedPrice || 0;
-              const discountPct = item.discountPercentage || (marketNewValue > estimatedSalePrice ? Math.round(((marketNewValue - estimatedSalePrice) / marketNewValue) * 100) : 0);
-              const seal = item.seal ? ITEM_SEALS[item.seal] : null;
-
-              return (
-                <div
-                  key={item.id}
-                  className="flex flex-col justify-between rounded-3xl bg-white border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-amber-500/40 transition-all duration-200 group overflow-hidden"
-                >
-                  {/* Photo Container */}
-                  <div className="relative h-48 w-full bg-slate-100 overflow-hidden cursor-pointer" onClick={() => setSelectedItemForModal(item)}>
-                    <img
-                      src={item.primaryPhoto}
-                      alt={item.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-
-                    {discountPct > 0 && (
-                      <span className="absolute top-3 left-3 px-2.5 py-1 text-[11px] font-black rounded-xl bg-emerald-600 text-white shadow-md">
-                        -{discountPct}% OFF
-                      </span>
-                    )}
-
-                    {/* Selo Badge ou Botão Editar Selo */}
-                    <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
-                      {seal ? (
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingSealItem(item);
-                          }}
-                          title={`${seal.description} (Clique para alterar o selo)`}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-extrabold rounded-full border shadow-md cursor-pointer ${seal.badgeBgClass} ${seal.badgeTextClass} ${seal.badgeBorderClass} hover:scale-105 transition-transform`}
-                        >
-                          <span>{seal.emoji}</span>
-                          <span>{seal.name}</span>
-                          <Edit3 className="w-3 h-3 ml-0.5 opacity-70" />
-                        </div>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingSealItem(item);
-                          }}
-                          className="px-2 py-1 text-[10px] font-bold rounded-full bg-white/90 text-amber-800 border border-amber-300 shadow-md backdrop-blur-sm hover:bg-amber-100 transition-colors flex items-center gap-1 cursor-pointer"
-                        >
-                          <Award className="w-3 h-3 text-amber-600" />
-                          <span>+ Escolher Selo</span>
-                        </button>
-                      )}
-                    </div>
-
-                    <span className="absolute bottom-3 left-3 px-2 py-0.5 text-[10px] font-mono font-bold rounded-lg bg-white/90 text-slate-700 backdrop-blur-md border border-slate-200 shadow-xs">
-                      {item.code}
-                    </span>
-                  </div>
-
-                  {/* Body Content */}
-                  <div className="p-4 flex-1 flex flex-col justify-between">
-                    <div className="space-y-1 text-left">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-extrabold uppercase text-amber-700 tracking-wider">
-                          {item.category}
-                        </span>
-                        <span className="text-[10px] font-bold uppercase text-slate-500">
-                          {item.condition}
-                        </span>
-                      </div>
-
-                      <h3
-                        onClick={() => setSelectedItemForModal(item)}
-                        className="font-bold text-sm text-slate-900 hover:text-amber-600 transition-colors line-clamp-2 cursor-pointer leading-snug min-h-[2.5rem]"
-                      >
-                        {item.name}
-                      </h3>
-
-                      {(item.brand || item.model) && (
-                        <p className="text-xs text-slate-500 truncate font-medium">
-                          {item.brand} {item.model}
-                        </p>
-                      )}
-
-                      {/* Seal info text snippet */}
-                      {seal && (
-                        <p className="text-[11px] text-slate-600 italic bg-slate-50 p-2 rounded-xl border border-slate-100 mt-2 font-medium line-clamp-2">
-                          <span className="font-bold not-italic">{seal.emoji} {seal.name}:</span> {seal.description}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Standardized Prices Breakdown */}
-                    <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1 text-left mt-3">
-                      {marketNewValue > 0 && (
-                        <div className="flex justify-between items-center text-[11px]">
-                          <span className="text-slate-500 font-medium">Valor Mercado:</span>
-                          <span className="text-slate-500 line-through font-semibold">
-                            {formatCurrency(marketNewValue)}
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-extrabold text-slate-800">Valor de Venda:</span>
-                        <span className="text-lg font-black text-emerald-700">
-                          {formatCurrency(estimatedSalePrice)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="space-y-2 pt-3">
-                      <button
-                        onClick={() => setCheckoutItem(item)}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
-                      >
-                        <MessageCircle className="w-4 h-4 fill-white" />
-                        <span>Comprar via WhatsApp</span>
-                      </button>
-
-                      <button
-                        onClick={() => setSelectedItemForModal(item)}
-                        className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-bold transition-colors cursor-pointer"
-                      >
-                        <Info className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Ver Detalhes do Produto</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </main>
-
-      {/* Modal Seleção/Edição de Selos */}
-      {editingSealItem && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs cursor-pointer"
-          onClick={() => setEditingSealItem(null)}
-        >
-          <div
-            className="w-full max-w-lg bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl space-y-4 text-left cursor-default"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <div className="flex items-center gap-2">
-                <Award className="w-5 h-5 text-amber-600" />
-                <h3 className="font-extrabold text-base text-slate-900">Escolha o Selo do Produto</h3>
-              </div>
-              <button
-                onClick={() => setEditingSealItem(null)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-600 font-medium">
-              Selecione o selo de estado estético/funcional para <strong>{editingSealItem.name}</strong> ({editingSealItem.code}):
-            </p>
-
-            <div className="space-y-2">
-              {ITEM_SEALS_LIST.map((seal) => {
-                const isSelected = editingSealItem.seal === seal.id;
-                return (
-                  <div
-                    key={seal.id}
-                    onClick={() => handleSelectSeal(editingSealItem.id, seal.id)}
-                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${seal.badgeBgClass} ${seal.badgeBorderClass} hover:ring-2 hover:ring-amber-500 ${isSelected ? "ring-2 ring-amber-600 font-bold" : ""}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">{seal.emoji}</span>
-                      <div>
-                        <div className={`text-xs font-black ${seal.badgeTextClass}`}>
-                          {seal.name}
-                        </div>
-                        <div className="text-[11px] text-slate-600 font-medium leading-tight">
-                          {seal.description}
-                        </div>
-                      </div>
-                    </div>
-                    {isSelected && (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
       )}
 
-      {/* Modal Detalhes do Produto */}
-      {selectedItemForModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs cursor-pointer"
-          onClick={() => setSelectedItemForModal(null)}
-        >
-          <div
-            className="w-full max-w-2xl bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto text-left cursor-default"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-200">
-              <div>
-                <span className="text-[10px] font-extrabold uppercase text-amber-700 tracking-wider">
-                  {selectedItemForModal.category} • Código: {selectedItemForModal.code}
-                </span>
-                <h2 className="text-xl font-black text-slate-900 mt-1">{selectedItemForModal.name}</h2>
-              </div>
-              <button
-                onClick={() => setSelectedItemForModal(null)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-              >
-                <X className="w-5 h-5" />
+      {/* SEÇÃO DE DESTAQUES DINÂMICOS */}
+      <section className="ow-container ow-featured">
+        <div className="ow-section-head">
+          <div>
+            <h2>Destaques disponíveis</h2>
+            <p>Produtos selecionados do inventário em destaque especial.</p>
+          </div>
+          <button onClick={() => go("categories")}>Ver Toda a Vitrine <ArrowRight /></button>
+        </div>
+
+        {featuredProducts.length ? (
+          <div className="ow-featured-marquee-container">
+            <div className="ow-featured-marquee">
+              {[...featuredProducts, ...featuredProducts].map((i, idx) => (
+                <Card key={`${i.id}-${idx}`} item={i} details={() => setSelected(i)} contact={() => whatsapp(i)} />
+              ))}
+            </div>
+          </div>
+        ) : <Empty />}
+      </section>
+    </main>}
+
+    {/* VITRINE (CATEGORIAS) */}
+    {page === "categories" && <main className="ow-container ow-categories-page">
+      <div className="ow-title-row">
+        <div>
+          <h1>Vitrine Outlet WM</h1>
+          <p>Consulte os produtos disponíveis por categoria, nome, marca, modelo ou selo de qualidade.</p>
+        </div>
+      </div>
+
+      <div className="ow-catalog">
+        <aside>
+          <h2>Categorias</h2>
+          <button onClick={() => toggleCategory("Todos")}>
+            <i className={selectedCategories.length === 0 ? "checked" : ""} />
+            <strong>Todas as Categorias</strong>
+            <span>{products.length}</span>
+          </button>
+          {categories.map(c => {
+            const isChecked = selectedCategories.includes(c);
+            const count = products.filter(i => i.category === c).length;
+            return (
+              <button key={c} onClick={() => toggleCategory(c)}>
+                <i className={isChecked ? "checked" : ""} />
+                {c}
+                <span>{count}</span>
               </button>
-            </div>
+            );
+          })}
+        </aside>
 
-            {/* Photos & Seal Banner */}
-            <div className="space-y-3">
-              <div className="relative h-64 sm:h-80 w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
-                <img
-                  src={selectedItemForModal.primaryPhoto}
-                  alt={selectedItemForModal.name}
-                  className="w-full h-full object-cover"
-                />
-
-                {selectedItemForModal.seal && (
-                  <div className="absolute bottom-3 left-3 right-3 p-3 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200 shadow-lg flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{ITEM_SEALS[selectedItemForModal.seal].emoji}</span>
-                      <div>
-                        <span className="text-xs font-black text-slate-900 block">
-                          Selo {ITEM_SEALS[selectedItemForModal.seal].name}
-                        </span>
-                        <span className="text-[11px] text-slate-600 font-medium">
-                          {ITEM_SEALS[selectedItemForModal.seal].description}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setEditingSealItem(selectedItemForModal)}
-                      className="px-2.5 py-1 text-[11px] font-bold rounded-xl bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition-colors"
-                    >
-                      Alterar Selo
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {selectedItemForModal.photos && selectedItemForModal.photos.length > 1 && (
-                <div className="flex items-center gap-2 overflow-x-auto pb-2">
-                  {selectedItemForModal.photos.map((photo, idx) => (
-                    <img
-                      key={idx}
-                      src={photo}
-                      alt={`Foto ${idx + 1}`}
-                      className="w-16 h-16 rounded-xl object-cover border border-slate-200 shrink-0 cursor-pointer hover:border-amber-500"
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Specs & Description */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-medium">
-              <div>
-                <span className="text-slate-500 block mb-0.5">Condição Física:</span>
-                <span className="font-bold text-slate-900 uppercase">{selectedItemForModal.condition}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block mb-0.5">Estado Operacional:</span>
-                <span className="font-bold text-slate-900 uppercase">{selectedItemForModal.operationalState.replace("_", " ")}</span>
-              </div>
-              {selectedItemForModal.brand && (
-                <div>
-                  <span className="text-slate-500 block mb-0.5">Marca:</span>
-                  <span className="font-bold text-slate-900">{selectedItemForModal.brand}</span>
-                </div>
-              )}
-              {selectedItemForModal.model && (
-                <div>
-                  <span className="text-slate-500 block mb-0.5">Modelo:</span>
-                  <span className="font-bold text-slate-900">{selectedItemForModal.model}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Price Box */}
-            {(() => {
-              const marketNewValue = selectedItemForModal.newProductMarketValue || (selectedItemForModal.estimatedMarketAvg > 0 ? Number((selectedItemForModal.estimatedMarketAvg / 0.7).toFixed(2)) : selectedItemForModal.estimatedMarketAvg);
-              const estimatedSalePrice = selectedItemForModal.estimatedMarketAvg || selectedItemForModal.listedPrice || 0;
-              const discountPct = selectedItemForModal.discountPercentage || (marketNewValue > estimatedSalePrice ? Math.round(((marketNewValue - estimatedSalePrice) / marketNewValue) * 100) : 0);
-
-              return (
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <span className="text-xs text-slate-600 block font-bold">Valor de Venda</span>
-                    <div className="text-2xl font-black text-emerald-700">
-                      {formatCurrency(estimatedSalePrice)}
-                    </div>
-                    {marketNewValue > estimatedSalePrice && (
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span className="line-through font-semibold">Valor Mercado: {formatCurrency(marketNewValue)}</span>
-                        {discountPct > 0 && (
-                          <span className="px-2 py-0.5 font-bold rounded bg-amber-100 text-amber-800 text-[10px] border border-amber-300">
-                            {discountPct}% OFF
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setCheckoutItem(selectedItemForModal);
-                      setSelectedItemForModal(null);
-                    }}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 transition-all shrink-0 cursor-pointer"
-                  >
-                    <MessageCircle className="w-4 h-4 fill-white" />
-                    <span>Tenho Interesse / Comprar</span>
-                  </button>
-                </div>
-              );
-            })()}
-
-            {/* Description / Notes */}
-            {selectedItemForModal.description && (
-              <div className="space-y-1 text-xs">
-                <span className="font-bold text-slate-800 block">Observações do Produto:</span>
-                <p className="text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-200 font-medium">
-                  {selectedItemForModal.description}
-                </p>
-              </div>
+        <div>
+          {/* CAMPO DE BUSCA LARGURA TOTAL COM BOTÃO X */}
+          <div className="ow-search" style={{ marginBottom: "24px" }}>
+            <Search size={18} style={{ color: "#64748b" }} />
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Buscar na vitrine por nome, selo, marca, modelo..."
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                style={{ border: 0, background: "none", cursor: "pointer", color: "#64748b", display: "flex", alignItems: "center", padding: "4px" }}
+                aria-label="Apagar busca"
+              >
+                <X size={18} />
+              </button>
             )}
           </div>
-        </div>
-      )}
 
-      {/* Modal Checkout WhatsApp */}
-      {checkoutItem && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs cursor-pointer"
-          onClick={() => setCheckoutItem(null)}
-        >
-          <div
-            className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl space-y-4 text-left cursor-default"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <div className="flex items-center gap-2">
-                <MessageCircle className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-extrabold text-base text-slate-900">Finalizar Pedido via WhatsApp</h3>
-              </div>
-              <button onClick={() => setCheckoutItem(null)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
+          {shown.length ? (
+            <div className="ow-products">
+              {shown.map(i => <Card key={i.id} item={i} details={() => setSelected(i)} contact={() => whatsapp(i)} />)}
             </div>
-
-            {/* Product Summary */}
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
-              <img
-                src={checkoutItem.primaryPhoto}
-                alt={checkoutItem.name}
-                className="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0"
-              />
-              <div className="space-y-0.5 truncate">
-                <span className="font-mono text-[10px] font-bold text-amber-700 block">
-                  {checkoutItem.code}
-                </span>
-                <h4 className="font-bold text-slate-900 truncate">{checkoutItem.name}</h4>
-                <div className="text-emerald-700 font-extrabold">
-                  {formatCurrency(checkoutItem.listedPrice || checkoutItem.estimatedMarketAvg || 0)}
-                </div>
-              </div>
-            </div>
-
-            <form onSubmit={handleSendWhatsAppOrder} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold mb-1 text-slate-700">Seu Nome Completo *</label>
-                <input
-                  type="text"
-                  required
-                  value={buyerName}
-                  onChange={(e) => setBuyerName(e.target.value)}
-                  placeholder="Ex: João da Silva"
-                  className="w-full p-3 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold mb-1 text-slate-700">Seu Telefone / WhatsApp</label>
-                <input
-                  type="text"
-                  value={buyerPhone}
-                  onChange={(e) => setBuyerPhone(e.target.value)}
-                  placeholder="(11) 99999-9999"
-                  className="w-full p-3 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold mb-1 text-slate-700">Observações / Dúvidas</label>
-                <textarea
-                  value={buyerNotes}
-                  onChange={(e) => setBuyerNotes(e.target.value)}
-                  placeholder="Pergunte sobre frete, agendamento de retirada ou estado do produto..."
-                  rows={2}
-                  className="w-full p-3 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 font-medium"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCheckoutItem(null)}
-                  className="px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-bold"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-extrabold text-white shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer"
-                >
-                  <MessageCircle className="w-4 h-4 fill-white" />
-                  <span>Enviar para WhatsApp</span>
-                </button>
-              </div>
-            </form>
-          </div>
+          ) : <Empty />}
         </div>
-      )}
-    </div>
-  );
+      </div>
+    </main>}
+
+    {/* COMO FUNCIONA */}
+    {page === "how" && <main><section className="ow-container ow-how"><div className="ow-how-intro"><h1>Logística Reversa,<br /><span>Descomplicada.</span></h1><p>Transformamos retornos, excessos de estoque e devoluções em oportunidades de alto valor. Nosso processo garante transparência, qualidade e agilidade.</p></div><div className="ow-steps">{[[Package, "Curadoria", "Selecionamos produtos de logística reversa de grandes varejistas e marcas. Cada lote passa por uma curadoria cuidadosa, buscando produtos com bom potencial de uso e excelente custo-benefício.", stepCuration], [CheckSquare, "Avaliação", "Cada produto é inspecionado e avaliado pelo padrão Outlet WM em quatro critérios: funcionamento, aparência, acessórios e embalagem. Ao final, recebe um selo que representa sua condição.", stepEvaluation], [Gavel, "Oferta", "Após avaliação e higienização, os produtos são catalogados e oferecidos por valores abaixo do mercado, com descontos que podem variar de 30% a 90%, conforme sua condição e selo de qualidade.", stepOffer], [Truck, "Entrega", "Após a confirmação da compra, combinamos a opção mais conveniente para ambas as partes. O produto pode ser entregue no endereço do comprador, retirado no local ou de outra forma combinada.", stepDelivery]].map(([Icon, title, text, image]: any, n) => <article key={title} style={{ display: "flex", flexDirection: "column", height: "100%" }}><div className={n === 2 ? "accent" : ""}><Icon /></div><h2>{title}</h2><p style={{ flexGrow: 1, marginBottom: "20px" }}>{text}</p><div style={{ width: "100%", height: "260px", background: "#f8fafc", borderRadius: "14px", overflow: "hidden", border: "1px solid #e2e8f0", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "center" }}><img src={image} alt={title} className="ow-step-image" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div></article>)}</div></section>
+
+      {/* REGRAS E GARANTIA (COMO FUNCIONA) */}
+      <section className="ow-container" style={{ margin: "40px auto 60px" }}>
+        <RulesAndWarrantySection />
+      </section>
+
+      <section className="ow-final-cta"><h2>Pronto para encontrar sua<br />próxima grande oportunidade?</h2><p>Explore agora os produtos disponíveis no inventário Outlet WM.</p><button className="ow-primary" onClick={() => go("categories")}>Explorar Ofertas <ArrowRight /></button></section></main>}
+
+    {/* SEÇÃO GLOBAL DE REGRAS E GARANTIA (HOME & VITRINE) */}
+    {page !== "how" && (
+      <section className="ow-container" style={{ margin: "60px auto 40px" }}>
+        <RulesAndWarrantySection />
+      </section>
+    )}
+
+    <Footer go={go} />
+    <nav className="ow-bottom">
+      <button onClick={() => go("home")} className={page === "home" ? "active" : ""}>
+        <Home />Home
+      </button>
+      <button onClick={() => go("categories")} className={page === "categories" ? "active" : ""}>
+        <Boxes />Vitrine
+      </button>
+      <button onClick={() => go("how")} className={page === "how" ? "active" : ""}>
+        <CheckSquare />Como Funciona
+      </button>
+      <button onClick={() => whatsapp()}>
+        <MessageCircle />Contato
+      </button>
+    </nav>
+    {selected && <div className="ow-modal" onClick={() => setSelected(null)}><div onClick={e => e.stopPropagation()}><button className="ow-modal-close" onClick={() => setSelected(null)} aria-label="Fechar"><X /></button><img src={selected.primaryPhoto} alt={selected.name} />{discount(selected) > 0 && <span style={{ background: "#16a34a", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800 }}>-{discount(selected)}% OFF</span>}<div style={{ marginTop: "12px", marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>{getSealBadge(selected)}<small style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: "11px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.03em" }}>{selected.category}</small></div><h2>{selected.name}</h2><p>{selected.description || "Produto revisado e disponível para venda."}</p>{market(selected) > price(selected) && <del>Mercado: {money(market(selected))}</del>}<strong>{money(price(selected))}</strong><div className="ow-trust"><ShieldCheck /> {selected.condition.replaceAll("_", " ")} <Truck /> {selected.location.customText || "Consulte a entrega"}</div>
+
+      <div style={{ marginTop: "16px", padding: "14px", background: "#f8fafc", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "13px", color: "#334155", textAlign: "left" }}>
+        <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
+          <span>⚠️</span> Regras & Garantia
+        </div>
+        <ul style={{ margin: 0, paddingLeft: "18px", lineHeight: "1.4" }}>
+          <li>Vendas por ordem de pagamento (sem reserva sem pgto).</li>
+          <li><strong>7 dias de garantia</strong> contra defeitos de funcionamento não informados.</li>
+          <li>Garantia não cobre mau uso, quedas ou danos pós-entrega.</li>
+        </ul>
+      </div>
+
+      <button className="ow-primary" style={{ marginTop: "16px" }} onClick={() => whatsapp(selected)}><MessageCircle /> Enviar interesse via WhatsApp</button></div></div>}
+  </div>;
 };
+
+function Card({ item, details, contact }: { item: AuctionItem; details: () => void; contact: () => void }) {
+  const d = discount(item);
+  const m = market(item);
+  const p = price(item);
+
+  return (
+    <article className="ow-card">
+      <div className="ow-card-image">
+        <img src={item.primaryPhoto} alt={item.name} />
+        {d > 0 && <b style={{ background: "#16a34a", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800 }}>-{d}% OFF</b>}
+      </div>
+      <div className="ow-card-body">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+          {getSealBadge(item)}
+          <small style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: "11px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+            {item.category}
+          </small>
+        </div>
+        <h3>{item.name}</h3>
+        {m > p && <del>Mercado: {money(m)}</del>}
+        <strong>{money(p)}</strong>
+        <div>
+          <button onClick={details}>Ver Detalhes</button>
+          <button aria-label="Comprar pelo WhatsApp" onClick={contact}><MessageCircle /></button>
+        </div>
+      </div>
+    </article>
+  );
+}
+function Empty() { return <div className="ow-empty"><Boxes /><h3>Nenhum produto disponível</h3><p>Quando um item receber o status “disponível” no inventário, ele aparecerá automaticamente aqui.</p></div>; }
+function Footer({ go }: { go: (p: Page) => void }) { return <footer className="ow-footer"><div className="ow-container"><div><Logo /><p>Produtos de qualidade por preços de oportunidade.</p></div><div><b>Navegação</b><button onClick={() => go("home")}>Home</button><button onClick={() => go("categories")}>Vitrine</button><button onClick={() => go("how")}>Como Funciona</button></div><div><b>Suporte</b><span>FAQ</span><span>Termos de Uso</span><span>Privacidade</span></div></div><p>© 2026 Outlet WM Logistics. Todos os direitos reservados.</p></footer>; }
+export default PublicMarketplaceView;
