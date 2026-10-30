@@ -203,6 +203,25 @@ interface AuctionContextType {
 
 const AuctionContext = createContext<AuctionContextType | undefined>(undefined);
 
+// Utilitário para evitar workspaces duplicados por ID ou por Nome idêntico
+const deduplicateWorkspaces = (list: Workspace[]): Workspace[] => {
+  const seenIds = new Set<string>();
+  const seenNames = new Set<string>();
+  const result: Workspace[] = [];
+
+  for (const item of list) {
+    if (!item || !item.id) continue;
+    const normName = (item.name || "").trim().toLowerCase();
+    if (seenIds.has(item.id)) continue;
+    if (normName && seenNames.has(normName)) continue;
+
+    seenIds.add(item.id);
+    if (normName) seenNames.add(normName);
+    result.push(item);
+  }
+  return result;
+};
+
 export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     return localStorage.getItem("leilao_theme") === "dark";
@@ -216,7 +235,12 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [workspaces, setWorkspaces] = useState<Workspace[]>(() => {
     try {
       const saved = localStorage.getItem("leilao_workspaces");
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return deduplicateWorkspaces(parsed);
+        }
+      }
     } catch (e) {}
     return [{ id: "default", name: "Leilão Principal", createdAt: new Date().toISOString() }];
   });
@@ -331,8 +355,28 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       (snap) => {
         if (!snap.empty) {
           const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Workspace));
-          setWorkspaces(list);
-          localStorage.setItem("leilao_workspaces", JSON.stringify(list));
+          const seenIds = new Set<string>();
+          const seenNames = new Set<string>();
+          const uniqueList: Workspace[] = [];
+
+          for (const ws of list) {
+            if (!ws || !ws.id) continue;
+            const normName = (ws.name || "").trim().toLowerCase();
+            if (seenIds.has(ws.id)) continue;
+            seenIds.add(ws.id);
+
+            // Se for duplicata pelo mesmo nome que já foi registrado, remove do Firestore para não duplicar na lista
+            if (normName && seenNames.has(normName)) {
+              deleteDoc(doc(db, "workspaces", ws.id)).catch(console.error);
+              continue;
+            }
+
+            if (normName) seenNames.add(normName);
+            uniqueList.push(ws);
+          }
+
+          setWorkspaces(uniqueList);
+          localStorage.setItem("leilao_workspaces", JSON.stringify(uniqueList));
         } else {
           const defaultWs: Workspace = {
             id: "default",
@@ -556,13 +600,33 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const addWorkspace = async (name: string): Promise<Workspace> => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      throw new Error("Nome do espaço inválido");
+    }
+
+    // Se já existir espaço com este mesmo nome (case-insensitive), redireciona e evita duplicação
+    const existing = workspaces.find(
+      (w) => w.name.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+    if (existing) {
+      setCurrentWorkspaceId(existing.id);
+      addToast("Espaço Selecionado", `O leilão "${existing.name}" já existe e foi selecionado.`, "info");
+      return existing;
+    }
+
     const id = "ws-" + crypto.randomUUID();
-    const newWs: Workspace = { id, name: name.trim(), createdAt: new Date().toISOString() };
+    const newWs: Workspace = { id, name: trimmed, createdAt: new Date().toISOString() };
     await setDoc(doc(db, "workspaces", id), newWs).catch(console.error);
-    setWorkspaces((prev) => [...prev, newWs]);
-    localStorage.setItem("leilao_workspaces", JSON.stringify([...workspaces, newWs]));
+
+    setWorkspaces((prev) => {
+      const updated = deduplicateWorkspaces([...prev, newWs]);
+      localStorage.setItem("leilao_workspaces", JSON.stringify(updated));
+      return updated;
+    });
+
     setCurrentWorkspaceId(id);
-    addToast("Espaço Criado", `Painel "${name}" pronto e zerado para novos lançamentos!`, "success");
+    addToast("Espaço Criado", `Painel "${trimmed}" pronto e zerado para novos lançamentos!`, "success");
     return newWs;
   };
 

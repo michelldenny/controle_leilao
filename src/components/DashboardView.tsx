@@ -17,7 +17,6 @@ import {
   Sparkles,
   Layers,
 } from "lucide-react";
-import { WorkspaceSelector } from "./WorkspaceSelector";
 import {
   ResponsiveContainer,
   BarChart,
@@ -135,9 +134,6 @@ export const DashboardView: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 shrink-0">
-          <div className="bg-white/10 p-1 rounded-2xl border border-white/20 backdrop-blur-sm">
-            <WorkspaceSelector variant="header" />
-          </div>
           <button
             onClick={() => setIsWizardOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-lg shadow-amber-500/25 transition-all"

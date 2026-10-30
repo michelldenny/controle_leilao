@@ -18,7 +18,6 @@ import {
   TrendingUp,
   Building,
 } from "lucide-react";
-import { WorkspaceSelector } from "./WorkspaceSelector";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -84,8 +83,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
         </button>
       </div>
 
-      {/* Workspace Switcher in Sidebar (when not collapsed) */}
-      {!collapsed && <WorkspaceSelector variant="sidebar" />}
 
       {/* Navigation List */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
