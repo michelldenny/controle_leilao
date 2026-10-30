@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { db } from "../lib/firebase";
 import {
   collection,
@@ -26,6 +26,7 @@ import {
   ApportionmentMethod,
   ItemCondition,
   OperationalState,
+  Workspace,
 } from "../types";
 import {
   auctionSchema,
@@ -54,15 +55,21 @@ interface AuctionContextType {
   userRole: UserRole;
   setUserRole: (role: UserRole) => void;
 
+  // Workspaces (Leilões / Sócios isolados)
+  workspaces: Workspace[];
+  currentWorkspaceId: string;
+  currentWorkspace: Workspace;
+  setCurrentWorkspaceId: (id: string) => void;
+  addWorkspace: (name: string) => Promise<Workspace>;
+  updateWorkspace: (id: string, name: string) => Promise<void>;
+  deleteWorkspace: (id: string) => Promise<void>;
+
   // Active View
   activeTab: string;
   setActiveTab: (tab: string) => void;
   selectedItemId: string | null;
   setSelectedItemId: (id: string | null) => void;
   openItemDetail: (itemId: string) => void;
-  selectedAuctionPageId: string | null;
-  setSelectedAuctionPageId: (id: string | null) => void;
-  openAuctionPage: (auctionId: string) => void;
 
   // Modals state
   isWizardOpen: boolean;
@@ -204,7 +211,31 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [userRole, setUserRole] = useState<UserRole>("admin");
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const [selectedAuctionPageId, setSelectedAuctionPageId] = useState<string | null>(null);
+
+  // Workspaces / Espaços de Leilão (Sociedades)
+  const [workspaces, setWorkspaces] = useState<Workspace[]>(() => {
+    try {
+      const saved = localStorage.getItem("leilao_workspaces");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [{ id: "default", name: "Leilão Principal", createdAt: new Date().toISOString() }];
+  });
+
+  const [currentWorkspaceId, setCurrentWorkspaceIdState] = useState<string>(() => {
+    return localStorage.getItem("leilao_active_workspace_id") || "default";
+  });
+
+  const setCurrentWorkspaceId = (id: string) => {
+    setCurrentWorkspaceIdState(id);
+    localStorage.setItem("leilao_active_workspace_id", id);
+  };
+
+  const currentWorkspace = useMemo(() => {
+    return (
+      workspaces.find((w) => w.id === currentWorkspaceId) ||
+      workspaces[0] || { id: "default", name: "Leilão Principal" }
+    );
+  }, [workspaces, currentWorkspaceId]);
 
   // Modals state
   const [isWizardOpen, setIsWizardOpen] = useState<boolean>(false);
@@ -219,24 +250,64 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Firestore connection status
   const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(true);
 
-  // Entities Data - Initialize with empty arrays (0 fictitious values)
-  const [auctions, setAuctions] = useState<Auction[]>([]);
-  const [lots, setLots] = useState<Lot[]>([]);
-  const [items, setItems] = useState<AuctionItem[]>([]);
-  const [expenses, setExpenses] = useState<AdditionalExpense[]>([]);
-  const [maintenanceRecords, setMaintenanceRecords] = useState<MaintenanceRecord[]>([]);
-  const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
-  const [sales, setSales] = useState<SaleRecord[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [documents, setDocuments] = useState<AppDocument[]>([]);
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  // Raw Entities from Firestore
+  const [rawAuctions, setRawAuctions] = useState<Auction[]>([]);
+  const [rawLots, setRawLots] = useState<Lot[]>([]);
+  const [rawItems, setRawItems] = useState<AuctionItem[]>([]);
+  const [rawExpenses, setRawExpenses] = useState<AdditionalExpense[]>([]);
+  const [rawMaintenanceRecords, setRawMaintenanceRecords] = useState<MaintenanceRecord[]>([]);
+  const [rawAdvertisements, setRawAdvertisements] = useState<Advertisement[]>([]);
+  const [rawSales, setRawSales] = useState<SaleRecord[]>([]);
+  const [rawContacts, setRawContacts] = useState<Contact[]>([]);
+  const [rawDocuments, setRawDocuments] = useState<AppDocument[]>([]);
+  const [rawActivityLogs, setRawActivityLogs] = useState<ActivityLog[]>([]);
+
+  // Filtered lists: 100% ISOLATED per currentWorkspaceId!
+  const auctions = useMemo(() => {
+    return rawAuctions.filter((a) => (a.organizationId || "default") === currentWorkspaceId);
+  }, [rawAuctions, currentWorkspaceId]);
+
+  const lots = useMemo(() => {
+    return rawLots.filter((l) => (l.organizationId || "default") === currentWorkspaceId);
+  }, [rawLots, currentWorkspaceId]);
+
+  const items = useMemo(() => {
+    return rawItems.filter((i) => (i.organizationId || "default") === currentWorkspaceId);
+  }, [rawItems, currentWorkspaceId]);
+
+  const expenses = useMemo(() => {
+    return rawExpenses.filter((e) => (e.organizationId || "default") === currentWorkspaceId);
+  }, [rawExpenses, currentWorkspaceId]);
+
+  const maintenanceRecords = useMemo(() => {
+    return rawMaintenanceRecords.filter((m) => (m.organizationId || "default") === currentWorkspaceId);
+  }, [rawMaintenanceRecords, currentWorkspaceId]);
+
+  const advertisements = useMemo(() => {
+    return rawAdvertisements.filter((ad) => (ad.organizationId || "default") === currentWorkspaceId);
+  }, [rawAdvertisements, currentWorkspaceId]);
+
+  const sales = useMemo(() => {
+    return rawSales.filter((s) => (s.organizationId || "default") === currentWorkspaceId);
+  }, [rawSales, currentWorkspaceId]);
+
+  const contacts = useMemo(() => {
+    return rawContacts.filter((c) => (c.organizationId || "default") === currentWorkspaceId);
+  }, [rawContacts, currentWorkspaceId]);
+
+  const documents = useMemo(() => {
+    return rawDocuments.filter((d) => (d.organizationId || "default") === currentWorkspaceId);
+  }, [rawDocuments, currentWorkspaceId]);
+
+  const activityLogs = useMemo(() => {
+    return rawActivityLogs.filter((l) => (l.organizationId || "default") === currentWorkspaceId);
+  }, [rawActivityLogs, currentWorkspaceId]);
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [globalSearch, setGlobalSearch] = useState<string>("");
 
   // Sync with Firestore in real-time
   useEffect(() => {
-    // Clear old localStorage mock caches
     [
       "leilao_auctions",
       "leilao_lots",
@@ -255,10 +326,29 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setIsFirebaseConnected(false);
     };
 
+    const unsubWorkspaces = onSnapshot(
+      collection(db, "workspaces"),
+      (snap) => {
+        if (!snap.empty) {
+          const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Workspace));
+          setWorkspaces(list);
+          localStorage.setItem("leilao_workspaces", JSON.stringify(list));
+        } else {
+          const defaultWs: Workspace = {
+            id: "default",
+            name: "Leilão Principal",
+            createdAt: new Date().toISOString(),
+          };
+          setDoc(doc(db, "workspaces", "default"), defaultWs).catch(console.error);
+        }
+      },
+      handleError
+    );
+
     const unsubAuctions = onSnapshot(
       collection(db, "auctions"),
       (snap) => {
-        setAuctions(snap.docs.map((d) => d.data() as Auction));
+        setRawAuctions(snap.docs.map((d) => d.data() as Auction));
         setIsFirebaseConnected(true);
       },
       handleError
@@ -267,7 +357,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const unsubLots = onSnapshot(
       collection(db, "lots"),
       (snap) => {
-        setLots(snap.docs.map((d) => d.data() as Lot));
+        setRawLots(snap.docs.map((d) => d.data() as Lot));
         setIsFirebaseConnected(true);
       },
       handleError
@@ -276,7 +366,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const unsubItems = onSnapshot(
       collection(db, "items"),
       (snap) => {
-        setItems(snap.docs.map((d) => d.data() as AuctionItem));
+        setRawItems(snap.docs.map((d) => d.data() as AuctionItem));
         setIsFirebaseConnected(true);
       },
       handleError
@@ -285,7 +375,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const unsubExpenses = onSnapshot(
       collection(db, "expenses"),
       (snap) => {
-        setExpenses(snap.docs.map((d) => d.data() as AdditionalExpense));
+        setRawExpenses(snap.docs.map((d) => d.data() as AdditionalExpense));
         setIsFirebaseConnected(true);
       },
       handleError
@@ -294,7 +384,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const unsubMaint = onSnapshot(
       collection(db, "maintenanceRecords"),
       (snap) => {
-        setMaintenanceRecords(snap.docs.map((d) => d.data() as MaintenanceRecord));
+        setRawMaintenanceRecords(snap.docs.map((d) => d.data() as MaintenanceRecord));
         setIsFirebaseConnected(true);
       },
       handleError
@@ -303,7 +393,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const unsubAds = onSnapshot(
       collection(db, "advertisements"),
       (snap) => {
-        setAdvertisements(snap.docs.map((d) => d.data() as Advertisement));
+        setRawAdvertisements(snap.docs.map((d) => d.data() as Advertisement));
         setIsFirebaseConnected(true);
       },
       handleError
@@ -312,7 +402,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const unsubSales = onSnapshot(
       collection(db, "sales"),
       (snap) => {
-        setSales(snap.docs.map((d) => d.data() as SaleRecord));
+        setRawSales(snap.docs.map((d) => d.data() as SaleRecord));
         setIsFirebaseConnected(true);
       },
       handleError
@@ -321,7 +411,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const unsubContacts = onSnapshot(
       collection(db, "contacts"),
       (snap) => {
-        setContacts(snap.docs.map((d) => d.data() as Contact));
+        setRawContacts(snap.docs.map((d) => d.data() as Contact));
         setIsFirebaseConnected(true);
       },
       handleError
@@ -330,7 +420,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const unsubDocs = onSnapshot(
       collection(db, "documents"),
       (snap) => {
-        setDocuments(snap.docs.map((d) => d.data() as AppDocument));
+        setRawDocuments(snap.docs.map((d) => d.data() as AppDocument));
         setIsFirebaseConnected(true);
       },
       handleError
@@ -340,13 +430,14 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       collection(db, "activityLogs"),
       (snap) => {
         const list = snap.docs.map((d) => d.data() as ActivityLog);
-        setActivityLogs(list.sort((a, b) => (b.id || "").localeCompare(a.id || "")));
+        setRawActivityLogs(list.sort((a, b) => (b.id || "").localeCompare(a.id || "")));
         setIsFirebaseConnected(true);
       },
       handleError
     );
 
     return () => {
+      unsubWorkspaces();
       unsubAuctions();
       unsubLots();
       unsubItems();
@@ -447,30 +538,71 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
           await batch.commit();
         }
       }
-      setAuctions([]);
-      setLots([]);
-      setItems([]);
-      setExpenses([]);
-      setMaintenanceRecords([]);
-      setAdvertisements([]);
-      setSales([]);
-      setContacts([]);
-      setDocuments([]);
-      setActivityLogs([]);
-      addToast("Banco de Dados Zerado", "Todos os dados fictícios foram removidos do Firebase.", "info");
+      setRawAuctions([]);
+      setRawLots([]);
+      setRawItems([]);
+      setRawExpenses([]);
+      setRawMaintenanceRecords([]);
+      setRawAdvertisements([]);
+      setRawSales([]);
+      setRawContacts([]);
+      setRawDocuments([]);
+      setRawActivityLogs([]);
+      addToast("Banco de Dados Zerado", "Todos os dados foram removidos do Firebase.", "info");
     } catch (err) {
       console.error("Erro ao zerar dados no Firebase:", err);
       addToast("Erro", "Não foi possível apagar os dados do Firebase.", "error");
     }
   };
 
-  const openItemDetail = (itemId: string) => {
-    setSelectedItemId(itemId);
+  const addWorkspace = async (name: string): Promise<Workspace> => {
+    const id = "ws-" + crypto.randomUUID();
+    const newWs: Workspace = { id, name: name.trim(), createdAt: new Date().toISOString() };
+    await setDoc(doc(db, "workspaces", id), newWs).catch(console.error);
+    setWorkspaces((prev) => [...prev, newWs]);
+    localStorage.setItem("leilao_workspaces", JSON.stringify([...workspaces, newWs]));
+    setCurrentWorkspaceId(id);
+    addToast("Espaço Criado", `Painel "${name}" pronto e zerado para novos lançamentos!`, "success");
+    return newWs;
   };
 
-  const openAuctionPage = (auctionId: string) => {
-    setSelectedAuctionPageId(auctionId);
-    setActiveTab("auction_page");
+  const updateWorkspace = async (id: string, name: string): Promise<void> => {
+    await setDoc(doc(db, "workspaces", id), { name: name.trim() }, { merge: true }).catch(console.error);
+    const updated = workspaces.map((w) => (w.id === id ? { ...w, name: name.trim() } : w));
+    setWorkspaces(updated);
+    localStorage.setItem("leilao_workspaces", JSON.stringify(updated));
+    addToast("Espaço Atualizado", "Nome atualizado com sucesso!");
+  };
+
+  const deleteWorkspace = async (id: string): Promise<void> => {
+    if (workspaces.length <= 1) {
+      addToast("Operação Bloqueada", "Você deve manter pelo menos um espaço ativo.", "warning");
+      return;
+    }
+    await deleteDoc(doc(db, "workspaces", id)).catch(console.error);
+
+    // Remove registros deste espaço em lote
+    try {
+      const batch = writeBatch(db);
+      rawItems.filter((i) => (i.organizationId || "default") === id).forEach((i) => batch.delete(doc(db, "items", i.id)));
+      rawLots.filter((l) => (l.organizationId || "default") === id).forEach((l) => batch.delete(doc(db, "lots", l.id)));
+      rawAuctions.filter((a) => (a.organizationId || "default") === id).forEach((a) => batch.delete(doc(db, "auctions", a.id)));
+      await batch.commit();
+    } catch (e) {
+      console.error("Erro ao limpar dados do espaço excluído:", e);
+    }
+
+    const remaining = workspaces.filter((w) => w.id !== id);
+    setWorkspaces(remaining);
+    localStorage.setItem("leilao_workspaces", JSON.stringify(remaining));
+    if (currentWorkspaceId === id) {
+      setCurrentWorkspaceId(remaining[0].id);
+    }
+    addToast("Espaço Removido", "O espaço e seus dados foram excluídos.");
+  };
+
+  const openItemDetail = (itemId: string) => {
+    setSelectedItemId(itemId);
   };
 
   const openApportionmentModal = (lot: Lot) => {
@@ -515,7 +647,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       addToast("Erro de Validação", msg, "error");
     }
     const id = "auc-" + crypto.randomUUID();
-    const newAuction: Auction = { ...auctionData, id };
+    const newAuction: Auction = { ...auctionData, organizationId: currentWorkspaceId, id };
     setDoc(doc(db, "auctions", id), newAuction).catch((err) => {
       console.error(err);
       addToast("Erro ao Salvar", "Não foi possível salvar o leilão no banco.", "error");
@@ -573,6 +705,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const totalLotCost = calculateTotalLotCost(lotData);
     const newLot: Lot = {
       ...lotData,
+      organizationId: currentWorkspaceId,
       id,
       totalLotCost,
       allocationStatus: "pendente",
@@ -653,6 +786,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const newItem: AuctionItem = {
       ...itemData,
+      organizationId: currentWorkspaceId,
       id,
       code,
       realTotalCost,
@@ -796,6 +930,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       const item: AuctionItem = {
         id,
+        organizationId: currentWorkspaceId,
         code,
         lotId,
         auctionId: targetLot.auctionId,
@@ -878,6 +1013,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       const item: AuctionItem = {
         id,
+        organizationId: currentWorkspaceId,
         code,
         lotId: targetLot ? targetLot.id : lotId,
         auctionId: targetLot ? targetLot.auctionId : auctionId,
@@ -959,7 +1095,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Ads
   const addAdvertisement = (adData: Omit<Advertisement, "id">) => {
     const id = "ad-" + crypto.randomUUID();
-    const newAd: Advertisement = { ...adData, id };
+    const newAd: Advertisement = { ...adData, organizationId: currentWorkspaceId, id };
 
     setDoc(doc(db, "advertisements", id), newAd).catch(console.error);
 
@@ -1070,7 +1206,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Contacts
   const addContact = (contactData: Omit<Contact, "id">) => {
     const id = "cnt-" + Date.now();
-    const newCnt: Contact = { ...contactData, id };
+    const newCnt: Contact = { ...contactData, organizationId: currentWorkspaceId, id };
     setDoc(doc(db, "contacts", id), newCnt).catch(console.error);
     addToast("Contato Cadastrado", `${newCnt.name} salvo.`);
   };
@@ -1091,7 +1227,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addDocument = (docData: Omit<AppDocument, "id" | "uploadDate">) => {
     const id = "doc-" + Date.now();
     const uploadDate = new Date().toISOString().split("T")[0];
-    const newDoc: AppDocument = { ...docData, id, uploadDate };
+    const newDoc: AppDocument = { ...docData, organizationId: currentWorkspaceId, id, uploadDate };
     setDoc(doc(db, "documents", id), newDoc).catch(console.error);
     addToast("Documento Anexado", `${newDoc.title}`);
   };
@@ -1235,9 +1371,13 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         selectedItemId,
         setSelectedItemId,
         openItemDetail,
-        selectedAuctionPageId,
-        setSelectedAuctionPageId,
-        openAuctionPage,
+        workspaces,
+        currentWorkspaceId,
+        currentWorkspace,
+        setCurrentWorkspaceId,
+        addWorkspace,
+        updateWorkspace,
+        deleteWorkspace,
         isWizardOpen,
         setIsWizardOpen,
         isBulkModalOpen,

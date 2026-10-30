@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 
 export const AuctionsView: React.FC = () => {
-  const { auctions, addAuction, updateAuction, deleteAuction, lots, items, sales, setActiveTab, openAuctionPage } = useAuction();
+  const { auctions, addAuction, updateAuction, deleteAuction, lots, items, sales, setActiveTab } = useAuction();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
@@ -447,21 +447,12 @@ export const AuctionsView: React.FC = () => {
 
                 <button
                   onClick={() => setSelectedAuction(auc)}
-                  className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white"
+                  className="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline"
                 >
                   <span>Detalhes</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
-
-              {/* Botão de Acesso Direto à Página Própria de Itens */}
-              <button
-                onClick={() => openAuctionPage(auc.id)}
-                className="w-full mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-sm transition-all"
-              >
-                <Layers className="w-4 h-4" />
-                <span>Abrir Painel Próprio de Itens</span>
-              </button>
             </div>
           );
         })}

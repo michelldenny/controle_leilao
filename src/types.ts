@@ -62,14 +62,10 @@ export type DocType =
 
 export type UserRole = "admin" | "operador" | "financeiro" | "consulta";
 
-export interface AuctionPartner {
+export interface Workspace {
   id: string;
   name: string;
-  sharePercentage: number; // e.g. 50 (%)
-  investedAmount?: number;
-  phone?: string;
-  email?: string;
-  notes?: string;
+  createdAt?: string;
 }
 
 export interface Auction {
