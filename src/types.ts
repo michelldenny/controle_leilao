@@ -62,6 +62,16 @@ export type DocType =
 
 export type UserRole = "admin" | "operador" | "financeiro" | "consulta";
 
+export interface AuctionPartner {
+  id: string;
+  name: string;
+  sharePercentage: number; // e.g. 50 (%)
+  investedAmount?: number;
+  phone?: string;
+  email?: string;
+  notes?: string;
+}
+
 export interface Auction {
   id: string;
   organizationId?: string;
@@ -80,6 +90,9 @@ export interface Auction {
   editalUrl?: string;
   status: AuctionStatus;
   documentsCount?: number;
+  partners?: AuctionPartner[];
+  societyNotes?: string;
+  colorTag?: string;
 }
 
 export interface Lot {

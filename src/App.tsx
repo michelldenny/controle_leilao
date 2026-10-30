@@ -5,26 +5,21 @@ import { Header } from "./components/Header";
 import { ToastContainer } from "./components/ToastContainer";
 
 import { DashboardView } from "./components/DashboardView";
+import { AuctionPagesHubView } from "./components/AuctionPagesHubView";
+import { AuctionDedicatedPageView } from "./components/AuctionDedicatedPageView";
 import { AuctionsView } from "./components/AuctionsView";
 import { LotsView } from "./components/LotsView";
 import { InventoryView } from "./components/InventoryView";
 import { ItemDetailView } from "./components/ItemDetailView";
-import { AdvertisementsView } from "./components/AdvertisementsView";
 import { SalesView } from "./components/SalesView";
-import { FinancialView } from "./components/FinancialView";
 import { BusinessIntelligenceView } from "./components/BusinessIntelligenceView";
-import { OpportunitiesView } from "./components/OpportunitiesView";
 import { ContactsView } from "./components/ContactsView";
 import { DocumentsView } from "./components/DocumentsView";
 import { ReportsView } from "./components/ReportsView";
 import { PublicMarketplaceView } from "./components/PublicMarketplaceView";
-import { StockLedgerView } from "./components/StockLedgerView";
-import { AgingAndTurnoverView } from "./components/AgingAndTurnoverView";
 import { FinancialAccountsView } from "./components/FinancialAccountsView";
 import { DimensionalProfitabilityView } from "./components/DimensionalProfitabilityView";
-import { PhysicalInventoryView } from "./components/PhysicalInventoryView";
 import { AssetManagementView } from "./components/AssetManagementView";
-import { GoalsAndTargetsView } from "./components/GoalsAndTargetsView";
 
 import { ItemWizardModal } from "./components/ItemWizardModal";
 import { BulkItemModal } from "./components/BulkItemModal";
@@ -33,13 +28,16 @@ import { QrCodeModal } from "./components/QrCodeModal";
 import { AiAssistantModal } from "./components/AiAssistantModal";
 import { ImportCsvModal } from "./components/ImportCsvModal";
 import { BackupRestoreModal } from "./components/BackupRestoreModal";
+import { NewAuctionPageModal } from "./components/NewAuctionPageModal";
 import { AuctionItem } from "./types";
 
 const MainAppLayout: React.FC = () => {
   const {
     activeTab,
+    setActiveTab,
     selectedItemId,
     setSelectedItemId,
+    selectedAuctionPageId,
     apportionmentModalLot,
     closeApportionmentModal,
     isBackupModalOpen,
@@ -49,11 +47,16 @@ const MainAppLayout: React.FC = () => {
 
   const [collapsed, setCollapsed] = useState(false);
   const [qrCodeItem, setQrCodeItem] = useState<AuctionItem | null>(null);
+  const [isNewPageModalOpen, setIsNewPageModalOpen] = useState(false);
 
   return (
     <div className={`min-h-screen flex ${darkMode ? "dark bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"}`}>
-      {/* Sidebar */}
-      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+      {/* Sidebar with Auction Pages Submenu */}
+      <Sidebar
+        collapsed={collapsed}
+        setCollapsed={setCollapsed}
+        onOpenNewAuctionPage={() => setIsNewPageModalOpen(true)}
+      />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden">
@@ -63,25 +66,34 @@ const MainAppLayout: React.FC = () => {
         {/* View Content Router */}
         <main className="flex-1 pb-16">
           {activeTab === "dashboard" && <DashboardView />}
+
+          {/* Central de Páginas de Leilão & Sociedades */}
+          {activeTab === "auction_pages" && (
+            <AuctionPagesHubView onOpenNewPageModal={() => setIsNewPageModalOpen(true)} />
+          )}
+
+          {/* Página Própria e Isolada de um Leilão Específico */}
+          {activeTab === "auction_page" && selectedAuctionPageId && (
+            <AuctionDedicatedPageView
+              auctionId={selectedAuctionPageId}
+              onBack={() => setActiveTab("auction_pages")}
+              onSelectQrCode={(item) => setQrCodeItem(item)}
+            />
+          )}
+
           {activeTab === "auctions" && <AuctionsView />}
           {activeTab === "lots" && <LotsView />}
           {activeTab === "inventory" && (
             <InventoryView onSelectQrCode={(item) => setQrCodeItem(item)} />
           )}
-          {activeTab === "assets" && <AssetManagementView />}
-          {activeTab === "goals" && <GoalsAndTargetsView />}
-          {activeTab === "advertisements" && <AdvertisementsView />}
           {activeTab === "sales" && <SalesView />}
           {activeTab === "marketplace" && <PublicMarketplaceView />}
-          {activeTab === "financial" && <FinancialView />}
           {activeTab === "accounts" && <FinancialAccountsView />}
-          {activeTab === "ledger" && <StockLedgerView />}
-          {activeTab === "aging" && <AgingAndTurnoverView />}
           {activeTab === "profitability" && <DimensionalProfitabilityView />}
           {activeTab === "bi" && <BusinessIntelligenceView />}
-          {activeTab === "opportunities" && <OpportunitiesView />}
-          {activeTab === "contacts" && <ContactsView />}
+          {activeTab === "assets" && <AssetManagementView />}
           {activeTab === "documents" && <DocumentsView />}
+          {activeTab === "contacts" && <ContactsView />}
           {activeTab === "reports" && <ReportsView />}
         </main>
       </div>
@@ -111,6 +123,10 @@ const MainAppLayout: React.FC = () => {
       <AiAssistantModal />
       <ImportCsvModal />
       <BackupRestoreModal isOpen={isBackupModalOpen} onClose={() => setIsBackupModalOpen(false)} />
+      <NewAuctionPageModal
+        isOpen={isNewPageModalOpen}
+        onClose={() => setIsNewPageModalOpen(false)}
+      />
 
       {apportionmentModalLot && (
         <ApportionmentModal
@@ -130,7 +146,7 @@ const MainAppLayout: React.FC = () => {
 };
 
 export function App() {
-  // Verifica se a URL acessada é para o modo público da vitrine (ex: ?mode=vitrine ou pathname contendo vitrine ou marketplace)
+  // Modo público da vitrine virtual
   const [isPublicMode] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const path = window.location.pathname.toLowerCase();

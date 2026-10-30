@@ -60,6 +60,9 @@ interface AuctionContextType {
   selectedItemId: string | null;
   setSelectedItemId: (id: string | null) => void;
   openItemDetail: (itemId: string) => void;
+  selectedAuctionPageId: string | null;
+  setSelectedAuctionPageId: (id: string | null) => void;
+  openAuctionPage: (auctionId: string) => void;
 
   // Modals state
   isWizardOpen: boolean;
@@ -201,6 +204,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [userRole, setUserRole] = useState<UserRole>("admin");
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedAuctionPageId, setSelectedAuctionPageId] = useState<string | null>(null);
 
   // Modals state
   const [isWizardOpen, setIsWizardOpen] = useState<boolean>(false);
@@ -462,6 +466,11 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const openItemDetail = (itemId: string) => {
     setSelectedItemId(itemId);
+  };
+
+  const openAuctionPage = (auctionId: string) => {
+    setSelectedAuctionPageId(auctionId);
+    setActiveTab("auction_page");
   };
 
   const openApportionmentModal = (lot: Lot) => {
@@ -1226,6 +1235,9 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         selectedItemId,
         setSelectedItemId,
         openItemDetail,
+        selectedAuctionPageId,
+        setSelectedAuctionPageId,
+        openAuctionPage,
         isWizardOpen,
         setIsWizardOpen,
         isBulkModalOpen,

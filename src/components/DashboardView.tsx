@@ -15,6 +15,7 @@ import {
   Zap,
   ArrowUpRight,
   Sparkles,
+  Layers,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -132,7 +133,14 @@ export const DashboardView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <button
+            onClick={() => setActiveTab("auction_pages")}
+            className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm transition-all"
+          >
+            <Layers className="w-4 h-4 text-amber-400" />
+            <span>Páginas por Leilão (Sociedades)</span>
+          </button>
           <button
             onClick={() => setIsWizardOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-lg shadow-amber-500/25 transition-all"
@@ -147,7 +155,7 @@ export const DashboardView: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {/* Total Invested */}
         <button
-          onClick={() => setActiveTab("financial")}
+          onClick={() => setActiveTab("accounts")}
           className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-amber-500/50 transition-all text-left group cursor-pointer"
         >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
@@ -199,7 +207,7 @@ export const DashboardView: React.FC = () => {
 
         {/* Realized Profit */}
         <button
-          onClick={() => setActiveTab("financial")}
+          onClick={() => setActiveTab("profitability")}
           className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-emerald-500/50 transition-all text-left group cursor-pointer"
         >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
@@ -267,7 +275,7 @@ export const DashboardView: React.FC = () => {
 
         {/* Advertised Items */}
         <button
-          onClick={() => setActiveTab("advertisements")}
+          onClick={() => setActiveTab("inventory")}
           className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md hover:border-blue-500/50 transition-all text-left group cursor-pointer"
         >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">

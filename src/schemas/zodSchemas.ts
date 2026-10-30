@@ -26,6 +26,21 @@ export const auctionSchema = z.object({
   editalUrl: z.union([z.string().url("URL de edital inválida"), z.literal("")]).optional(),
   status: z.enum(["futuro", "participando", "concluido", "cancelado"]),
   documentsCount: z.number().optional(),
+  partners: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        sharePercentage: z.number(),
+        investedAmount: z.number().optional(),
+        phone: z.string().optional(),
+        email: z.string().optional(),
+        notes: z.string().optional(),
+      })
+    )
+    .optional(),
+  societyNotes: z.string().optional(),
+  colorTag: z.string().optional(),
 });
 
 // Schema de Lote
