@@ -143,14 +143,23 @@ export const AuctionsView: React.FC = () => {
     setEditingAuction(null);
   };
 
-  const filteredAuctions = auctions.filter((a) => {
-    const matchesSearch =
-      a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.auctioneer.toLowerCase().includes(search.toLowerCase()) ||
-      a.city.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "todos" || a.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredAuctions = auctions
+    .filter((a) => {
+      const matchesSearch =
+        a.name.toLowerCase().includes(search.toLowerCase()) ||
+        a.auctioneer.toLowerCase().includes(search.toLowerCase()) ||
+        a.city.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = statusFilter === "todos" || a.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      // 1- Ordem crescente por data do leilão
+      const dateA = a.auctionDate ? new Date(a.auctionDate).getTime() : 0;
+      const dateB = b.auctionDate ? new Date(b.auctionDate).getTime() : 0;
+      if (dateA !== dateB) return dateA - dateB;
+      // Desempate por ordem alfabética do nome
+      return a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" });
+    });
 
   const getBadgeColor = (st: AuctionStatus) => {
     switch (st) {

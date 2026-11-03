@@ -66,7 +66,15 @@ export const LotsView: React.FC = () => {
       );
     })
     .sort((a, b) => {
-      if (sortFilter === "padrao") return 0;
+      if (sortFilter === "padrao") {
+        const aucA = auctions.find((auc) => auc.id === a.auctionId)?.name || "";
+        const aucB = auctions.find((auc) => auc.id === b.auctionId)?.name || "";
+        const aucComparison = aucA.localeCompare(aucB, "pt-BR", { sensitivity: "base" });
+        if (aucComparison !== 0) return aucComparison;
+
+        // Se for o mesmo leilão, ordenar pelo número do lote (ordenação natural/numérica: Lote 1, Lote 2, Lote 10...)
+        return a.lotNumber.localeCompare(b.lotNumber, "pt-BR", { numeric: true, sensitivity: "base" });
+      }
       const mA = getLotMetrics(a);
       const mB = getLotMetrics(b);
       if (sortFilter === "maior_margem") return mB.marginOnSalePct - mA.marginOnSalePct;
