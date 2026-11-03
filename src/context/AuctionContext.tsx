@@ -91,6 +91,8 @@ interface AuctionContextType {
   setIsImportModalOpen: (open: boolean) => void;
   isBackupModalOpen: boolean;
   setIsBackupModalOpen: (open: boolean) => void;
+  isQuickPasteOpen: boolean;
+  setIsQuickPasteOpen: (open: boolean) => void;
 
   // Database Connection & Reset
   isFirebaseConnected: boolean;
@@ -1479,6 +1481,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setIsImportModalOpen,
         isBackupModalOpen,
         setIsBackupModalOpen,
+        isQuickPasteOpen,
+        setIsQuickPasteOpen,
         isFirebaseConnected,
         clearAllDatabaseData,
         auctions,
