@@ -93,6 +93,8 @@ interface AuctionContextType {
   setIsBackupModalOpen: (open: boolean) => void;
   isQuickPasteOpen: boolean;
   setIsQuickPasteOpen: (open: boolean) => void;
+  quickPasteLotId: string | null;
+  openQuickPasteModal: (lotId?: string) => void;
 
   // Database Connection & Reset
   isFirebaseConnected: boolean;
@@ -290,6 +292,12 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState<boolean>(false);
   const [isQuickPasteOpen, setIsQuickPasteOpen] = useState<boolean>(false);
+  const [quickPasteLotId, setQuickPasteLotId] = useState<string | null>(null);
+
+  const openQuickPasteModal = (lotId?: string) => {
+    setQuickPasteLotId(lotId || null);
+    setIsQuickPasteOpen(true);
+  };
 
   // Firestore connection status
   const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(true);
@@ -1483,6 +1491,8 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setIsBackupModalOpen,
         isQuickPasteOpen,
         setIsQuickPasteOpen,
+        quickPasteLotId,
+        openQuickPasteModal,
         isFirebaseConnected,
         clearAllDatabaseData,
         auctions,

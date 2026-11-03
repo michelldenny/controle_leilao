@@ -139,6 +139,7 @@ export const QuickPasteModal: React.FC = () => {
   const {
     isQuickPasteOpen,
     setIsQuickPasteOpen,
+    quickPasteLotId,
     lots,
     auctions,
     addMultipleItems,
@@ -147,6 +148,17 @@ export const QuickPasteModal: React.FC = () => {
 
   const [rawText, setRawText] = useState("");
   const [selectedLotId, setSelectedLotId] = useState("");
+
+  // Sempre sincronizar com o lote de onde o modal foi aberto
+  React.useEffect(() => {
+    if (isQuickPasteOpen) {
+      if (quickPasteLotId) {
+        setSelectedLotId(quickPasteLotId);
+      } else if (!selectedLotId && lots.length > 0) {
+        setSelectedLotId(lots[0].id);
+      }
+    }
+  }, [isQuickPasteOpen, quickPasteLotId, lots]);
   const [draftItems, setDraftItems] = useState<ParsedDraftItem[]>([]);
   const [isProcessingAi, setIsProcessingAi] = useState(false);
   const [step, setStep] = useState<"input" | "preview">("input");

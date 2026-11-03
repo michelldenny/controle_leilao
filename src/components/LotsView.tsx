@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 
 export const LotsView: React.FC = () => {
-  const { lots, auctions, addLot, updateLot, deleteLot, items, sales, openApportionmentModal, setIsBulkModalOpen, setActiveTab, setIsQuickPasteOpen } = useAuction();
+  const { lots, auctions, addLot, updateLot, deleteLot, items, sales, openApportionmentModal, setIsBulkModalOpen, setActiveTab, openQuickPasteModal } = useAuction();
 
   const [search, setSearch] = useState("");
   const [sortFilter, setSortFilter] = useState<
@@ -517,7 +517,7 @@ export const LotsView: React.FC = () => {
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setIsQuickPasteOpen(true)}
+                    onClick={() => openQuickPasteModal(lot.id)}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-amber-500/10 to-amber-600/20 hover:from-amber-500/20 hover:to-amber-600/30 text-amber-600 dark:text-amber-400 border border-amber-500/20 transition-colors"
                     title="Colar lista de produtos em texto e cadastrar automaticamente"
                   >

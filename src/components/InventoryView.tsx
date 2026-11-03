@@ -47,7 +47,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
     globalSearch,
     setGlobalSearch,
     setIsWizardOpen,
-    setIsQuickPasteOpen,
+    openQuickPasteModal,
     deleteItem,
   } = useAuction();
 

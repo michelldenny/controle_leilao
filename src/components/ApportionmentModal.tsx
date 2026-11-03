@@ -11,7 +11,7 @@ interface ApportionmentModalProps {
 }
 
 export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onClose }) => {
-  const { items, apportionLotCost, setIsWizardOpen, setIsBulkModalOpen } = useAuction();
+  const { items, apportionLotCost, setIsWizardOpen, setIsBulkModalOpen, openQuickPasteModal } = useAuction();
 
   const lotItems = items.filter((i) => i.lotId === lot.id);
   const [method, setMethod] = useState<ApportionmentMethod>("igualitario");
@@ -40,7 +40,7 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
       });
     }
     setCustomValues(initialMap);
-  }, [method, lot.id]);
+  }, [method, lot.id, lotItems.length]);
 
   const handleInputChange = (itemId: string, val: number) => {
     setCustomValues((prev) => ({ ...prev, [itemId]: val }));
@@ -211,6 +211,17 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
                   >
                     <Plus className="w-4 h-4" />
                     <span>Cadastrar Item Individual</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      openQuickPasteModal(lot.id);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 shadow-md shadow-amber-500/20"
+                  >
+                    <span>Colar Lista (IA)</span>
                   </button>
 
                   <button
