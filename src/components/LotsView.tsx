@@ -25,10 +25,11 @@ import {
   Gavel,
   Pencil,
   Trash2,
+  ClipboardList,
 } from "lucide-react";
 
 export const LotsView: React.FC = () => {
-  const { lots, auctions, addLot, updateLot, deleteLot, items, sales, openApportionmentModal, setIsBulkModalOpen, setActiveTab } = useAuction();
+  const { lots, auctions, addLot, updateLot, deleteLot, items, sales, openApportionmentModal, setIsBulkModalOpen, setActiveTab, setIsQuickPasteOpen } = useAuction();
 
   const [search, setSearch] = useState("");
   const [sortFilter, setSortFilter] = useState<
@@ -514,13 +515,24 @@ export const LotsView: React.FC = () => {
                   <span>Ratear Custo do Lote</span>
                 </button>
 
-                <button
-                  onClick={() => setIsBulkModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors"
-                >
-                  <PackagePlus className="w-3.5 h-3.5" />
-                  <span>Gerar Itens em Massa</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsQuickPasteOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-amber-500/10 to-amber-600/20 hover:from-amber-500/20 hover:to-amber-600/30 text-amber-600 dark:text-amber-400 border border-amber-500/20 transition-colors"
+                    title="Colar lista de produtos em texto e cadastrar automaticamente"
+                  >
+                    <ClipboardList className="w-3.5 h-3.5" />
+                    <span>Colar Lista (IA)</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsBulkModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors"
+                  >
+                    <PackagePlus className="w-3.5 h-3.5" />
+                    <span>Gerar Itens em Massa</span>
+                  </button>
+                </div>
               </div>
             </div>
           );

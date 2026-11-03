@@ -3,7 +3,6 @@ import { useAuction } from "../context/AuctionContext";
 import { AuctionItem, ItemStatus, AdPlatform } from "../types";
 import { EditItemModal } from "./EditItemModal";
 import { FormattedNumberInput } from "./FormattedNumberInput";
-import { FormattedNumberInput } from "./FormattedNumberInput";
 import {
   ArrowLeft,
   Package,

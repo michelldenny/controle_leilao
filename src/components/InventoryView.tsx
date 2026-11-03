@@ -21,6 +21,7 @@ import {
   Square,
   Plus,
   Zap,
+  ClipboardList,
   Edit,
   Trash2,
   Eye,
@@ -46,6 +47,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ onSelectQrCode }) 
     globalSearch,
     setGlobalSearch,
     setIsWizardOpen,
+    setIsQuickPasteOpen,
     deleteItem,
   } = useAuction();
 

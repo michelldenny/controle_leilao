@@ -287,6 +287,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [aiModalItem, setAiModalItem] = useState<AuctionItem | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState<boolean>(false);
+  const [isQuickPasteOpen, setIsQuickPasteOpen] = useState<boolean>(false);
 
   // Firestore connection status
   const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(true);

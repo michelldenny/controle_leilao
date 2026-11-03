@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useAuction } from "../context/AuctionContext";
 import { calculateGoalProgress } from "../services/financialMath";
 import { formatCurrency } from "../lib/dateUtils";
+import { FormattedNumberInput } from "./FormattedNumberInput";
 import { Target, TrendingUp, Award, DollarSign, PieChart, CheckCircle2, AlertTriangle, Calendar } from "lucide-react";
 
 export const GoalsAndTargetsView: React.FC = () => {

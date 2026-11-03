@@ -26,6 +26,7 @@ import { QrCodeModal } from "./components/QrCodeModal";
 import { AiAssistantModal } from "./components/AiAssistantModal";
 import { ImportCsvModal } from "./components/ImportCsvModal";
 import { BackupRestoreModal } from "./components/BackupRestoreModal";
+import { QuickPasteModal } from "./components/QuickPasteModal";
 import { AuctionItem } from "./types";
 
 const MainAppLayout: React.FC = () => {
@@ -97,6 +98,7 @@ const MainAppLayout: React.FC = () => {
       <BulkItemModal />
       <AiAssistantModal />
       <ImportCsvModal />
+      <QuickPasteModal />
       <BackupRestoreModal isOpen={isBackupModalOpen} onClose={() => setIsBackupModalOpen(false)} />
 
       {apportionmentModalLot && (

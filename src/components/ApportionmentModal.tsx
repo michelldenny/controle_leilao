@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useAuction } from "../context/AuctionContext";
 import { Lot, ApportionmentMethod } from "../types";
 import { apportionLotCostExact } from "../services/financialMath";
+import { FormattedNumberInput } from "./FormattedNumberInput";
 import { Calculator, X, AlertCircle, Check, Percent, DollarSign, Scale, Plus, PackagePlus } from "lucide-react";
 
 interface ApportionmentModalProps {

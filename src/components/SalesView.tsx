@@ -3,6 +3,7 @@ import { useAuction } from "../context/AuctionContext";
 import { SaleRecord } from "../types";
 import { ShoppingBag, Plus, DollarSign, TrendingUp, CheckCircle2, X, Eye, Pencil, Trash2 } from "lucide-react";
 import { ConfirmModal } from "./ConfirmModal";
+import { FormattedNumberInput } from "./FormattedNumberInput";
 
 export const SalesView: React.FC = () => {
   const { items, lots, auctions, sales, recordSale, updateSale, deleteSale, openItemDetail, metrics } = useAuction();

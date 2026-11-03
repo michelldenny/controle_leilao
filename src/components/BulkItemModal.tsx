@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useAuction } from "../context/AuctionContext";
 import { PRODUCT_CATEGORIES } from "../constants/categories";
 import { FormattedNumberInput } from "./FormattedNumberInput";
-import { FormattedNumberInput } from "./FormattedNumberInput";
 import { PackagePlus, X, Check } from "lucide-react";
 
 export const BulkItemModal: React.FC = () => {
