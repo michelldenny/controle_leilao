@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useAuction } from "../context/AuctionContext";
 import { AuctionItem, ItemStatus, AdPlatform } from "../types";
 import { EditItemModal } from "./EditItemModal";
+import { FormattedNumberInput } from "./FormattedNumberInput";
+import { FormattedNumberInput } from "./FormattedNumberInput";
 import {
   ArrowLeft,
   Package,
@@ -452,13 +454,11 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Valor (R$)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      value={expenseCost}
-                      onChange={(e) => setExpenseCost(e.target.value)}
+                    <FormattedNumberInput
+                      value={Number(expenseCost) || 0}
+                      onChange={(val) => setExpenseCost(String(val))}
                       className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                      placeholder="0,00"
                     />
                   </div>
                   <div>
@@ -556,12 +556,11 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
                 </div>
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Custo (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={maintCost}
-                    onChange={(e) => setMaintCost(e.target.value)}
+                  <FormattedNumberInput
+                    value={Number(maintCost) || 0}
+                    onChange={(val) => setMaintCost(String(val))}
                     className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                    placeholder="0,00"
                   />
                 </div>
                 <div className="sm:col-span-2">
@@ -648,13 +647,11 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({ itemId, onBack, 
                 </div>
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Preço Anunciado (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={adPrice}
-                    onChange={(e) => setAdPrice(Number(e.target.value))}
+                  <FormattedNumberInput
+                    value={adPrice || 0}
+                    onChange={(val) => setAdPrice(val)}
                     className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                    placeholder="0,00"
                   />
                 </div>
               </div>

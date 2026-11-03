@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuction } from "../context/AuctionContext";
 import { PRODUCT_CATEGORIES } from "../constants/categories";
+import { FormattedNumberInput } from "./FormattedNumberInput";
+import { FormattedNumberInput } from "./FormattedNumberInput";
 import { PackagePlus, X, Check } from "lucide-react";
 
 export const BulkItemModal: React.FC = () => {
@@ -144,11 +146,11 @@ export const BulkItemModal: React.FC = () => {
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Custo Unitário Rateado (R$)
               </label>
-              <input
-                type="number"
+              <FormattedNumberInput
                 value={unitCost}
-                onChange={(e) => setUnitCost(Number(e.target.value))}
+                onChange={(val) => setUnitCost(val)}
                 className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
+                placeholder="0,00"
               />
             </div>
 
@@ -156,11 +158,11 @@ export const BulkItemModal: React.FC = () => {
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Valor Estimado Unitário (R$)
               </label>
-              <input
-                type="number"
+              <FormattedNumberInput
                 value={unitEstimatedValue}
-                onChange={(e) => setUnitEstimatedValue(Number(e.target.value))}
+                onChange={(val) => setUnitEstimatedValue(val)}
                 className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-emerald-600"
+                placeholder="0,00"
               />
             </div>
           </div>

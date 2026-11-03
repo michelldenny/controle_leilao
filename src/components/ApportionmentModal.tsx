@@ -301,12 +301,11 @@ export const ApportionmentModal: React.FC<ApportionmentModalProps> = ({ lot, onC
                           ) : method === "manual" ? (
                             <div className="flex items-center justify-center gap-1">
                               <span>R$</span>
-                              <input
-                                type="number"
-                                step="10"
+                              <FormattedNumberInput
                                 value={customValues[item.id] ?? 0}
-                                onChange={(e) => handleInputChange(item.id, Number(e.target.value))}
+                                onChange={(val) => handleInputChange(item.id, val)}
                                 className="w-24 p-1 text-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                                placeholder="0,00"
                               />
                             </div>
                           ) : (

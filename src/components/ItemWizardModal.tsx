@@ -361,33 +361,33 @@ export const ItemWizardModal: React.FC = () => {
                       <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                         Valor do Lance Vencedor (R$)
                       </label>
-                      <input
-                        type="number"
+                      <FormattedNumberInput
                         value={winningBid}
-                        onChange={(e) => setWinningBid(Number(e.target.value))}
+                        onChange={(val) => setWinningBid(val)}
                         className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
+                        placeholder="0,00"
                       />
                     </div>
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                         Comissão Leiloeiro (R$)
                       </label>
-                      <input
-                        type="number"
+                      <FormattedNumberInput
                         value={commission}
-                        onChange={(e) => setCommission(Number(e.target.value))}
+                        onChange={(val) => setCommission(val)}
                         className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                        placeholder="0,00"
                       />
                     </div>
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                         Frete / Logística (R$)
                       </label>
-                      <input
-                        type="number"
+                      <FormattedNumberInput
                         value={transportCost}
-                        onChange={(e) => setTransportCost(Number(e.target.value))}
+                        onChange={(val) => setTransportCost(val)}
                         className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                        placeholder="0,00"
                       />
                     </div>
                   </div>

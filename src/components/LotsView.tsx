@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useAuction } from "../context/AuctionContext";
 import { Lot, LotPaymentStatus, LotPickupStatus } from "../types";
+import { FormattedNumberInput } from "./FormattedNumberInput";
+import { calculateAdminFeeFromTable } from "../services/financialMath";
 import { ApportionmentModal } from "./ApportionmentModal";
 import { BulkItemModal } from "./BulkItemModal";
 import { ConfirmModal } from "./ConfirmModal";
@@ -602,13 +604,18 @@ export const LotsView: React.FC = () => {
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Lance Vencedor (R$) *
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
+                  <FormattedNumberInput
                     value={winningBid}
-                    onChange={(e) => setWinningBid(Number(e.target.value))}
+                    onChange={(val) => {
+                      setWinningBid(val);
+                      setAdminFee(calculateAdminFeeFromTable(val));
+                      const auc = auctions.find((a) => a.id === auctionId);
+                      if (auc && auc.commissionPercentage > 0) {
+                        setAuctioneerCommission(Number(((val * auc.commissionPercentage) / 100).toFixed(2)));
+                      }
+                    }}
                     className="w-full p-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold"
+                    placeholder="0,00"
                   />
                 </div>
 
@@ -616,26 +623,34 @@ export const LotsView: React.FC = () => {
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Comissão Leiloeiro (R$)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
+                  <FormattedNumberInput
                     value={auctioneerCommission}
-                    onChange={(e) => setAuctioneerCommission(Number(e.target.value))}
+                    onChange={(val) => setAuctioneerCommission(val)}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    placeholder="0,00"
                   />
+                  {auctioneerCommission > 0 && (
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1 block">
+                      ✓ Calculada automaticamente (% do leilão)
+                    </span>
+                  )}
                 </div>
 
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Taxa Adm / Serv. (R$)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
+                  <FormattedNumberInput
                     value={adminFee}
-                    onChange={(e) => setAdminFee(Number(e.target.value))}
+                    onChange={(val) => setAdminFee(val)}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    placeholder="0,00"
                   />
+                  {adminFee > 0 && (
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1 block">
+                      ✓ Calculada automaticamente (Edital VIII)
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -644,12 +659,11 @@ export const LotsView: React.FC = () => {
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Impostos / ICMS (R$)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
+                  <FormattedNumberInput
                     value={taxes}
-                    onChange={(e) => setTaxes(Number(e.target.value))}
+                    onChange={(val) => setTaxes(val)}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    placeholder="0,00"
                   />
                 </div>
 
@@ -657,12 +671,11 @@ export const LotsView: React.FC = () => {
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Frete / Transporte (R$)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
+                  <FormattedNumberInput
                     value={transportCost}
-                    onChange={(e) => setTransportCost(Number(e.target.value))}
+                    onChange={(val) => setTransportCost(val)}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    placeholder="0,00"
                   />
                 </div>
 
@@ -670,12 +683,11 @@ export const LotsView: React.FC = () => {
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Carregamento / Outros (R$)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
+                  <FormattedNumberInput
                     value={loadingCost}
-                    onChange={(e) => setLoadingCost(Number(e.target.value))}
+                    onChange={(val) => setLoadingCost(val)}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    placeholder="0,00"
                   />
                 </div>
               </div>

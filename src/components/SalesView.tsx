@@ -470,13 +470,11 @@ export const SalesView: React.FC = () => {
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Preço Final Acordado (R$) *
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
+                  <FormattedNumberInput
                     value={finalPrice}
-                    onChange={(e) => setFinalPrice(Number(e.target.value))}
+                    onChange={(val) => setFinalPrice(val)}
                     className="w-full p-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold"
+                    placeholder="0,00"
                   />
                 </div>
               </div>
@@ -487,12 +485,11 @@ export const SalesView: React.FC = () => {
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Impostos (R$)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
+                  <FormattedNumberInput
                     value={taxes}
-                    onChange={(e) => setTaxes(Number(e.target.value))}
+                    onChange={(val) => setTaxes(val)}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    placeholder="0,00"
                   />
                 </div>
 
@@ -500,12 +497,11 @@ export const SalesView: React.FC = () => {
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Comissão Plataforma (R$)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
+                  <FormattedNumberInput
                     value={platformCommission}
-                    onChange={(e) => setPlatformCommission(Number(e.target.value))}
+                    onChange={(val) => setPlatformCommission(val)}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    placeholder="0,00"
                   />
                 </div>
 
@@ -513,12 +509,11 @@ export const SalesView: React.FC = () => {
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Frete (R$)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
+                  <FormattedNumberInput
                     value={sellerFreight}
-                    onChange={(e) => setSellerFreight(Number(e.target.value))}
+                    onChange={(val) => setSellerFreight(val)}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    placeholder="0,00"
                   />
                 </div>
               </div>

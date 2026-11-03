@@ -201,6 +201,23 @@ interface AuctionContextType {
   };
 }
 
+/**
+ * Remove campos com valor undefined de um objeto antes de salvar no Firestore.
+ * O Firestore nao aceita undefined - apenas null, string, number, boolean, object, array.
+ */
+function sanitizeForFirestore<T extends Record<string, any>>(obj: T): T {
+  const result: Record<string, any> = {};
+  for (const key of Object.keys(obj)) {
+    const val = obj[key];
+    if (val === undefined) continue;
+    if (val !== null && typeof val === "object" && !Array.isArray(val) && !(val instanceof Date)) {
+      result[key] = sanitizeForFirestore(val as Record<string, any>);
+    } else {
+      result[key] = val;
+    }
+  }
+  return result as T;
+}
 const AuctionContext = createContext<AuctionContextType | undefined>(undefined);
 
 // Utilitário para evitar workspaces duplicados por ID ou por Nome idêntico
@@ -860,7 +877,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       costAllocationStatus: itemData.apportionedCost > 0 ? "concluido" : "pendente",
     };
 
-    setDoc(doc(db, "items", id), newItem).catch(console.error);
+    setDoc(doc(db, "items", id), sanitizeForFirestore(newItem)).catch(console.error);
 
     if (targetLot) {
       const newCount = (targetLot.itemCount || 0) + 1;
@@ -892,7 +909,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       addLog("Localização Alterada", `Localização do item ${existing.code} atualizada para ${itemData.location.customText}.`, "location_change", id);
     }
 
-    setDoc(doc(db, "items", id), updated).catch(console.error);
+    setDoc(doc(db, "items", id), sanitizeForFirestore(updated)).catch(console.error);
     addToast("Item Atualizado", "Alterações salvas com sucesso.");
   };
 
@@ -1029,7 +1046,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         costAllocationStatus: "concluido",
       };
 
-      setDoc(doc(db, "items", id), item).catch(console.error);
+      setDoc(doc(db, "items", id), sanitizeForFirestore(item)).catch(console.error);
     }
 
     updateLot(lotId, { itemCount: (targetLot.itemCount || 0) + count, allocationStatus: "desatualizado" });
@@ -1109,7 +1126,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         costAllocationStatus: "concluido",
       };
 
-      setDoc(doc(db, "items", id), item).catch(console.error);
+      setDoc(doc(db, "items", id), sanitizeForFirestore(item)).catch(console.error);
     }
 
     if (targetLot) {

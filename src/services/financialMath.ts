@@ -285,3 +285,66 @@ export function calculateGoalProgress(realized: number, target: number): number 
 }
 
 
+
+/**
+ * Tabela de Despesas Administrativas por faixa de lance vencedor (Clausula VIII do Edital).
+ */
+const ADMIN_FEE_TABLE = [
+  { from: 0.01,    to: 99.99,      fee: 44.00 },
+  { from: 100,     to: 199.99,     fee: 58.00 },
+  { from: 200,     to: 299.99,     fee: 75.00 },
+  { from: 300,     to: 399.99,     fee: 99.00 },
+  { from: 400,     to: 499.99,     fee: 128.00 },
+  { from: 500,     to: 649.99,     fee: 165.00 },
+  { from: 650,     to: 799.99,     fee: 219.00 },
+  { from: 800,     to: 999.99,     fee: 288.00 },
+  { from: 1000,    to: 1099.99,    fee: 314.00 },
+  { from: 1100,    to: 1999.99,    fee: 440.00 },
+  { from: 2000,    to: 3999.99,    fee: 702.00 },
+  { from: 4000,    to: 4999.99,    fee: 875.00 },
+  { from: 5000,    to: 6999.99,    fee: 999.00 },
+  { from: 7000,    to: 9999.99,    fee: 1235.00 },
+  { from: 10000,   to: 14999.99,   fee: 1435.00 },
+  { from: 15000,   to: 19999.99,   fee: 1870.00 },
+  { from: 20000,   to: 24999.99,   fee: 2451.00 },
+  { from: 25000,   to: 29999.99,   fee: 3122.00 },
+  { from: 30000,   to: 34999.99,   fee: 3540.00 },
+  { from: 35000,   to: 44999.99,   fee: 4308.00 },
+  { from: 45000,   to: 54999.99,   fee: 5385.00 },
+  { from: 55000,   to: 64999.99,   fee: 6413.00 },
+  { from: 65000,   to: 74999.99,   fee: 7480.00 },
+  { from: 75000,   to: 84999.99,   fee: 8591.00 },
+  { from: 85000,   to: 99999.99,   fee: 9922.00 },
+  { from: 100000,  to: 124999.99,  fee: 11979.00 },
+  { from: 125000,  to: 149999.99,  fee: 14762.00 },
+  { from: 150000,  to: 199999.99,  fee: 18755.00 },
+  { from: 200000,  to: 224999.99,  fee: 23595.00 },
+  { from: 225000,  to: 249999.99,  fee: 26136.00 },
+  { from: 250000,  to: 299999.99,  fee: 30444.00 },
+  { from: 300000,  to: 349999.99,  fee: 32074.00 },
+  { from: 350000,  to: 399999.99,  fee: 41200.00 },
+  { from: 400000,  to: 449999.99,  fee: 42585.00 },
+  { from: 450000,  to: 499999.99,  fee: 52151.00 },
+  { from: 500000,  to: 549999.99,  fee: 57838.00 },
+  { from: 550000,  to: 599999.99,  fee: 64130.00 },
+  { from: 600000,  to: 649999.99,  fee: 68123.00 },
+  { from: 650000,  to: null,       fee: 77077.00 },
+] as const satisfies { from: number; to: number | null; fee: number }[];
+
+/**
+ * Calcula automaticamente a Taxa Administrativa com base no valor do lance vencedor,
+ * conforme tabela do Edital (Clausula VIII - Despesas Administrativas).
+ * @param winningBid Valor do lance vencedor em R$.
+ * @returns Valor fixo da taxa administrativa em R$.
+ */
+export function calculateAdminFeeFromTable(winningBid: number): number {
+  if (!winningBid || winningBid <= 0) return 0;
+  for (const row of ADMIN_FEE_TABLE) {
+    if (row.to === null) {
+      if (winningBid >= row.from) return row.fee;
+    } else {
+      if (winningBid >= row.from && winningBid <= row.to) return row.fee;
+    }
+  }
+  return 0;
+}

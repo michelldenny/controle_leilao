@@ -42,21 +42,21 @@ export const GoalsAndTargetsView: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block font-semibold text-slate-600 dark:text-slate-300 mb-1">Meta de Receita Bruta (R$)</label>
-            <input
-              type="number"
+            <FormattedNumberInput
               value={targetRevenue}
-              onChange={(e) => setTargetRevenue(parseFloat(e.target.value) || 0)}
+              onChange={(val) => setTargetRevenue(val)}
               className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold"
+              placeholder="0,00"
             />
           </div>
 
           <div>
             <label className="block font-semibold text-slate-600 dark:text-slate-300 mb-1">Meta de Lucro Líquido (R$)</label>
-            <input
-              type="number"
+            <FormattedNumberInput
               value={targetProfit}
-              onChange={(e) => setTargetProfit(parseFloat(e.target.value) || 0)}
+              onChange={(val) => setTargetProfit(val)}
               className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold"
+              placeholder="0,00"
             />
           </div>
 
