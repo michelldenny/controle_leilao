@@ -26,7 +26,7 @@ export const recordLedgerEntry = (
 
   const entry: StockLedgerEntry = {
     id: ledgerId,
-    organizationId: params.organizationId || "org-default",
+    organizationId: params.organizationId || "default",
     itemId: params.itemId,
     lotId: params.lotId || "",
     auctionId: params.auctionId || "",

@@ -30,7 +30,7 @@ export const StockLedgerView: React.FC = () => {
     items.forEach((item) => {
       list.push({
         id: `led-acq-${item.id}`,
-        organizationId: item.organizationId || "org-default",
+        organizationId: item.organizationId || "default",
         itemId: item.id,
         lotId: item.lotId,
         auctionId: item.auctionId,
@@ -46,7 +46,7 @@ export const StockLedgerView: React.FC = () => {
       if (item.status === "uso_proprio") {
         list.push({
           id: `led-own-${item.id}`,
-          organizationId: item.organizationId || "org-default",
+          organizationId: item.organizationId || "default",
           itemId: item.id,
           lotId: item.lotId,
           auctionId: item.auctionId,
@@ -63,7 +63,7 @@ export const StockLedgerView: React.FC = () => {
       if (item.status === "descartado") {
         list.push({
           id: `led-disc-${item.id}`,
-          organizationId: item.organizationId || "org-default",
+          organizationId: item.organizationId || "default",
           itemId: item.id,
           lotId: item.lotId,
           auctionId: item.auctionId,
@@ -82,7 +82,7 @@ export const StockLedgerView: React.FC = () => {
     expenses.forEach((exp) => {
       list.push({
         id: `led-exp-${exp.id}`,
-        organizationId: exp.organizationId || "org-default",
+        organizationId: exp.organizationId || "default",
         itemId: exp.itemId,
         eventType: "ADDITIONAL_EXPENSE",
         description: `Despesa adicional acumulada no custo: ${exp.description} (${exp.category})`,
@@ -98,7 +98,7 @@ export const StockLedgerView: React.FC = () => {
     sales.forEach((sale) => {
       list.push({
         id: `led-sale-${sale.id}`,
-        organizationId: sale.organizationId || "org-default",
+        organizationId: sale.organizationId || "default",
         itemId: sale.itemId,
         eventType: "SALE",
         description: `Venda concluída para ${sale.buyerName} via ${sale.platform}. CMV Congelado: ${formatCurrency(sale.costBasisAtSale || 0)}.`,

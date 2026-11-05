@@ -45,21 +45,71 @@ export const SalesView: React.FC = () => {
     return parentLot?.totalLotCost || 0;
   };
 
-  // Associar o histórico de vendas gravado na coleção sales com o item correspondente e ordenar alfabeticamente pelo nome do item
-  const salesHistory = sales
-    .map((sale) => {
+  // Associar o histórico de vendas gravado na coleção sales com o item correspondente e incluir itens vendidos no estoque
+  const salesHistory = React.useMemo(() => {
+    const list: { sale: SaleRecord; item?: any; itemCost: number }[] = [];
+    const processedItemIds = new Set<string>();
+
+    sales.forEach((sale) => {
       const item = items.find((i) => i.id === sale.itemId);
-      return {
+      if (sale.itemId) processedItemIds.add(sale.itemId);
+      list.push({
         sale,
         item,
-        itemCost: getItemRealCost(item),
-      };
-    })
-    .sort((a, b) => {
+        itemCost: sale.costBasisAtSale !== undefined ? sale.costBasisAtSale : getItemRealCost(item),
+      });
+    });
+
+    items.forEach((item) => {
+      if ((item.status === "vendido" || item.isSold) && !processedItemIds.has(item.id)) {
+        processedItemIds.add(item.id);
+        const itemCost = getItemRealCost(item);
+        const price =
+          item.listedPrice && item.listedPrice > 0
+            ? item.listedPrice
+            : item.estimatedMarketAvg && item.estimatedMarketAvg > 0
+            ? item.estimatedMarketAvg
+            : itemCost;
+        const netProfit = price - itemCost;
+        const roi = itemCost > 0 ? (netProfit / itemCost) * 100 : 0;
+
+        const fallbackSale: SaleRecord = {
+          id: "sale-" + item.id,
+          itemId: item.id,
+          organizationId: item.organizationId || "default",
+          buyerName: "Venda Direta (Estoque)",
+          buyerDoc: "",
+          platform: "Venda Direta",
+          saleDate: item.dateAdded ? item.dateAdded.split("T")[0] : new Date().toISOString().split("T")[0],
+          finalPrice: price,
+          netSaleValue: price,
+          costBasisAtSale: itemCost,
+          netProfit,
+          roiPercentage: Number(roi.toFixed(2)),
+          marginPercentage: price > 0 ? Number(((netProfit / price) * 100).toFixed(2)) : 0,
+          platformCommission: 0,
+          sellerFreight: 0,
+          taxes: 0,
+          otherExpenses: 0,
+          paymentMethod: "Pix",
+          paymentStatus: "pago",
+          createdAt: item.dateAdded || new Date().toISOString(),
+        };
+
+        list.push({
+          sale: fallbackSale,
+          item,
+          itemCost,
+        });
+      }
+    });
+
+    return list.sort((a, b) => {
       const nameA = a.item?.name || "";
       const nameB = b.item?.name || "";
       return nameA.localeCompare(nameB, "pt-BR", { sensitivity: "base" });
     });
+  }, [sales, items, lots]);
 
   const selectedItem = items.find((i) => i.id === selectedItemId);
 
@@ -184,7 +234,7 @@ export const SalesView: React.FC = () => {
           <div className="text-2xl font-extrabold text-slate-900 dark:text-white mt-1">
             {formatCurrency(metrics.totalSoldAmount)}
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">{sales.length} vendas registradas</span>
+          <span className="text-[11px] text-slate-500 mt-1 block">{salesHistory.length} vendas registradas</span>
         </div>
 
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -212,7 +262,7 @@ export const SalesView: React.FC = () => {
       {/* Sales History Table */}
       <div className="border border-slate-200 dark:border-slate-800 rounded-3xl bg-white dark:bg-slate-800/80 shadow-sm overflow-hidden text-xs">
         <div className="p-4 border-b border-slate-100 dark:border-slate-700">
-          <h3 className="font-bold text-slate-900 dark:text-white">Histórico de Vendas Realizadas ({sales.length})</h3>
+          <h3 className="font-bold text-slate-900 dark:text-white">Histórico de Vendas Realizadas ({salesHistory.length})</h3>
         </div>
 
         <div className="overflow-x-auto">

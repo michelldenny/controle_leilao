@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { db } from "../lib/firebase";
 import {
   collection,
@@ -262,7 +262,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
           return deduplicateWorkspaces(parsed);
         }
       }
-    } catch (e) {}
+    } catch (e) { }
     return [{ id: "default", name: "Leilão Principal", createdAt: new Date().toISOString() }];
   });
 
@@ -314,45 +314,69 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [rawDocuments, setRawDocuments] = useState<AppDocument[]>([]);
   const [rawActivityLogs, setRawActivityLogs] = useState<ActivityLog[]>([]);
 
+  // Helper de correspondência de espaço: trata "default", "org-default" e valores nulos/vazios de forma retrocompatível
+  const matchesWorkspace = useCallback(
+    (entityOrgId?: string) => {
+      const org = entityOrgId || "default";
+      if (currentWorkspaceId === "default" || currentWorkspaceId === "org-default") {
+        return org === "default" || org === "org-default" || !entityOrgId;
+      }
+      return org === currentWorkspaceId;
+    },
+    [currentWorkspaceId]
+  );
+
+  // Helper de correspondência de espaço: trata "default", "org-default" e valores vazios de forma retrocompatível
+  const matchesWorkspace = useCallback(
+    (entityOrgId?: string) => {
+      const org = entityOrgId || "default";
+      if (currentWorkspaceId === "default" || currentWorkspaceId === "org-default") {
+        return org === "default" || org === "org-default" || !entityOrgId;
+      }
+      return org === currentWorkspaceId;
+    },
+    [currentWorkspaceId]
+  );
+
   // Filtered lists: 100% ISOLATED per currentWorkspaceId!
   const auctions = useMemo(() => {
-    return rawAuctions.filter((a) => (a.organizationId || "default") === currentWorkspaceId);
+    return rawAuctions.filter((a) => matchesWorkspace(a.organizationId));
   }, [rawAuctions, currentWorkspaceId]);
 
   const lots = useMemo(() => {
-    return rawLots.filter((l) => (l.organizationId || "default") === currentWorkspaceId);
+    return rawLots.filter((l) => matchesWorkspace(l.organizationId));
   }, [rawLots, currentWorkspaceId]);
 
   const items = useMemo(() => {
-    return rawItems.filter((i) => (i.organizationId || "default") === currentWorkspaceId);
+    return rawItems.filter((i) => matchesWorkspace(i.organizationId));
   }, [rawItems, currentWorkspaceId]);
 
   const expenses = useMemo(() => {
-    return rawExpenses.filter((e) => (e.organizationId || "default") === currentWorkspaceId);
+    return rawExpenses.filter((e) => matchesWorkspace(e.organizationId));
   }, [rawExpenses, currentWorkspaceId]);
 
   const maintenanceRecords = useMemo(() => {
-    return rawMaintenanceRecords.filter((m) => (m.organizationId || "default") === currentWorkspaceId);
+    return rawMaintenanceRecords.filter((m) => matchesWorkspace(m.organizationId));
   }, [rawMaintenanceRecords, currentWorkspaceId]);
 
   const advertisements = useMemo(() => {
-    return rawAdvertisements.filter((ad) => (ad.organizationId || "default") === currentWorkspaceId);
+    return rawAdvertisements.filter((ad) => matchesWorkspace(ad.organizationId));
   }, [rawAdvertisements, currentWorkspaceId]);
 
   const sales = useMemo(() => {
-    return rawSales.filter((s) => (s.organizationId || "default") === currentWorkspaceId);
+    return rawSales.filter((s) => matchesWorkspace(s.organizationId));
   }, [rawSales, currentWorkspaceId]);
 
   const contacts = useMemo(() => {
-    return rawContacts.filter((c) => (c.organizationId || "default") === currentWorkspaceId);
+    return rawContacts.filter((c) => matchesWorkspace(c.organizationId));
   }, [rawContacts, currentWorkspaceId]);
 
   const documents = useMemo(() => {
-    return rawDocuments.filter((d) => (d.organizationId || "default") === currentWorkspaceId);
+    return rawDocuments.filter((d) => matchesWorkspace(d.organizationId));
   }, [rawDocuments, currentWorkspaceId]);
 
   const activityLogs = useMemo(() => {
-    return rawActivityLogs.filter((l) => (l.organizationId || "default") === currentWorkspaceId);
+    return rawActivityLogs.filter((l) => matchesWorkspace(l.organizationId));
   }, [rawActivityLogs, currentWorkspaceId]);
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -542,7 +566,7 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const targetLot = lots.find((l) => l.id === item.lotId);
         const lotNum = targetLot ? targetLot.lotNumber : "0";
         const year = item.dateAdded ? new Date(item.dateAdded).getFullYear() : new Date().getFullYear();
-        
+
         // Obter os itens do mesmo lote ordenados por ID/data para manter sequencial estável
         const sameLotItems = items.filter((i) => i.lotId === item.lotId);
         const itemIdx = sameLotItems.findIndex((i) => i.id === item.id);
@@ -555,6 +579,63 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     });
   }, [items, lots]);
+
+  // Sincronização retroativa automática: garantir que todo produto vendido no inventário possua registro de venda na coleção sales
+  useEffect(() => {
+    if (rawItems.length === 0) return;
+
+    rawItems.forEach((item) => {
+      if (item.status === "vendido" || item.isSold) {
+        const hasSale = rawSales.some((s) => s.itemId === item.id);
+        if (!hasSale) {
+          const realCost = item.realTotalCost || (item.apportionedCost || 0) + (item.additionalCosts || 0);
+          const salePrice =
+            item.listedPrice && item.listedPrice > 0
+              ? item.listedPrice
+              : item.estimatedMarketAvg && item.estimatedMarketAvg > 0
+                ? item.estimatedMarketAvg
+                : realCost;
+          const netSaleValue = salePrice;
+          const netProfit = netSaleValue - realCost;
+          const roiPercentage = realCost > 0 ? (netProfit / realCost) * 100 : 0;
+          const marginPercentage = netSaleValue > 0 ? (netProfit / netSaleValue) * 100 : 0;
+
+          const saleId = "sale-" + item.id;
+          const autoSale: SaleRecord = {
+            id: saleId,
+            itemId: item.id,
+            organizationId: item.organizationId || "default",
+            buyerName: "Venda Direta (Estoque)",
+            buyerDoc: "",
+            buyerPhone: "",
+            buyerEmail: "",
+            platform: "Venda Direta",
+            saleDate: item.dateAdded ? item.dateAdded.split("T")[0] : new Date().toISOString().split("T")[0],
+            listedPrice: salePrice,
+            negotiatedPrice: salePrice,
+            finalPrice: salePrice,
+            discount: 0,
+            sellerFreight: 0,
+            platformCommission: 0,
+            taxes: 0,
+            otherExpenses: 0,
+            paymentMethod: "Pix",
+            paymentStatus: "pago",
+            notes: "Sincronização automática de item vendido no inventário",
+            netSaleValue,
+            costBasisAtSale: realCost,
+            netProfit: Number(netProfit.toFixed(2)),
+            roiPercentage: Number(roiPercentage.toFixed(2)),
+            marginPercentage: Number(marginPercentage.toFixed(2)),
+            previousItemStatus: "disponivel",
+            createdAt: item.dateAdded || new Date().toISOString(),
+          };
+
+          setDoc(doc(db, "sales", saleId), autoSale).catch(console.error);
+        }
+      }
+    });
+  }, [rawItems, rawSales]);
 
   const toggleDarkMode = () => setDarkMode((prev) => !prev);
 
@@ -751,7 +832,53 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateAuction = (id: string, auctionData: Partial<Auction>) => {
     const existing = auctions.find((a) => a.id === id);
-    if (!existing) return;
+    if (!existing) {
+      const targetItem = rawItems.find((i) => "sale-" + i.id === id || i.id === saleData.itemId);
+      const realCost = targetItem ? (targetItem.realTotalCost || (targetItem.apportionedCost || 0) + (targetItem.additionalCosts || 0)) : 0;
+      const baseFinalPrice = saleData.finalPrice ?? (targetItem?.listedPrice || targetItem?.estimatedMarketAvg || realCost);
+      const freight = saleData.sellerFreight ?? 0;
+      const commission = saleData.platformCommission ?? 0;
+      const taxes = saleData.taxes ?? 0;
+      const other = saleData.otherExpenses ?? 0;
+      const netSaleValue = baseFinalPrice - freight - commission - taxes - other;
+      const netProfit = netSaleValue - realCost;
+      const roiPercentage = realCost > 0 ? (netProfit / realCost) * 100 : 0;
+      const marginPercentage = netSaleValue > 0 ? (netProfit / netSaleValue) * 100 : 0;
+
+      const newRecord: SaleRecord = {
+        id,
+        itemId: targetItem?.id || saleData.itemId || "",
+        organizationId: targetItem?.organizationId || currentWorkspaceId || "default",
+        buyerName: saleData.buyerName || "Venda Direta (Estoque)",
+        buyerDoc: saleData.buyerDoc || "",
+        buyerPhone: saleData.buyerPhone || "",
+        buyerEmail: saleData.buyerEmail || "",
+        platform: saleData.platform || "Venda Direta",
+        saleDate: saleData.saleDate || new Date().toISOString().split("T")[0],
+        listedPrice: saleData.listedPrice ?? targetItem?.listedPrice ?? baseFinalPrice,
+        negotiatedPrice: saleData.negotiatedPrice ?? baseFinalPrice,
+        finalPrice: baseFinalPrice,
+        discount: saleData.discount ?? 0,
+        sellerFreight: freight,
+        platformCommission: commission,
+        taxes,
+        otherExpenses: other,
+        paymentMethod: saleData.paymentMethod || "Pix",
+        paymentStatus: saleData.paymentStatus || "pago",
+        notes: saleData.notes || "",
+        netSaleValue: Number(netSaleValue.toFixed(2)),
+        costBasisAtSale: realCost,
+        netProfit: Number(netProfit.toFixed(2)),
+        roiPercentage: Number(roiPercentage.toFixed(2)),
+        marginPercentage: Number(marginPercentage.toFixed(2)),
+        previousItemStatus: targetItem?.status || "disponivel",
+        createdAt: new Date().toISOString(),
+      };
+
+      setDoc(doc(db, "sales", id), newRecord).catch(console.error);
+      addToast("Venda Salva", "As informações da venda foram registradas com sucesso.");
+      return;
+    }
     const updated = { ...existing, ...auctionData };
     setDoc(doc(db, "auctions", id), updated).catch(console.error);
     addToast("Leilão Atualizado", "As informações do leilão foram atualizadas.");
@@ -813,7 +940,53 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateLot = (id: string, lotData: Partial<Lot>) => {
     const existing = lots.find((l) => l.id === id);
-    if (!existing) return;
+    if (!existing) {
+      const targetItem = rawItems.find((i) => "sale-" + i.id === id || i.id === saleData.itemId);
+      const realCost = targetItem ? (targetItem.realTotalCost || (targetItem.apportionedCost || 0) + (targetItem.additionalCosts || 0)) : 0;
+      const baseFinalPrice = saleData.finalPrice ?? (targetItem?.listedPrice || targetItem?.estimatedMarketAvg || realCost);
+      const freight = saleData.sellerFreight ?? 0;
+      const commission = saleData.platformCommission ?? 0;
+      const taxes = saleData.taxes ?? 0;
+      const other = saleData.otherExpenses ?? 0;
+      const netSaleValue = baseFinalPrice - freight - commission - taxes - other;
+      const netProfit = netSaleValue - realCost;
+      const roiPercentage = realCost > 0 ? (netProfit / realCost) * 100 : 0;
+      const marginPercentage = netSaleValue > 0 ? (netProfit / netSaleValue) * 100 : 0;
+
+      const newRecord: SaleRecord = {
+        id,
+        itemId: targetItem?.id || saleData.itemId || "",
+        organizationId: targetItem?.organizationId || currentWorkspaceId || "default",
+        buyerName: saleData.buyerName || "Venda Direta (Estoque)",
+        buyerDoc: saleData.buyerDoc || "",
+        buyerPhone: saleData.buyerPhone || "",
+        buyerEmail: saleData.buyerEmail || "",
+        platform: saleData.platform || "Venda Direta",
+        saleDate: saleData.saleDate || new Date().toISOString().split("T")[0],
+        listedPrice: saleData.listedPrice ?? targetItem?.listedPrice ?? baseFinalPrice,
+        negotiatedPrice: saleData.negotiatedPrice ?? baseFinalPrice,
+        finalPrice: baseFinalPrice,
+        discount: saleData.discount ?? 0,
+        sellerFreight: freight,
+        platformCommission: commission,
+        taxes,
+        otherExpenses: other,
+        paymentMethod: saleData.paymentMethod || "Pix",
+        paymentStatus: saleData.paymentStatus || "pago",
+        notes: saleData.notes || "",
+        netSaleValue: Number(netSaleValue.toFixed(2)),
+        costBasisAtSale: realCost,
+        netProfit: Number(netProfit.toFixed(2)),
+        roiPercentage: Number(roiPercentage.toFixed(2)),
+        marginPercentage: Number(marginPercentage.toFixed(2)),
+        previousItemStatus: targetItem?.status || "disponivel",
+        createdAt: new Date().toISOString(),
+      };
+
+      setDoc(doc(db, "sales", id), newRecord).catch(console.error);
+      addToast("Venda Salva", "As informações da venda foram registradas com sucesso.");
+      return;
+    }
     const updated = { ...existing, ...lotData };
     const oldCost = existing.totalLotCost || 0;
     updated.totalLotCost = calculateTotalLotCost(updated);
@@ -903,12 +1076,111 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateItem = (id: string, itemData: Partial<AuctionItem>) => {
     const existing = items.find((i) => i.id === id);
-    if (!existing) return;
+    if (!existing) {
+      const targetItem = rawItems.find((i) => "sale-" + i.id === id || i.id === saleData.itemId);
+      const realCost = targetItem ? (targetItem.realTotalCost || (targetItem.apportionedCost || 0) + (targetItem.additionalCosts || 0)) : 0;
+      const baseFinalPrice = saleData.finalPrice ?? (targetItem?.listedPrice || targetItem?.estimatedMarketAvg || realCost);
+      const freight = saleData.sellerFreight ?? 0;
+      const commission = saleData.platformCommission ?? 0;
+      const taxes = saleData.taxes ?? 0;
+      const other = saleData.otherExpenses ?? 0;
+      const netSaleValue = baseFinalPrice - freight - commission - taxes - other;
+      const netProfit = netSaleValue - realCost;
+      const roiPercentage = realCost > 0 ? (netProfit / realCost) * 100 : 0;
+      const marginPercentage = netSaleValue > 0 ? (netProfit / netSaleValue) * 100 : 0;
+
+      const newRecord: SaleRecord = {
+        id,
+        itemId: targetItem?.id || saleData.itemId || "",
+        organizationId: targetItem?.organizationId || currentWorkspaceId || "default",
+        buyerName: saleData.buyerName || "Venda Direta (Estoque)",
+        buyerDoc: saleData.buyerDoc || "",
+        buyerPhone: saleData.buyerPhone || "",
+        buyerEmail: saleData.buyerEmail || "",
+        platform: saleData.platform || "Venda Direta",
+        saleDate: saleData.saleDate || new Date().toISOString().split("T")[0],
+        listedPrice: saleData.listedPrice ?? targetItem?.listedPrice ?? baseFinalPrice,
+        negotiatedPrice: saleData.negotiatedPrice ?? baseFinalPrice,
+        finalPrice: baseFinalPrice,
+        discount: saleData.discount ?? 0,
+        sellerFreight: freight,
+        platformCommission: commission,
+        taxes,
+        otherExpenses: other,
+        paymentMethod: saleData.paymentMethod || "Pix",
+        paymentStatus: saleData.paymentStatus || "pago",
+        notes: saleData.notes || "",
+        netSaleValue: Number(netSaleValue.toFixed(2)),
+        costBasisAtSale: realCost,
+        netProfit: Number(netProfit.toFixed(2)),
+        roiPercentage: Number(roiPercentage.toFixed(2)),
+        marginPercentage: Number(marginPercentage.toFixed(2)),
+        previousItemStatus: targetItem?.status || "disponivel",
+        createdAt: new Date().toISOString(),
+      };
+
+      setDoc(doc(db, "sales", id), newRecord).catch(console.error);
+      addToast("Venda Salva", "As informações da venda foram registradas com sucesso.");
+      return;
+    }
     const updated = { ...existing, ...itemData };
     updated.realTotalCost = (updated.apportionedCost || 0) + (updated.additionalCosts || 0);
 
     if (itemData.status === "vendido") {
       updated.isSold = true;
+      const hasSale = rawSales.some((s) => s.itemId === id);
+      if (!hasSale) {
+        const realCost = updated.realTotalCost || (updated.apportionedCost || 0) + (updated.additionalCosts || 0);
+        const salePrice =
+          updated.listedPrice && updated.listedPrice > 0
+            ? updated.listedPrice
+            : updated.estimatedMarketAvg && updated.estimatedMarketAvg > 0
+              ? updated.estimatedMarketAvg
+              : realCost;
+        const netSaleValue = salePrice;
+        const netProfit = netSaleValue - realCost;
+        const roiPercentage = realCost > 0 ? (netProfit / realCost) * 100 : 0;
+        const marginPercentage = netSaleValue > 0 ? (netProfit / netSaleValue) * 100 : 0;
+
+        const saleId = "sale-" + id;
+        const autoSale: SaleRecord = {
+          id: saleId,
+          itemId: id,
+          organizationId: updated.organizationId || currentWorkspaceId || "default",
+          buyerName: "Venda Direta (Estoque)",
+          buyerDoc: "",
+          buyerPhone: "",
+          buyerEmail: "",
+          platform: "Venda Direta",
+          saleDate: updated.dateAdded ? updated.dateAdded.split("T")[0] : new Date().toISOString().split("T")[0],
+          listedPrice: salePrice,
+          negotiatedPrice: salePrice,
+          finalPrice: salePrice,
+          discount: 0,
+          sellerFreight: 0,
+          platformCommission: 0,
+          taxes: 0,
+          otherExpenses: 0,
+          paymentMethod: "Pix",
+          paymentStatus: "pago",
+          notes: "Registro automático de item vendido no inventário",
+          netSaleValue,
+          costBasisAtSale: realCost,
+          netProfit: Number(netProfit.toFixed(2)),
+          roiPercentage: Number(roiPercentage.toFixed(2)),
+          marginPercentage: Number(marginPercentage.toFixed(2)),
+          previousItemStatus: existing.status || "disponivel",
+          createdAt: new Date().toISOString(),
+        };
+
+        setDoc(doc(db, "sales", saleId), autoSale).catch(console.error);
+      }
+    } else if (itemData.status && existing.status === "vendido" && itemData.status !== "vendido") {
+      updated.isSold = false;
+      const existingSale = rawSales.find((s) => s.itemId === id);
+      if (existingSale) {
+        deleteDoc(doc(db, "sales", existingSale.id)).catch(console.error);
+      }
     } else if (itemData.status) {
       updated.isSold = false;
     }
@@ -954,7 +1226,53 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const archiveItem = (id: string) => {
     const existing = items.find((i) => i.id === id);
-    if (!existing) return;
+    if (!existing) {
+      const targetItem = rawItems.find((i) => "sale-" + i.id === id || i.id === saleData.itemId);
+      const realCost = targetItem ? (targetItem.realTotalCost || (targetItem.apportionedCost || 0) + (targetItem.additionalCosts || 0)) : 0;
+      const baseFinalPrice = saleData.finalPrice ?? (targetItem?.listedPrice || targetItem?.estimatedMarketAvg || realCost);
+      const freight = saleData.sellerFreight ?? 0;
+      const commission = saleData.platformCommission ?? 0;
+      const taxes = saleData.taxes ?? 0;
+      const other = saleData.otherExpenses ?? 0;
+      const netSaleValue = baseFinalPrice - freight - commission - taxes - other;
+      const netProfit = netSaleValue - realCost;
+      const roiPercentage = realCost > 0 ? (netProfit / realCost) * 100 : 0;
+      const marginPercentage = netSaleValue > 0 ? (netProfit / netSaleValue) * 100 : 0;
+
+      const newRecord: SaleRecord = {
+        id,
+        itemId: targetItem?.id || saleData.itemId || "",
+        organizationId: targetItem?.organizationId || currentWorkspaceId || "default",
+        buyerName: saleData.buyerName || "Venda Direta (Estoque)",
+        buyerDoc: saleData.buyerDoc || "",
+        buyerPhone: saleData.buyerPhone || "",
+        buyerEmail: saleData.buyerEmail || "",
+        platform: saleData.platform || "Venda Direta",
+        saleDate: saleData.saleDate || new Date().toISOString().split("T")[0],
+        listedPrice: saleData.listedPrice ?? targetItem?.listedPrice ?? baseFinalPrice,
+        negotiatedPrice: saleData.negotiatedPrice ?? baseFinalPrice,
+        finalPrice: baseFinalPrice,
+        discount: saleData.discount ?? 0,
+        sellerFreight: freight,
+        platformCommission: commission,
+        taxes,
+        otherExpenses: other,
+        paymentMethod: saleData.paymentMethod || "Pix",
+        paymentStatus: saleData.paymentStatus || "pago",
+        notes: saleData.notes || "",
+        netSaleValue: Number(netSaleValue.toFixed(2)),
+        costBasisAtSale: realCost,
+        netProfit: Number(netProfit.toFixed(2)),
+        roiPercentage: Number(roiPercentage.toFixed(2)),
+        marginPercentage: Number(marginPercentage.toFixed(2)),
+        previousItemStatus: targetItem?.status || "disponivel",
+        createdAt: new Date().toISOString(),
+      };
+
+      setDoc(doc(db, "sales", id), newRecord).catch(console.error);
+      addToast("Venda Salva", "As informações da venda foram registradas com sucesso.");
+      return;
+    }
     updateItem(id, { archived: !existing.archived });
   };
 
@@ -1173,7 +1491,53 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateMaintenanceStatus = async (id: string, status: MaintenanceRecord["status"], newOperationalState?: OperationalState) => {
     const existing = maintenanceRecords.find((m) => m.id === id);
-    if (!existing) return;
+    if (!existing) {
+      const targetItem = rawItems.find((i) => "sale-" + i.id === id || i.id === saleData.itemId);
+      const realCost = targetItem ? (targetItem.realTotalCost || (targetItem.apportionedCost || 0) + (targetItem.additionalCosts || 0)) : 0;
+      const baseFinalPrice = saleData.finalPrice ?? (targetItem?.listedPrice || targetItem?.estimatedMarketAvg || realCost);
+      const freight = saleData.sellerFreight ?? 0;
+      const commission = saleData.platformCommission ?? 0;
+      const taxes = saleData.taxes ?? 0;
+      const other = saleData.otherExpenses ?? 0;
+      const netSaleValue = baseFinalPrice - freight - commission - taxes - other;
+      const netProfit = netSaleValue - realCost;
+      const roiPercentage = realCost > 0 ? (netProfit / realCost) * 100 : 0;
+      const marginPercentage = netSaleValue > 0 ? (netProfit / netSaleValue) * 100 : 0;
+
+      const newRecord: SaleRecord = {
+        id,
+        itemId: targetItem?.id || saleData.itemId || "",
+        organizationId: targetItem?.organizationId || currentWorkspaceId || "default",
+        buyerName: saleData.buyerName || "Venda Direta (Estoque)",
+        buyerDoc: saleData.buyerDoc || "",
+        buyerPhone: saleData.buyerPhone || "",
+        buyerEmail: saleData.buyerEmail || "",
+        platform: saleData.platform || "Venda Direta",
+        saleDate: saleData.saleDate || new Date().toISOString().split("T")[0],
+        listedPrice: saleData.listedPrice ?? targetItem?.listedPrice ?? baseFinalPrice,
+        negotiatedPrice: saleData.negotiatedPrice ?? baseFinalPrice,
+        finalPrice: baseFinalPrice,
+        discount: saleData.discount ?? 0,
+        sellerFreight: freight,
+        platformCommission: commission,
+        taxes,
+        otherExpenses: other,
+        paymentMethod: saleData.paymentMethod || "Pix",
+        paymentStatus: saleData.paymentStatus || "pago",
+        notes: saleData.notes || "",
+        netSaleValue: Number(netSaleValue.toFixed(2)),
+        costBasisAtSale: realCost,
+        netProfit: Number(netProfit.toFixed(2)),
+        roiPercentage: Number(roiPercentage.toFixed(2)),
+        marginPercentage: Number(marginPercentage.toFixed(2)),
+        previousItemStatus: targetItem?.status || "disponivel",
+        createdAt: new Date().toISOString(),
+      };
+
+      setDoc(doc(db, "sales", id), newRecord).catch(console.error);
+      addToast("Venda Salva", "As informações da venda foram registradas com sucesso.");
+      return;
+    }
 
     try {
       await InventoryService.updateMaintenanceStatus(id, existing, status, newOperationalState);
@@ -1203,7 +1567,53 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateAdStatus = (id: string, status: Advertisement["status"]) => {
     const existing = advertisements.find((a) => a.id === id);
-    if (!existing) return;
+    if (!existing) {
+      const targetItem = rawItems.find((i) => "sale-" + i.id === id || i.id === saleData.itemId);
+      const realCost = targetItem ? (targetItem.realTotalCost || (targetItem.apportionedCost || 0) + (targetItem.additionalCosts || 0)) : 0;
+      const baseFinalPrice = saleData.finalPrice ?? (targetItem?.listedPrice || targetItem?.estimatedMarketAvg || realCost);
+      const freight = saleData.sellerFreight ?? 0;
+      const commission = saleData.platformCommission ?? 0;
+      const taxes = saleData.taxes ?? 0;
+      const other = saleData.otherExpenses ?? 0;
+      const netSaleValue = baseFinalPrice - freight - commission - taxes - other;
+      const netProfit = netSaleValue - realCost;
+      const roiPercentage = realCost > 0 ? (netProfit / realCost) * 100 : 0;
+      const marginPercentage = netSaleValue > 0 ? (netProfit / netSaleValue) * 100 : 0;
+
+      const newRecord: SaleRecord = {
+        id,
+        itemId: targetItem?.id || saleData.itemId || "",
+        organizationId: targetItem?.organizationId || currentWorkspaceId || "default",
+        buyerName: saleData.buyerName || "Venda Direta (Estoque)",
+        buyerDoc: saleData.buyerDoc || "",
+        buyerPhone: saleData.buyerPhone || "",
+        buyerEmail: saleData.buyerEmail || "",
+        platform: saleData.platform || "Venda Direta",
+        saleDate: saleData.saleDate || new Date().toISOString().split("T")[0],
+        listedPrice: saleData.listedPrice ?? targetItem?.listedPrice ?? baseFinalPrice,
+        negotiatedPrice: saleData.negotiatedPrice ?? baseFinalPrice,
+        finalPrice: baseFinalPrice,
+        discount: saleData.discount ?? 0,
+        sellerFreight: freight,
+        platformCommission: commission,
+        taxes,
+        otherExpenses: other,
+        paymentMethod: saleData.paymentMethod || "Pix",
+        paymentStatus: saleData.paymentStatus || "pago",
+        notes: saleData.notes || "",
+        netSaleValue: Number(netSaleValue.toFixed(2)),
+        costBasisAtSale: realCost,
+        netProfit: Number(netProfit.toFixed(2)),
+        roiPercentage: Number(roiPercentage.toFixed(2)),
+        marginPercentage: Number(marginPercentage.toFixed(2)),
+        previousItemStatus: targetItem?.status || "disponivel",
+        createdAt: new Date().toISOString(),
+      };
+
+      setDoc(doc(db, "sales", id), newRecord).catch(console.error);
+      addToast("Venda Salva", "As informações da venda foram registradas com sucesso.");
+      return;
+    }
     setDoc(doc(db, "advertisements", id), { ...existing, status }).catch(console.error);
     addToast("Anúncio Atualizado", `Status alterado para ${status}.`);
   };
@@ -1252,8 +1662,54 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateSale = (id: string, saleData: Partial<SaleRecord>) => {
-    const existing = sales.find((s) => s.id === id);
-    if (!existing) return;
+    let existing = rawSales.find((s) => s.id === id);
+    if (!existing) {
+      const targetItem = rawItems.find((i) => "sale-" + i.id === id || i.id === saleData.itemId);
+      const realCost = targetItem ? (targetItem.realTotalCost || (targetItem.apportionedCost || 0) + (targetItem.additionalCosts || 0)) : 0;
+      const baseFinalPrice = saleData.finalPrice ?? (targetItem?.listedPrice || targetItem?.estimatedMarketAvg || realCost);
+      const freight = saleData.sellerFreight ?? 0;
+      const commission = saleData.platformCommission ?? 0;
+      const taxes = saleData.taxes ?? 0;
+      const other = saleData.otherExpenses ?? 0;
+      const netSaleValue = baseFinalPrice - freight - commission - taxes - other;
+      const netProfit = netSaleValue - realCost;
+      const roiPercentage = realCost > 0 ? (netProfit / realCost) * 100 : 0;
+      const marginPercentage = netSaleValue > 0 ? (netProfit / netSaleValue) * 100 : 0;
+
+      const newRecord: SaleRecord = {
+        id,
+        itemId: targetItem?.id || saleData.itemId || "",
+        organizationId: targetItem?.organizationId || currentWorkspaceId || "default",
+        buyerName: saleData.buyerName || "Venda Direta (Estoque)",
+        buyerDoc: saleData.buyerDoc || "",
+        buyerPhone: saleData.buyerPhone || "",
+        buyerEmail: saleData.buyerEmail || "",
+        platform: saleData.platform || "Venda Direta",
+        saleDate: saleData.saleDate || new Date().toISOString().split("T")[0],
+        listedPrice: saleData.listedPrice ?? targetItem?.listedPrice ?? baseFinalPrice,
+        negotiatedPrice: saleData.negotiatedPrice ?? baseFinalPrice,
+        finalPrice: baseFinalPrice,
+        discount: saleData.discount ?? 0,
+        sellerFreight: freight,
+        platformCommission: commission,
+        taxes,
+        otherExpenses: other,
+        paymentMethod: saleData.paymentMethod || "Pix",
+        paymentStatus: saleData.paymentStatus || "pago",
+        notes: saleData.notes || "",
+        netSaleValue: Number(netSaleValue.toFixed(2)),
+        costBasisAtSale: realCost,
+        netProfit: Number(netProfit.toFixed(2)),
+        roiPercentage: Number(roiPercentage.toFixed(2)),
+        marginPercentage: Number(marginPercentage.toFixed(2)),
+        previousItemStatus: targetItem?.status || "disponivel",
+        createdAt: new Date().toISOString(),
+      };
+
+      setDoc(doc(db, "sales", id), newRecord).catch(console.error);
+      addToast("Venda Salva", "As informações da venda foram registradas com sucesso.");
+      return;
+    }
 
     // Respeitar o CMV congelado na venda (costBasisAtSale) se existir
     const realCost = existing.costBasisAtSale !== undefined ? existing.costBasisAtSale : existing.netSaleValue - existing.netProfit;
@@ -1283,8 +1739,15 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const deleteSale = async (id: string) => {
-    const existingSale = sales.find((s) => s.id === id);
-    if (!existingSale) return;
+    const existingSale = rawSales.find((s) => s.id === id);
+    if (!existingSale) {
+      const targetItem = rawItems.find((i) => "sale-" + i.id === id || i.id === id);
+      if (targetItem) {
+        updateItem(targetItem.id, { status: "disponivel", isSold: false });
+        addToast("Venda Removida", "O item retornou ao estoque com status 'Disponível'.");
+      }
+      return;
+    }
 
     try {
       await SalesService.reverseSale(existingSale, userRole);
@@ -1305,7 +1768,53 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateContact = (id: string, contactData: Partial<Contact>) => {
     const existing = contacts.find((c) => c.id === id);
-    if (!existing) return;
+    if (!existing) {
+      const targetItem = rawItems.find((i) => "sale-" + i.id === id || i.id === saleData.itemId);
+      const realCost = targetItem ? (targetItem.realTotalCost || (targetItem.apportionedCost || 0) + (targetItem.additionalCosts || 0)) : 0;
+      const baseFinalPrice = saleData.finalPrice ?? (targetItem?.listedPrice || targetItem?.estimatedMarketAvg || realCost);
+      const freight = saleData.sellerFreight ?? 0;
+      const commission = saleData.platformCommission ?? 0;
+      const taxes = saleData.taxes ?? 0;
+      const other = saleData.otherExpenses ?? 0;
+      const netSaleValue = baseFinalPrice - freight - commission - taxes - other;
+      const netProfit = netSaleValue - realCost;
+      const roiPercentage = realCost > 0 ? (netProfit / realCost) * 100 : 0;
+      const marginPercentage = netSaleValue > 0 ? (netProfit / netSaleValue) * 100 : 0;
+
+      const newRecord: SaleRecord = {
+        id,
+        itemId: targetItem?.id || saleData.itemId || "",
+        organizationId: targetItem?.organizationId || currentWorkspaceId || "default",
+        buyerName: saleData.buyerName || "Venda Direta (Estoque)",
+        buyerDoc: saleData.buyerDoc || "",
+        buyerPhone: saleData.buyerPhone || "",
+        buyerEmail: saleData.buyerEmail || "",
+        platform: saleData.platform || "Venda Direta",
+        saleDate: saleData.saleDate || new Date().toISOString().split("T")[0],
+        listedPrice: saleData.listedPrice ?? targetItem?.listedPrice ?? baseFinalPrice,
+        negotiatedPrice: saleData.negotiatedPrice ?? baseFinalPrice,
+        finalPrice: baseFinalPrice,
+        discount: saleData.discount ?? 0,
+        sellerFreight: freight,
+        platformCommission: commission,
+        taxes,
+        otherExpenses: other,
+        paymentMethod: saleData.paymentMethod || "Pix",
+        paymentStatus: saleData.paymentStatus || "pago",
+        notes: saleData.notes || "",
+        netSaleValue: Number(netSaleValue.toFixed(2)),
+        costBasisAtSale: realCost,
+        netProfit: Number(netProfit.toFixed(2)),
+        roiPercentage: Number(roiPercentage.toFixed(2)),
+        marginPercentage: Number(marginPercentage.toFixed(2)),
+        previousItemStatus: targetItem?.status || "disponivel",
+        createdAt: new Date().toISOString(),
+      };
+
+      setDoc(doc(db, "sales", id), newRecord).catch(console.error);
+      addToast("Venda Salva", "As informações da venda foram registradas com sucesso.");
+      return;
+    }
     setDoc(doc(db, "contacts", id), { ...existing, ...contactData }).catch(console.error);
     addToast("Contato Atualizado", "As informações do contato foram alteradas.");
   };
@@ -1326,7 +1835,53 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateDocument = (id: string, docData: Partial<AppDocument>) => {
     const existing = documents.find((d) => d.id === id);
-    if (!existing) return;
+    if (!existing) {
+      const targetItem = rawItems.find((i) => "sale-" + i.id === id || i.id === saleData.itemId);
+      const realCost = targetItem ? (targetItem.realTotalCost || (targetItem.apportionedCost || 0) + (targetItem.additionalCosts || 0)) : 0;
+      const baseFinalPrice = saleData.finalPrice ?? (targetItem?.listedPrice || targetItem?.estimatedMarketAvg || realCost);
+      const freight = saleData.sellerFreight ?? 0;
+      const commission = saleData.platformCommission ?? 0;
+      const taxes = saleData.taxes ?? 0;
+      const other = saleData.otherExpenses ?? 0;
+      const netSaleValue = baseFinalPrice - freight - commission - taxes - other;
+      const netProfit = netSaleValue - realCost;
+      const roiPercentage = realCost > 0 ? (netProfit / realCost) * 100 : 0;
+      const marginPercentage = netSaleValue > 0 ? (netProfit / netSaleValue) * 100 : 0;
+
+      const newRecord: SaleRecord = {
+        id,
+        itemId: targetItem?.id || saleData.itemId || "",
+        organizationId: targetItem?.organizationId || currentWorkspaceId || "default",
+        buyerName: saleData.buyerName || "Venda Direta (Estoque)",
+        buyerDoc: saleData.buyerDoc || "",
+        buyerPhone: saleData.buyerPhone || "",
+        buyerEmail: saleData.buyerEmail || "",
+        platform: saleData.platform || "Venda Direta",
+        saleDate: saleData.saleDate || new Date().toISOString().split("T")[0],
+        listedPrice: saleData.listedPrice ?? targetItem?.listedPrice ?? baseFinalPrice,
+        negotiatedPrice: saleData.negotiatedPrice ?? baseFinalPrice,
+        finalPrice: baseFinalPrice,
+        discount: saleData.discount ?? 0,
+        sellerFreight: freight,
+        platformCommission: commission,
+        taxes,
+        otherExpenses: other,
+        paymentMethod: saleData.paymentMethod || "Pix",
+        paymentStatus: saleData.paymentStatus || "pago",
+        notes: saleData.notes || "",
+        netSaleValue: Number(netSaleValue.toFixed(2)),
+        costBasisAtSale: realCost,
+        netProfit: Number(netProfit.toFixed(2)),
+        roiPercentage: Number(roiPercentage.toFixed(2)),
+        marginPercentage: Number(marginPercentage.toFixed(2)),
+        previousItemStatus: targetItem?.status || "disponivel",
+        createdAt: new Date().toISOString(),
+      };
+
+      setDoc(doc(db, "sales", id), newRecord).catch(console.error);
+      addToast("Venda Salva", "As informações da venda foram registradas com sucesso.");
+      return;
+    }
     setDoc(doc(db, "documents", id), { ...existing, ...docData }).catch(console.error);
     addToast("Documento Atualizado", "Documento atualizado com sucesso.");
   };

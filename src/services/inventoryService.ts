@@ -35,7 +35,7 @@ export const InventoryService = {
       const newExp: AdditionalExpense = {
         ...expenseData,
         id: expId,
-        organizationId: item.organizationId || "org-default",
+        organizationId: item.organizationId || "default",
         createdAt: new Date().toISOString(),
       };
 
@@ -47,7 +47,7 @@ export const InventoryService = {
 
       // Registrar Evento de Despesa Adicional no Ledger Imutável
       recordLedgerEntry(transaction, {
-        organizationId: item.organizationId || "org-default",
+        organizationId: item.organizationId || "default",
         itemId: item.id,
         lotId: item.lotId,
         auctionId: item.auctionId,
@@ -86,7 +86,7 @@ export const InventoryService = {
       const newMaint: MaintenanceRecord = {
         ...maintData,
         id: maintId,
-        organizationId: item.organizationId || "org-default",
+        organizationId: item.organizationId || "default",
         expenseId: expId,
       };
       transaction.set(maintRef, newMaint);
@@ -98,7 +98,7 @@ export const InventoryService = {
         const expRef = doc(db, "expenses", expId);
         const newExp: AdditionalExpense = {
           id: expId,
-          organizationId: item.organizationId || "org-default",
+          organizationId: item.organizationId || "default",
           itemId: maintData.itemId,
           category: "Manutenção",
           description: `Serviço: ${maintData.serviceType}`,
@@ -120,7 +120,7 @@ export const InventoryService = {
 
       // Gravação no Ledger
       recordLedgerEntry(transaction, {
-        organizationId: item.organizationId || "org-default",
+        organizationId: item.organizationId || "default",
         itemId: item.id,
         lotId: item.lotId,
         auctionId: item.auctionId,

@@ -5,7 +5,7 @@ import { saleRecordSchema } from "../schemas/zodSchemas";
 import { calculateNetSaleValue, calculateNetProfit, calculateROI, calculateNetMargin } from "./financialMath";
 import { recordLedgerEntry } from "./ledgerService";
 
-export interface RecordSaleParams extends Omit<SaleRecord, "id" | "netSaleValue" | "netProfit" | "roiPercentage" | "marginPercentage" | "costBasisAtSale"> {}
+export interface RecordSaleParams extends Omit<SaleRecord, "id" | "netSaleValue" | "netProfit" | "roiPercentage" | "marginPercentage" | "costBasisAtSale"> { }
 
 /**
  * Serviço especializado nas operações de Venda, CMV e Reversão.
@@ -76,7 +76,7 @@ export const SalesService = {
       const newSale: SaleRecord = {
         id: saleId,
         itemId: params.itemId,
-        organizationId: item.organizationId || "org-default",
+        organizationId: item.organizationId || "default",
         buyerName: params.buyerName || "Cliente",
         buyerDoc: params.buyerDoc || "",
         buyerPhone: params.buyerPhone || "",
@@ -111,7 +111,7 @@ export const SalesService = {
 
       // Gravação no Ledger Imutável
       recordLedgerEntry(transaction, {
-        organizationId: item.organizationId || "org-default",
+        organizationId: item.organizationId || "default",
         itemId: item.id,
         lotId: item.lotId || "",
         auctionId: item.auctionId || "",
@@ -127,7 +127,7 @@ export const SalesService = {
       // Log de Atividade
       const newLog: ActivityLog = {
         id: logId,
-        organizationId: item.organizationId || "org-default",
+        organizationId: item.organizationId || "default",
         itemId: item.id,
         title: "Venda Realizada",
         description: `Vendido por R$ ${params.finalPrice.toFixed(2)} para ${newSale.buyerName}. Lucro Líquido: R$ ${netProfit.toFixed(2)} (ROI ${roiPercentage.toFixed(1)}%).`,
@@ -167,7 +167,7 @@ export const SalesService = {
 
         // Registrar Reversão no Ledger
         recordLedgerEntry(transaction, {
-          organizationId: item.organizationId || "org-default",
+          organizationId: item.organizationId || "default",
           itemId: item.id,
           lotId: item.lotId || "",
           auctionId: item.auctionId || "",
