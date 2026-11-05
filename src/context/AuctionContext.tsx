@@ -326,18 +326,6 @@ export const AuctionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     [currentWorkspaceId]
   );
 
-  // Helper de correspondência de espaço: trata "default", "org-default" e valores vazios de forma retrocompatível
-  const matchesWorkspace = useCallback(
-    (entityOrgId?: string) => {
-      const org = entityOrgId || "default";
-      if (currentWorkspaceId === "default" || currentWorkspaceId === "org-default") {
-        return org === "default" || org === "org-default" || !entityOrgId;
-      }
-      return org === currentWorkspaceId;
-    },
-    [currentWorkspaceId]
-  );
-
   // Filtered lists: 100% ISOLATED per currentWorkspaceId!
   const auctions = useMemo(() => {
     return rawAuctions.filter((a) => matchesWorkspace(a.organizationId));
